@@ -1,0 +1,76 @@
+<!-- 答题闯关页：本地即时判分 + 随堂讲解 -->
+<view class="page" wx:if="{{hasQuiz}}">
+
+  <!-- 进度区 -->
+  <view class="head">
+    <view class="between head-top">
+      <text class="h3 head-title">{{title}}</text>
+      <text class="pill">{{gradeLabel}}</text>
+    </view>
+
+    <view class="progress head-bar">
+      <view class="progress-inner" style="width: {{progress}}%;"></view>
+    </view>
+
+    <view class="between head-bottom">
+      <text class="h3">第 {{current + 1}} / {{total}} 题</text>
+      <text class="tag">{{sourceLabel}}</text>
+    </view>
+  </view>
+
+  <!-- 题干 -->
+  <view class="card" wx:if="{{currentQuestion}}">
+    <view class="h2 stem">{{currentQuestion.stem}}</view>
+    <view class="muted stem-tip">选出你觉得对的那一个</view>
+  </view>
+
+  <!-- 选项 -->
+  <view class="option-list">
+    <view
+      wx:for="{{options}}"
+      wx:key="no"
+      class="option {{item.state}} {{judged ? 'disabled' : ''}}"
+      data-index="{{item.no}}"
+      hover-class="{{judged ? '' : 'hover-soft'}}"
+      bindtap="onSelectOption"
+    >
+      <view class="option-key">{{item.key}}</view>
+      <view class="grow option-text">{{item.text}}</view>
+      <text class="opt-mark mark-correct" wx:if="{{item.state === 'correct'}}">✓</text>
+      <text class="opt-mark mark-wrong" wx:if="{{item.state === 'wrong'}}">再想想</text>
+    </view>
+  </view>
+
+  <!-- 讲解卡：判完分马上给，不对也不错得不明不白 -->
+  <view class="card feedback-card" wx:if="{{judged}}">
+    <view class="row feedback-head">
+      <mascot state="{{mascotState}}" size="sm" caption="{{mascotCaption}}"></mascot>
+    </view>
+
+    <view class="encourage-box" wx:if="{{encourage}}">
+      <text class="encourage-emoji">🤝</text>
+      <text class="encourage-text">要不要先看看解析？看懂了再往下走，一点也不急。</text>
+    </view>
+
+    <view class="pill pill-orange point-pill" wx:if="{{currentQuestion.knowledge_point}}">{{currentQuestion.knowledge_point}}</view>
+
+    <view class="analysis-title h3">小科讲讲这道题</view>
+    <view class="analysis-text body">{{currentQuestion.analysis}}</view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="footer">
+    <view
+      class="btn btn-primary btn-block {{(selected < 0 && !judged) ? 'disabled' : ''}}"
+      hover-class="{{submitting ? '' : 'hover-soft'}}"
+      bindtap="onJudge"
+    >
+      <block wx:if="{{!judged}}">就选这个</block>
+      <block wx:elif="{{current + 1 < total}}">下一题</block>
+      <block wx:else>看看我的报告</block>
+    </view>
+    <view class="muted footer-tip" wx:if="{{submitting}}">{{submitTip}}</view>
+    <view class="muted footer-tip" wx:elif="{{judged && current + 1 < total}}">想清楚了就继续，小科在这儿等你。</view>
+  </view>
+
+</view>

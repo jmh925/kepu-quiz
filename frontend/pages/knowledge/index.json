@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "mascot": "../../components/mascot/mascot"
+  },
+  "navigationBarTitleText": "知识库",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "light"
+}

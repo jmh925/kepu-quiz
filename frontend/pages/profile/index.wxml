@@ -1,0 +1,77 @@
+<!-- 我的：游客态一句说明 + 登录；登录后是经验值、错题、薄弱知识点与历史闯关 -->
+<view class="page">
+
+  <!-- 一、游客态 -->
+  <view class="card center-col" wx:if="{{!isLogin}}">
+    <mascot state="encourage" size="lg"></mascot>
+    <view class="h3 guest-text">你来啦！登录后才有经验值和错题本哦，现在也能正常闯关</view>
+    <button class="btn btn-primary guest-btn" loading="{{logging}}" bindtap="onLogin">登录</button>
+  </view>
+
+  <!-- 二、已登录 -->
+  <block wx:if="{{isLogin}}">
+
+    <!-- 读取中 -->
+    <view class="card center-col" wx:if="{{loading}}">
+      <mascot state="thinking" size="sm" caption="小科正在整理…"></mascot>
+    </view>
+
+    <block wx:if="{{!loading}}">
+
+      <!-- 个人概览 -->
+      <view class="card hero">
+        <view class="h2">{{nickname}}</view>
+        <view class="xp-box">
+          <view class="xp-num mono-num">{{totalXp}}</view>
+          <view class="muted">累计经验值</view>
+        </view>
+        <view class="wrap stat-wrap">
+          <view class="stat-item">
+            <view class="stat-num mono-num">{{wrongCount}}</view>
+            <view class="muted">错题本里的题</view>
+          </view>
+          <view class="stat-item">
+            <view class="stat-text">{{gradeLabel}}</view>
+            <view class="muted">当前学段</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 薄弱知识点 -->
+      <view class="card">
+        <view class="card-title">要多看两眼的知识点</view>
+        <view class="wrap" wx:if="{{weakPoints.length}}">
+          <text class="pill pill-orange pill-gap" wx:for="{{weakPoints}}" wx:key="knowledge_point">
+            {{item.knowledge_point}} · 错 {{item.wrong_times}} 次
+          </text>
+        </view>
+        <view class="body" wx:if="{{!weakPoints.length}}">还没有薄弱知识点，保持这个势头！</view>
+      </view>
+
+      <!-- 历史闯关 -->
+      <view class="card">
+        <view class="card-title">历史闯关</view>
+        <block wx:if="{{sessions.length}}">
+          <view class="session-item" wx:for="{{sessions}}" wx:key="quizId"
+                data-quiz-id="{{item.quizId}}" bindtap="onOpenSession">
+            <view class="between">
+              <text class="h3 session-title">{{item.title}}</text>
+              <text class="tag">{{item.timeText}}</text>
+            </view>
+            <view class="wrap session-tags">
+              <text class="pill session-tag" wx:if="{{item.gradeLabel}}">{{item.gradeLabel}}</text>
+              <text class="tag session-tag" wx:if="{{item.sourceLabel}}">{{item.sourceLabel}}</text>
+              <text class="muted go-text">看看这一局的复盘 ›</text>
+            </view>
+          </view>
+        </block>
+        <view class="body" wx:if="{{!sessions.length}}">还没有闯关记录，去闯一关吧！</view>
+      </view>
+
+      <!-- 清空错题本 -->
+      <button class="btn btn-ghost clear-btn" bindtap="onClearWrong">清空错题本</button>
+
+    </block>
+  </block>
+
+</view>

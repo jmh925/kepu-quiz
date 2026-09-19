@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/quiz/index",
+    "pages/report/index",
+    "pages/profile/index",
+    "pages/knowledge/index",
+    "pages/wrong/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#4FC3F7",
+    "navigationBarTitleText": "科普闯关",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F7FBFF",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#9AA7B4",
+    "selectedColor": "#0288D1",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "去闯关"
+      },
+      {
+        "pagePath": "pages/wrong/index",
+        "text": "错题本"
+      },
+      {
+        "pagePath": "pages/knowledge/index",
+        "text": "知识库"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

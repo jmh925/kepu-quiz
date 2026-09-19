@@ -1,0 +1,27 @@
+# 仓库运行产物与本地配置
+.venv/
+.wheels/
+.buildtmp/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# 运行期数据库（首次启动自动创建，含测试数据，不入库）
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+
+# 本地环境配置（含密钥，禁止提交）
+backend/.env
+
+# 编辑器与系统文件
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+
+# 临时排查产物
+backend/_diag_*.py
+backend/tests/_*.log

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>科普知识闯关小程序 · 管理端</title>
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+<!-- 登录层 -->
+<div id="login-layer" class="login-layer">
+  <form id="login-form" class="login-card" autocomplete="off">
+    <div class="login-logo">科</div>
+    <h1>科普知识闯关小程序 · 管理端</h1>
+    <p class="muted">面向家长 / 教师 / 教务的运营后台</p>
+    <label>账号<input id="username" type="text" value="admin" required></label>
+    <label>口令<input id="password" type="password" placeholder="默认口令见 README" required></label>
+    <button class="btn btn-primary" type="submit">登录</button>
+    <p id="login-msg" class="msg"></p>
+  </form>
+</div>
+
+<!-- 主体 -->
+<div id="app" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-dot"></span> 闯关后台</div>
+    <nav class="nav">
+      <a href="#/dashboard" data-view="dashboard" class="active">运行看板</a>
+      <a href="#/questions" data-view="questions">题库资源池</a>
+      <a href="#/users" data-view="users">用户管理</a>
+      <a href="#/sessions" data-view="sessions">闯关记录</a>
+      <a href="#/logs" data-view="logs">操作日志</a>
+    </nav>
+    <div class="sidebar-foot">
+      <span id="admin-name" class="muted"></span>
+      <button id="logout" class="btn btn-ghost btn-sm">退出</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- 运行看板 -->
+    <section id="view-dashboard" class="view">
+      <header class="view-head">
+        <h2>运行看板</h2>
+        <button class="btn btn-ghost btn-sm" onclick="Admin.loadDashboard()">刷新</button>
+      </header>
+      <div id="cards" class="cards"></div>
+      <div class="panel">
+        <div class="panel-head"><h3>近 7 天闯关量</h3></div>
+        <div id="trend" class="trend"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>薄弱知识点 TOP 8</h3></div>
+        <div id="weak" class="chips"></div>
+      </div>
+    </section>
+
+    <!-- 题库资源池 -->
+    <section id="view-questions" class="view hidden">
+      <header class="view-head">
+        <h2>题库资源池</h2>
+        <div class="tools">
+          <input id="q-keyword" class="input" placeholder="按题干 / 知识点搜索">
+          <button class="btn btn-primary btn-sm" onclick="Admin.openQuestion()">新增题目</button>
+        </div>
+      </header>
+      <p class="tip">资源池中的题目会在出题时被优先命中；未启用大模型 Key 时，它就是出题的主要来源。</p>
+      <div class="panel"><table id="q-table" class="table"></table></div>
+      <div id="q-pager" class="pager"></div>
+    </section>
+
+    <!-- 用户管理 -->
+    <section id="view-users" class="view hidden">
+      <header class="view-head">
+        <h2>用户管理</h2>
+        <div class="tools"><input id="u-keyword" class="input" placeholder="按昵称 / openid 搜索">
+          <button class="btn btn-ghost btn-sm" onclick="Admin.loadUsers(1)">搜索</button></div>
+      </header>
+      <div class="panel"><table id="u-table" class="table"></table></div>
+      <div id="u-pager" class="pager"></div>
+    </section>
+
+    <!-- 闯关记录 -->
+    <section id="view-sessions" class="view hidden">
+      <header class="view-head"><h2>闯关记录</h2>
+        <button class="btn btn-ghost btn-sm" onclick="Admin.loadSessions(1)">刷新</button></header>
+      <div class="panel"><table id="s-table" class="table"></table></div>
+      <div id="s-pager" class="pager"></div>
+    </section>
+
+    <!-- 操作日志 -->
+    <section id="view-logs" class="view hidden">
+      <header class="view-head"><h2>操作日志</h2>
+        <button class="btn btn-ghost btn-sm" onclick="Admin.loadLogs()">刷新</button></header>
+      <div class="panel"><table id="l-table" class="table"></table></div>
+    </section>
+  </main>
+</div>
+
+<!-- 题目编辑弹层 -->
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="modal-title">新增题目</h3>
+      <button class="btn btn-ghost btn-sm" onclick="Admin.closeModal()">关闭</button></div>
+    <div class="form-row">
+      <label>主题<select id="f-theme">
+        <option>天文</option><option>地理</option><option>生物</option>
+        <option>物理</option><option>化学</option><option>科技</option><option>通用</option>
+      </select></label>
+      <label>学段<select id="f-grade">
+        <option value="primary_low">小学低年级</option>
+        <option value="primary_high" selected>小学高年级</option>
+        <option value="junior">初中</option>
+      </select></label>
+      <label>难度<select id="f-difficulty">
+        <option value="1">易</option><option value="2" selected>中</option><option value="3">难</option>
+      </select></label>
+    </div>
+    <label class="block">题干<textarea id="f-stem" rows="2" placeholder="题干不超过 40 字（小学高年级）"></textarea></label>
+    <label class="block">选项（每行一个，第一行为默认正确答案）<textarea id="f-options" rows="4"
+      placeholder="选项A&#10;选项B&#10;选项C&#10;选项D"></textarea></label>
+    <div class="form-row">
+      <label>正确答案<select id="f-answer"></select></label>
+      <label>知识点<input id="f-kp" type="text" placeholder="如：月球运动"></label>
+      <label>状态<select id="f-enabled"><option value="1">启用</option><option value="0">停用</option></select></label>
+    </div>
+    <label class="block">解析<textarea id="f-analysis" rows="2" placeholder="用一句话讲清楚为什么"></textarea></label>
+    <p id="modal-msg" class="msg"></p>
+    <div class="modal-foot"><button class="btn btn-primary" onclick="Admin.saveQuestion()">保存</button></div>
+  </div>
+</div>
+
+<script src="assets/admin.js"></script>
+</body>
+</html>

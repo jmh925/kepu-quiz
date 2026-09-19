@@ -1,0 +1,107 @@
+<!-- 首页 —— 去闯关：选学段、写主题、出题等待 -->
+<view class="page">
+
+  <!-- 顶部问候 -->
+  <view class="greet-card">
+    <view class="greet-left">
+      <view class="h1">去闯关</view>
+      <view class="greet-line body">今天想探索什么？你是{{gradeLabel}}哦</view>
+      <view class="muted">小科负责出题，你只管大胆猜。</view>
+    </view>
+    <mascot state="idle" size="md" caption=""></mascot>
+  </view>
+
+  <!-- 出题中：分档台词 + 科普轮播 + 取消入口 -->
+  <block wx:if="{{asking}}">
+    <view class="card asking-card">
+      <mascot state="thinking" size="lg" caption="{{askCaption}}"></mascot>
+
+      <view class="fact-box">
+        <view class="fact-head row">
+          <text class="fact-emoji">💡</text>
+          <text class="fact-title">等一会儿，先看条小知识</text>
+        </view>
+        <view class="fact-text">{{currentFact}}</view>
+        <view class="muted fact-index">第 {{factIndex + 1}} / {{facts.length}} 条</view>
+      </view>
+
+      <view class="ask-hint muted">已经等了 {{askElapsed}} 秒，出题一般需要 20—40 秒</view>
+      <view class="btn btn-ghost ask-cancel" hover-class="hover-soft" bindtap="onCancelAsk">先不出了</view>
+    </view>
+  </block>
+
+  <!-- 表单态 -->
+  <block wx:else>
+
+    <!-- 学段选择 -->
+    <view class="card">
+      <view class="card-title">先选一个学段</view>
+      <view class="grade-list">
+        <view
+          wx:for="{{grades}}"
+          wx:key="value"
+          class="grade-btn {{gradeValue === item.value ? 'grade-on' : ''}}"
+          data-value="{{item.value}}"
+          hover-class="hover-soft"
+          bindtap="onPickGrade"
+        >
+          <text class="grade-emoji">{{item.emoji}}</text>
+          <text class="grade-name">{{item.short}}</text>
+        </view>
+      </view>
+      <view class="muted grade-tip">换学段会让题目变难或变简单，随时可以换回来。</view>
+    </view>
+
+    <!-- 主题输入 -->
+    <view class="card">
+      <view class="card-title">想探索什么主题？</view>
+
+      <!-- 来自知识库的资料 -->
+      <view class="doc-card" wx:if="{{docId}}">
+        <view class="row">
+          <text class="doc-emoji">📘</text>
+          <view class="grow">
+            <view class="doc-title">本次将基于《{{docName}}》出题</view>
+            <view class="muted">小科会照着这份资料来出题</view>
+          </view>
+        </view>
+      </view>
+
+      <input
+        class="input"
+        type="text"
+        value="{{topic}}"
+        maxlength="30"
+        placeholder="比如：太阳系、恐龙、彩虹是怎么来的"
+        placeholder-class="input-ph"
+        confirm-type="done"
+        bindinput="onTopicInput"
+        bindconfirm="onStartAsk"
+      />
+
+      <view class="chip-wrap wrap">
+        <view
+          wx:for="{{chips}}"
+          wx:key="label"
+          class="chip"
+          data-topic="{{item.topic}}"
+          hover-class="hover-soft"
+          bindtap="onTapChip"
+        >
+          <text class="chip-emoji">{{item.emoji}}</text>
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+
+      <view class="ask-warn muted" wx:if="{{!canAsk}}">先告诉小科你想学什么吧</view>
+
+      <view
+        class="btn btn-primary btn-block {{canAsk ? '' : 'disabled'}}"
+        hover-class="{{canAsk ? 'hover-soft' : ''}}"
+        bindtap="onStartAsk"
+      >开始出题</view>
+    </view>
+
+  </block>
+
+</view>

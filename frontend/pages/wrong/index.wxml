@@ -1,0 +1,83 @@
+<!-- 错题本：统计 → 只练错题 → 错题清单 -->
+<view class="page">
+
+  <!-- 一、游客态 -->
+  <view class="card center-col" wx:if="{{!isLogin}}">
+    <mascot state="encourage" size="lg"></mascot>
+    <view class="h3 guest-text">登录后才能把错题存下来哦，现在也能正常闯关</view>
+    <button class="btn btn-primary guest-btn" loading="{{logging}}" bindtap="onLogin">登录</button>
+  </view>
+
+  <block wx:if="{{isLogin}}">
+
+    <!-- 二、读取中 -->
+    <view class="card center-col" wx:if="{{loading}}">
+      <mascot state="thinking" size="sm" caption="小科正在翻错题本…"></mascot>
+    </view>
+
+    <block wx:if="{{!loading}}">
+      <!-- 三、统计卡 -->
+      <view class="card stat-card">
+        <view class="total-num mono-num">{{total}}</view>
+        <view class="muted">错题本里一共有这么多题</view>
+        <view class="wp-box" wx:if="{{weakPoints.length}}">
+          <view class="h3">薄弱知识点</view>
+          <view class="wrap">
+            <text class="pill pill-orange pill-gap" wx:for="{{weakPoints}}" wx:key="knowledge_point">
+              {{item.knowledge_point}} · 错 {{item.wrong_times}} 次
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 四、只练错题 -->
+      <view class="card">
+        <button class="btn btn-primary practice-btn" disabled="{{total === 0}}"
+                loading="{{practicing}}" bindtap="onPractice">只练错题</button>
+        <view class="muted center tip-text">不用等 AI 出题，马上就能开始</view>
+      </view>
+
+      <!-- 五、错题清单 -->
+      <block wx:if="{{questions.length}}">
+        <view class="card" wx:for="{{questions}}" wx:key="stem">
+          <view class="item-head" data-index="{{index}}" bindtap="onToggleItem">
+            <view class="h3 stem-text">{{index + 1}}. {{item.stem}}</view>
+            <view class="wrap meta-row">
+              <text class="pill meta-item">{{item.knowledgePoint}}</text>
+              <text class="pill pill-orange meta-item">错过 {{item.wrongCount}} 次</text>
+              <text class="muted meta-item">{{item.expanded ? '收起讲解' : '看看讲解'}}</text>
+            </view>
+          </view>
+
+          <view class="detail" wx:if="{{item.expanded}}">
+            <view class="review-line" wx:if="{{item.yourAnswer}}">
+              <text class="line-key">你的答案</text>
+              <text class="line-val your-val">{{item.yourAnswer}}</text>
+            </view>
+            <view class="review-line" wx:if="{{item.rightAnswer}}">
+              <text class="line-key">正确答案</text>
+              <text class="line-val right-val">{{item.rightAnswer}}</text>
+            </view>
+            <view class="analysis">
+              <text class="tag">{{item.knowledgePoint}}</text>
+              <view class="body">{{item.analysis}}</view>
+            </view>
+            <view class="muted last-at" wx:if="{{item.lastAt}}">最近一次：{{item.lastAt}}</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 六、空态 -->
+      <view class="card center-col" wx:if="{{!questions.length}}">
+        <mascot state="idle" size="sm"></mascot>
+        <view class="h3 empty-text">还没有错题，去闯一关吧！</view>
+        <button class="btn btn-primary guest-btn" bindtap="onGoQuiz">去闯关</button>
+      </view>
+
+      <!-- 七、清空错题本 -->
+      <button class="btn btn-ghost clear-btn" wx:if="{{total > 0}}" bindtap="onClearWrong">清空错题本</button>
+    </block>
+
+  </block>
+
+</view>

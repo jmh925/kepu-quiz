@@ -1,0 +1,55 @@
+<!-- 知识库：上传资料 → 照着资料出题 -->
+<view class="page">
+
+  <!-- 一、说明卡 -->
+  <view class="card">
+    <view class="h2">知识库</view>
+    <view class="body intro-text">把讲义或课外读本传上来，小科就能照着它出题。</view>
+    <button class="btn btn-primary upload-btn" loading="{{uploading}}" bindtap="onUpload">上传资料</button>
+  </view>
+
+  <!-- 二、读取中 -->
+  <view class="card center-col" wx:if="{{loading}}">
+    <mascot state="thinking" size="sm" caption="小科正在整理资料…"></mascot>
+  </view>
+
+  <!-- 三、列表没拿到时的重试 -->
+  <view class="card" wx:if="{{!loading && !loadOk}}">
+    <view class="body">小科这会儿没翻到资料架，要不要再看一眼？</view>
+    <button class="btn btn-ghost retry-btn" bindtap="onRetry">再看一眼</button>
+  </view>
+
+  <!-- 四、资料列表 -->
+  <block wx:if="{{!loading && loadOk && documents.length}}">
+    <view class="card" wx:for="{{documents}}" wx:key="docId">
+      <view class="h3 doc-name">{{item.filename}}</view>
+      <view class="wrap meta-row">
+        <text class="tag meta-item">{{item.typeText}}</text>
+        <text class="tag meta-item">{{item.sizeText}}</text>
+        <text class="{{item.statusClass}} meta-item">{{item.statusText}}</text>
+        <text class="muted time-text">{{item.timeText}}</text>
+      </view>
+      <view class="row doc-actions">
+        <button class="btn btn-primary btn-sm action-btn" loading="{{usingId === item.docId}}"
+                data-doc-id="{{item.docId}}" data-doc-name="{{item.filename}}"
+                bindtap="onUseDoc">用它出题</button>
+        <button class="btn btn-ghost btn-sm action-btn action-btn-last"
+                data-doc-id="{{item.docId}}" bindtap="onDeleteDoc">删除</button>
+      </view>
+    </view>
+  </block>
+
+  <!-- 五、空态 -->
+  <view class="card center-col" wx:if="{{!loading && loadOk && !documents.length}}">
+    <mascot state="idle" size="sm"></mascot>
+    <view class="h3 empty-text">还没有资料，传一份上来试试吧</view>
+    <view class="muted">讲义、读本、课堂笔记都可以，小科会照着它们出题。</view>
+  </view>
+
+  <!-- 六、诚实说明 -->
+  <view class="card note-card">
+    <view class="h3">小科的小说明</view>
+    <view class="body">当前直接支持 txt / md 文本；pdf / docx 需要服务端安装 pypdf、docx2txt 依赖。</view>
+  </view>
+
+</view>

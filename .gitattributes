@@ -1,0 +1,20 @@
+# 统一换行与文本判定，避免 Windows/Linux 协作时整文件 diff
+* text=auto eol=lf
+
+# 明确按文本处理
+*.py   text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.wxml text eol=lf
+*.wxss text eol=lf
+*.cmd  text eol=crlf
+
+# 二进制文件不做换行转换
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.docx binary
+*.db   binary

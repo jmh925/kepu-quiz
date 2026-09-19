@@ -1,0 +1,29 @@
+<!-- 小科：纯 CSS 绘制，无任何图片资源 -->
+<view class="mascot mascot-{{size}} mascot-{{state}}" aria-role="img" aria-label="小科：{{shownCaption}}">
+  <view class="mascot-stage">
+    <view class="mascot-dots" wx:if="{{state === 'thinking'}}">
+      <view class="dot"></view>
+      <view class="dot"></view>
+      <view class="dot"></view>
+    </view>
+
+    <view class="mascot-body">
+      <view class="ear ear-left"></view>
+      <view class="ear ear-right"></view>
+
+      <view class="mascot-head">
+        <view class="mascot-face">
+          <view class="mascot-eyes">
+            <view class="eye eye-left"></view>
+            <view class="eye eye-right"></view>
+          </view>
+          <view class="mouth"></view>
+          <view class="cheek cheek-left"></view>
+          <view class="cheek cheek-right"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="mascot-caption">{{shownCaption}}</view>
+</view>

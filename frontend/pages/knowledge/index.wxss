@@ -1,0 +1,59 @@
+/* 知识库页面专属样式：颜色只用 app.wxss 的 CSS 变量 */
+
+.center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.intro-text {
+  margin: 12rpx 0 28rpx;
+}
+
+.upload-btn {
+  width: 100%;
+}
+
+.retry-btn {
+  margin-top: 24rpx;
+}
+
+/* ---------- 资料列表 ---------- */
+.doc-name {
+  word-break: break-all;
+}
+
+.meta-row {
+  margin-top: 16rpx;
+  align-items: center;
+}
+
+.meta-item {
+  margin: 0 12rpx 12rpx 0;
+}
+
+.time-text {
+  margin-bottom: 12rpx;
+}
+
+.doc-actions {
+  margin-top: 12rpx;
+}
+
+.action-btn {
+  flex: 1;
+}
+
+.action-btn-last {
+  margin-left: 20rpx;
+}
+
+/* ---------- 空态与说明 ---------- */
+.empty-text {
+  margin: 16rpx 0 8rpx;
+}
+
+.note-card {
+  background: var(--c-bg);
+}

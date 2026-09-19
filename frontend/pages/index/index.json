@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "mascot": "../../components/mascot/mascot"
+  },
+  "navigationBarTitleText": "去闯关"
+}

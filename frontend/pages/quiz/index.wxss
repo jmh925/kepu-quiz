@@ -1,0 +1,130 @@
+/* ============================================================
+   答题闯关页
+   只补本页专有类；.option / .progress / .btn / .card 等全局类直接复用。
+   答错一律用暖橙 --c-orange，不用纯红。
+   ============================================================ */
+
+/* ---------- 进度区 ---------- */
+.head {
+  margin-bottom: 20rpx;
+}
+
+.head-top {
+  margin-bottom: 14rpx;
+}
+
+.head-title {
+  flex: 1;
+  padding-right: 16rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.head-bar {
+  margin-bottom: 12rpx;
+}
+
+.head-bottom {
+  margin-bottom: 4rpx;
+}
+
+/* ---------- 题干 ---------- */
+.stem {
+  margin-bottom: 10rpx;
+}
+
+.stem-tip {
+  margin-top: 4rpx;
+}
+
+/* ---------- 选项 ---------- */
+.option-list {
+  margin-bottom: 8rpx;
+}
+
+.option-text {
+  font-size: 34rpx;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.opt-mark {
+  margin-left: 16rpx;
+  flex-shrink: 0;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.mark-correct {
+  color: var(--c-green);
+  font-size: 40rpx;
+}
+
+.mark-wrong {
+  color: var(--c-orange);
+  font-size: 28rpx;
+}
+
+/* ---------- 讲解卡 ---------- */
+.feedback-card {
+  background: #FBFDFF;
+}
+
+.feedback-head {
+  justify-content: center;
+  margin-bottom: 8rpx;
+}
+
+.encourage-box {
+  display: flex;
+  align-items: center;
+  background: #FFF3EE;
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.encourage-emoji {
+  font-size: 38rpx;
+  margin-right: 14rpx;
+}
+
+.encourage-text {
+  flex: 1;
+  font-size: 30rpx;
+  line-height: 1.6;
+  color: #C24A22;
+}
+
+.point-pill {
+  margin-bottom: 14rpx;
+}
+
+.analysis-title {
+  margin-bottom: 8rpx;
+}
+
+.analysis-text {
+  line-height: 1.75;
+}
+
+/* ---------- 底部按钮 ---------- */
+.footer {
+  padding: 12rpx 0 24rpx;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.footer-tip {
+  margin-top: 14rpx;
+  text-align: center;
+}
+
+/* 轻点反馈，与首页保持一致 */
+.hover-soft {
+  transform: scale(0.97);
+  opacity: 0.92;
+}

@@ -1,0 +1,313 @@
+# -*- coding: utf-8 -*-
+"""业务服务层：登录鉴权 / 出题 / 判题 / 复盘报告 / 知识库检索 / 错题本。
+
+分层约定（对应论文 5.1 节项目结构）：
+- routers 只负责参数解析与响应封装，业务规则全部收敛到本层；
+- 本层不依赖 FastAPI，只依赖 database / llm / grades / safety / wrongbook，
+  因此可以脱离 Web 层单独测试；
+- 检索增强采用「中文 2-gram 词频向量 + 余弦相似度」的轻量实现，
+  在单文档规模下效果可用且零额外依赖（论文 2.3、5.6 节）。
+"""
+import math
+import re
+import time
+import uuid
+
+import jwt as pyjwt
+
+from . import database as db
+from . import grades
+from . import llm
+from . import safety
+from . import wrongbook
+from .config import settings
+
+# 每完成一次闯关的经验值与每题答对的经验值（游戏化激励，论文 2.2 节）
+XP_FINISH = 10
+XP_PER_CORRECT = 2
+
+
+# ---------------- 鉴权 ----------------
+def issue_token(user_id: int, openid: str) -> str:
+    """签发 HS256 JWT（有效期由配置决定，默认 7 天）。"""
+    payload = {"uid": user_id, "openid": openid,
+               "exp": int(time.time()) + settings.jwt_expire_days * 86400}
+    return pyjwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
+def decode_token(token: str):
+    try:
+        return pyjwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+    except Exception:
+        return None
+
+
+# ---------------- 用户 ----------------
+def login(code=None, nickname="小科学家", grade=None):
+    """登录：当前以本地方式建立账号（微信 jscode2session 为预留扩展点）。
+
+    设计取舍：本系统采用「可选登录」——游客可以完整体验出题与答题，
+    只有错题本、经验值等需要持久化归属的功能才要求登录，
+    这样既降低了使用门槛，也让演示不依赖微信开发者工具。
+    """
+    openid = "local_" + uuid.uuid4().hex[:12] if not code else "wx_" + str(code)[:32]
+    user = db.query_one("SELECT * FROM users WHERE openid=?", (openid,))
+    if not user:
+        db.execute("INSERT INTO users(openid, nickname, grade, last_login_at) "
+                   "VALUES(?,?,?,datetime('now','localtime'))",
+                   (openid, nickname or "小科学家", grades.normalize_grade(grade)))
+        user = db.query_one("SELECT * FROM users WHERE openid=?", (openid,))
+    else:
+        db.execute("UPDATE users SET last_login_at=datetime('now','localtime') WHERE id=?",
+                   (user["id"],))
+    token = issue_token(user["id"], user["openid"])
+    return {"token": token, "user": _user_vo(user)}
+
+
+def get_profile(user_id):
+    user = db.query_one("SELECT * FROM users WHERE id=?", (user_id,))
+    if not user:
+        return None
+    sessions = db.query(
+        "SELECT quiz_id, title, grade, source, created_at FROM quiz_sessions "
+        "WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,))
+    return {"user": _user_vo(user), "sessions": sessions,
+            "wrong_count": wrongbook.count_wrong(user_id),
+            "weak_points": wrongbook.weak_points(user_id)}
+
+
+def _user_vo(user):
+    return {"id": user["id"], "nickname": user["nickname"],
+            "avatar_url": user["avatar_url"], "total_xp": user["total_xp"],
+            "grade": user.get("grade") or grades.DEFAULT_GRADE}
+
+
+# ---------------- 出题 ----------------
+def generate_quiz(topic, count=None, user_id=None, doc_id=None, grade=None):
+    """出题：内容安全 → 可选文档检索 → 大模型/题库 → 落库，返回可答题的完整题目。"""
+    g = grades.normalize_grade(grade)
+    context, hit_chunks = None, 0
+    if doc_id:
+        context, hit_chunks = retrieve_context(doc_id, topic)
+
+    if context and settings.deepseek_api_key:
+        # 真检索增强：把命中的资料片段拼进 Prompt
+        result = llm.generate_questions(
+            topic + "\n\n参考资料（请严格依据以下资料出题，不要编造资料外的事实）：\n" + context,
+            count, g)
+    else:
+        result = llm.generate_questions(topic, count, g)
+
+    quiz_id = uuid.uuid4().hex[:16]
+    questions = result["questions"]
+    db.execute(
+        "INSERT INTO quiz_sessions(quiz_id, user_id, title, summary, user_input, grade, "
+        "source, questions_json) VALUES(?,?,?,?,?,?,?,?)",
+        (quiz_id, user_id, result["title"], "", topic, g, result["source"],
+         db.dumps(questions)))
+    return {"quiz_id": quiz_id, "title": result["title"], "source": result["source"],
+            "grade": g, "grade_label": grades.grade_rule(g)["label"],
+            "count": len(questions), "hit_chunks": hit_chunks,
+            "dropped_unsafe": result.get("dropped_unsafe", 0),
+            "dropped_long": result.get("dropped_long", 0),
+            "questions": questions}
+
+
+# ---------------- 判题 ----------------
+def submit_answer(quiz_id, answers, user_id=None, duration_ms=0):
+    """判题与结算：逐题比对 → 记录明细 → 结算经验值 → 维护错题本。"""
+    row = db.query_one("SELECT * FROM quiz_sessions WHERE quiz_id=?", (quiz_id,))
+    if not row:
+        return None
+    questions = db.loads(row["questions_json"]) or []
+    total = len(questions)
+    correct = 0
+    details = []
+    weak_points = []
+    for i, q in enumerate(questions):
+        user_ans = answers[i] if i < len(answers) else -1
+        right = int(q.get("answer", 0))
+        is_correct = (user_ans == right)
+        if is_correct:
+            correct += 1
+        else:
+            weak_points.append(q.get("knowledge_point") or "科普知识")
+        details.append({
+            "id": q.get("id", i + 1),
+            "stem": q.get("stem", ""),
+            "options": q.get("options", []),
+            "user_answer": user_ans,
+            "correct_answer": right,
+            "is_correct": is_correct,
+            "analysis": q.get("analysis", ""),
+            "knowledge_point": q.get("knowledge_point", ""),
+        })
+    accuracy = round(correct / total * 100, 1) if total else 0
+    db.execute(
+        "INSERT OR REPLACE INTO answer_records(quiz_id, user_id, records_json, "
+        "total_questions, correct_count, accuracy, duration_ms) VALUES(?,?,?,?,?,?,?)",
+        (quiz_id, user_id, db.dumps(details), total, correct, accuracy, int(duration_ms or 0)))
+
+    # 经验值结算：完成闯关 +10，每答对一题 +2
+    xp = XP_FINISH + correct * XP_PER_CORRECT
+    if user_id:
+        db.execute("UPDATE users SET total_xp=total_xp+?, "
+                   "updated_at=datetime('now','localtime') WHERE id=?", (xp, user_id))
+
+    # 错题本维护：答错入库并累加次数；答对视为已掌握，从错题本移除
+    added = wrongbook.record_wrong(user_id, quiz_id, details)
+    mastered = wrongbook.mark_mastered(user_id, details)
+
+    return {"quiz_id": quiz_id, "total": total, "correct": correct,
+            "accuracy": accuracy, "xp_gained": xp,
+            "wrong_added": added, "mastered": mastered,
+            "wrong_total": wrongbook.count_wrong(user_id),
+            "weak_points": list(dict.fromkeys(weak_points)), "details": details}
+
+
+# ---------------- 复盘报告 ----------------
+def generate_report(quiz_id, user_id=None):
+    rec = db.query_one("SELECT * FROM answer_records WHERE quiz_id=?", (quiz_id,))
+    if not rec:
+        return None
+    total = rec["total_questions"]
+    correct = rec["correct_count"]
+    accuracy = rec["accuracy"]
+    weak_points = list(dict.fromkeys(
+        [d.get("knowledge_point") or "科普知识"
+         for d in (db.loads(rec["records_json"]) or []) if not d.get("is_correct")]))
+    # 报告语气跟随本局所选学段
+    session = db.query_one("SELECT grade FROM quiz_sessions WHERE quiz_id=?", (quiz_id,))
+    g = grades.normalize_grade(session["grade"] if session else None)
+    report = llm.generate_report(total, correct, weak_points, grade=g)
+    db.execute("INSERT OR REPLACE INTO reports(quiz_id, user_id, report_json) VALUES(?,?,?)",
+               (quiz_id, user_id, db.dumps(report)))
+    return {"quiz_id": quiz_id, "total": total, "correct": correct,
+            "accuracy": accuracy, "report": report}
+
+
+# ---------------- 知识库（轻量检索增强） ----------------
+def add_document(filename, content, user_id=None, size_bytes=0):
+    doc_id = uuid.uuid4().hex[:12]
+    ext = (filename.rsplit(".", 1)[-1].lower() if "." in filename else "txt")
+    db.execute("INSERT INTO knowledge_docs(doc_id, user_id, filename, file_type, "
+               "size_bytes, content, status) VALUES(?,?,?,?,?,?,?)",
+               (doc_id, user_id, filename, ext, int(size_bytes), content, "ready"))
+    chunks = _chunk(content)
+    for i, c in enumerate(chunks):
+        db.execute("INSERT INTO knowledge_chunks(doc_id, chunk_index, content) VALUES(?,?,?)",
+                   (doc_id, i, c))
+    return {"doc_id": doc_id, "filename": filename, "chunks": len(chunks),
+            "file_type": ext, "size_bytes": int(size_bytes)}
+
+
+def list_documents(user_id=None):
+    return db.query(
+        "SELECT doc_id, filename, file_type, size_bytes, status, created_at "
+        "FROM knowledge_docs WHERE user_id IS ? ORDER BY id DESC", (user_id,))
+    # 说明：user_id 为 None 时用 SQLite 的 IS 语义匹配游客上传的文档
+
+
+def delete_document(doc_id):
+    db.execute("DELETE FROM knowledge_chunks WHERE doc_id=?", (doc_id,))
+    return db.execute("DELETE FROM knowledge_docs WHERE doc_id=?", (doc_id,))
+
+
+def _chunk(content, size=300):
+    """按段落 + 长度分块：把长文档切成约 300 字、语义相对完整的片段。"""
+    chunks, cur = [], ""
+    for p in re.split(r"\n+", content or ""):
+        p = p.strip()
+        if not p:
+            continue
+        if len(cur) + len(p) > size and cur:
+            chunks.append(cur)
+            cur = p
+        else:
+            cur = (cur + "\n" + p) if cur else p
+    if cur:
+        chunks.append(cur)
+    return chunks
+
+
+def _ngram_vector(text):
+    """中文 2-gram + 单字词频向量，做 L2 归一化。"""
+    text = re.sub(r"[^\u4e00-\u9fa5a-zA-Z0-9]", "", text or "")
+    grams = [text[i:i + 2] for i in range(len(text) - 1)] + list(text)
+    vec = {}
+    for g in grams:
+        if g:
+            vec[g] = vec.get(g, 0) + 1
+    norm = math.sqrt(sum(v * v for v in vec.values())) or 1.0
+    return {k: v / norm for k, v in vec.items()}
+
+
+def _cosine(a, b):
+    if len(a) > len(b):
+        a, b = b, a
+    return sum(v * b.get(k, 0) for k, v in a.items())
+
+
+def retrieve_context(doc_id, query, top_k=None):
+    """从文档分块中检索与 query 最相关的片段，返回 (拼接后的上下文, 命中片段数)。
+
+    注意：向量只在这里按需计算，且 2-gram 向量规模很小，
+    单文档（几十个分块）场景下耗时在毫秒级，无需引入向量数据库。
+    """
+    top_k = top_k or settings.rag_top_k
+    chunks = db.query("SELECT content FROM knowledge_chunks WHERE doc_id=? "
+                      "ORDER BY chunk_index", (doc_id,))
+    if not chunks:
+        return None, 0
+    qv = _ngram_vector(query)
+    scored = [(_cosine(qv, _ngram_vector(c["content"])), c["content"]) for c in chunks]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    top = [c for s, c in scored[:top_k] if s > 0]
+    if not top:
+        return None, 0
+    return "\n".join(top)[:settings.rag_context_max], len(top)
+
+
+# ---------------- 错题本与个性化复习 ----------------
+def practice_wrong(user_id, count=8, grade=None):
+    """只用错题重组一套练习卷：不调用大模型，秒级返回。
+
+    这既是「个性化复习」的落地，也让复习功能在大模型不可用时依然可用。
+    """
+    if not user_id:
+        return None
+    questions = wrongbook.build_practice_quiz(user_id, count)
+    if not questions:
+        return None
+    g = grades.normalize_grade(grade)
+    quiz_id = uuid.uuid4().hex[:16]
+    db.execute(
+        "INSERT INTO quiz_sessions(quiz_id, user_id, title, summary, user_input, grade, "
+        "source, questions_json) VALUES(?,?,?,?,?,?,?,?)",
+        (quiz_id, user_id, "错题重练", "", "错题重练", g, "wrongbook",
+         db.dumps(questions)))
+    return {"quiz_id": quiz_id, "title": "错题重练", "source": "wrongbook",
+            "grade": g, "grade_label": grades.grade_rule(g)["label"],
+            "count": len(questions), "questions": questions}
+
+
+def get_wrong_summary(user_id):
+    """错题本总览：错题列表 + 薄弱知识点排行。"""
+    if not user_id:
+        return {"questions": [], "weak_points": [], "total": 0}
+    return {"questions": wrongbook.list_wrong(user_id),
+            "weak_points": wrongbook.weak_points(user_id),
+            "total": wrongbook.count_wrong(user_id)}
+
+
+def clear_wrong(user_id):
+    return wrongbook.clear(user_id)
+
+
+def check_topic(topic):
+    """出题前的内容安全校验，返回 (是否通过, 错误码, 提示语)。"""
+    passed, reason = safety.check_input(topic)
+    if passed:
+        return True, 0, ""
+    code = 4002 if reason == safety.UNSAFE_INPUT_MSG else 4000
+    return False, code, reason

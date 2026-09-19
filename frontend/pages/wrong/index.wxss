@@ -1,0 +1,115 @@
+/* 错题本页面专属样式：颜色只用 app.wxss 的 CSS 变量，答错一律暖橙 */
+
+.center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.guest-text {
+  margin: 20rpx 0 32rpx;
+}
+
+.guest-btn {
+  width: 100%;
+}
+
+/* ---------- 统计卡 ---------- */
+.stat-card {
+  text-align: center;
+}
+
+.total-num {
+  font-size: 96rpx;
+  line-height: 1.1;
+  color: var(--c-primary-deep);
+}
+
+.wp-box {
+  margin-top: 24rpx;
+  border-top: 2rpx solid var(--c-line);
+  padding-top: 24rpx;
+}
+
+.pill-gap {
+  margin: 12rpx 12rpx 0 0;
+}
+
+/* ---------- 只练错题 ---------- */
+.practice-btn {
+  width: 100%;
+}
+
+.tip-text {
+  margin-top: 16rpx;
+  text-align: center;
+}
+
+/* ---------- 错题清单 ---------- */
+.item-head {
+  min-height: 88rpx;
+}
+
+.stem-text {
+  margin-bottom: 12rpx;
+}
+
+.meta-row {
+  align-items: center;
+}
+
+.meta-item {
+  margin: 0 12rpx 12rpx 0;
+}
+
+.detail {
+  border-top: 2rpx solid var(--c-line);
+  padding-top: 20rpx;
+}
+
+.review-line {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 14rpx;
+}
+
+.line-key {
+  flex-shrink: 0;
+  width: 150rpx;
+  font-size: 28rpx;
+  color: var(--c-sub);
+}
+
+.line-val {
+  flex: 1;
+  font-size: 32rpx;
+}
+
+.your-val {
+  color: var(--c-orange);
+}
+
+.right-val {
+  color: var(--c-green);
+}
+
+.analysis {
+  background: var(--c-bg);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-top: 20rpx;
+}
+
+.last-at {
+  margin-top: 16rpx;
+}
+
+/* ---------- 空态与清空 ---------- */
+.empty-text {
+  margin: 16rpx 0 28rpx;
+}
+
+.clear-btn {
+  margin-bottom: 40rpx;
+}

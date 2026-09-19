@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "mascot": "../../components/mascot/mascot"
+  },
+  "navigationBarTitleText": "复盘报告"
+}

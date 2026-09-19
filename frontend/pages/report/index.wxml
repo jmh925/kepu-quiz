@@ -1,0 +1,132 @@
+<!-- 复盘报告：先看得分，再看小科的复盘，最后是这一局的收获与回顾 -->
+<view class="page">
+
+  <!-- 一、得分区 -->
+  <view class="card score-card" wx:if="{{hasResult || reportReady}}">
+    <mascot state="{{mascotState}}" size="lg"></mascot>
+
+    <view class="score-row">
+      <view class="score-num mono-num">{{accuracy}}<text class="score-unit">%</text></view>
+      <view class="score-meta">
+        <view class="h3">这一局的正确率</view>
+        <view class="muted">答对 {{correct}} / {{total}} 题</view>
+      </view>
+    </view>
+
+    <view class="progress mastery-bar">
+      <view class="progress-inner" style="width: {{mastery}}%;"></view>
+    </view>
+    <view class="between mastery-label">
+      <text class="muted">掌握度</text>
+      <text class="muted">{{mastery}} 分</text>
+    </view>
+  </view>
+
+  <!-- 二、小科正在写报告 -->
+  <view class="card" wx:if="{{loading}}">
+    <mascot state="thinking" size="md" caption="小科在写复盘报告…"></mascot>
+  </view>
+
+  <!-- 三、报告没拿到时的重试入口 -->
+  <view class="card" wx:if="{{!loading && !reportReady && (hasResult || fromHistory)}}">
+    <view class="body">小科这份复盘还没写好，要不要再写一次？</view>
+    <button class="btn btn-ghost retry-btn" bindtap="onRetryReport">再写一次</button>
+  </view>
+
+  <!-- 四、复盘报告正文 -->
+  <view class="card" wx:if="{{reportReady}}">
+    <view class="between">
+      <text class="card-title">小科的复盘</text>
+      <text class="tag" wx:if="{{reportSourceLabel}}">{{reportSourceLabel}}</text>
+    </view>
+
+    <view class="row level-row" wx:if="{{level}}">
+      <text class="pill pill-yellow">{{level}}</text>
+      <text class="muted mastery-text">掌握度 {{mastery}} 分</text>
+    </view>
+
+    <view class="divider"></view>
+    <view class="body">{{summary}}</view>
+
+    <view class="suggest-box" wx:if="{{suggestion}}">
+      <view class="h3">下一步可以这样</view>
+      <view class="body">{{suggestion}}</view>
+    </view>
+
+    <view class="wp-box" wx:if="{{weakPoints.length}}">
+      <view class="h3">值得再看看的知识点</view>
+      <view class="wrap pills">
+        <text class="pill pill-orange pill-gap" wx:for="{{weakPoints}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 五、结算区：只在手上有本次判题结果时出现 -->
+  <view class="card" wx:if="{{hasResult}}">
+    <view class="card-title">这一局的收获</view>
+    <view class="settle-grid">
+      <view class="settle-item">
+        <view class="settle-num mono-num">+{{xpGained}}</view>
+        <view class="muted">经验值</view>
+      </view>
+      <view class="settle-item">
+        <view class="settle-num mono-num">{{wrongAdded}}</view>
+        <view class="muted">新收的错题</view>
+      </view>
+      <view class="settle-item">
+        <view class="settle-num mono-num">{{mastered}}</view>
+        <view class="muted">已经掌握的题</view>
+      </view>
+      <view class="settle-item">
+        <view class="settle-num mono-num">{{wrongTotal}}</view>
+        <view class="muted">错题本共</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 六、本次答题回顾：只列答错的题，可以折叠 -->
+  <view class="card" wx:if="{{hasResult}}">
+    <view class="between review-head" bindtap="onToggleReview">
+      <text class="card-title">本次答题回顾</text>
+      <text class="muted">{{reviewOpen ? '收起' : '展开'}}</text>
+    </view>
+
+    <view class="body" wx:if="{{!wrongList.length}}">这一局全都答对啦，真厉害！</view>
+
+    <view class="muted review-tip" wx:if="{{!reviewOpen && wrongList.length}}">
+      有 {{wrongList.length}} 道题想和你再聊聊，点上面展开看看～
+    </view>
+
+    <block wx:if="{{reviewOpen}}">
+      <view class="review-item" wx:for="{{wrongList}}" wx:key="key">
+        <view class="h3">{{item.index}}. {{item.stem}}</view>
+        <view class="review-line">
+          <text class="line-key">你的答案</text>
+          <text class="line-val your-val">{{item.yourAnswer}}</text>
+        </view>
+        <view class="review-line">
+          <text class="line-key">正确答案</text>
+          <text class="line-val right-val">{{item.rightAnswer}}</text>
+        </view>
+        <view class="analysis">
+          <text class="tag">{{item.knowledgePoint}}</text>
+          <view class="body">{{item.analysis}}</view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 七、底部入口 -->
+  <view class="foot-btns" wx:if="{{hasResult || reportReady}}">
+    <button class="btn btn-primary foot-btn" bindtap="onAgain">再来一局</button>
+    <button class="btn btn-ghost foot-btn" bindtap="onGoWrong">去错题本</button>
+  </view>
+
+  <!-- 八、没有可看的报告时 -->
+  <view class="card" wx:if="{{noData}}">
+    <mascot state="encourage" size="lg"></mascot>
+    <view class="center h3 no-data-text">还没有报告可以看，先去闯一关吧</view>
+    <button class="btn btn-primary" bindtap="onAgain">去闯关</button>
+  </view>
+
+</view>

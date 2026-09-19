@@ -1,0 +1,260 @@
+/* ============================================================
+   小科吉祥物 —— 纯 CSS 绘制，零图片、零第三方。
+   眼睛、嘴、腮红都随 state 变形换色；颜色优先取 app.wxss 的
+   CSS 变量，取不到时用回退值，保证组件单独预览也不掉色。
+   ============================================================ */
+
+.mascot {
+  --mascot-ink: var(--c-text, #2F3E4E);
+  --mascot-primary: var(--c-primary, #4FC3F7);
+  --mascot-deep: var(--c-primary-deep, #0288D1);
+  --mascot-green: var(--c-green, #66BB6A);
+  --mascot-orange: var(--c-orange, #FF8A65);
+  /* 脑袋直径：sm 60rpx / md 100rpx / lg 140rpx */
+  --head: 100rpx;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.mascot-sm { --head: 60rpx; }
+.mascot-md { --head: 100rpx; }
+.mascot-lg { --head: 140rpx; }
+
+.mascot-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(var(--head) * 0.2);
+}
+
+.mascot-body {
+  position: relative;
+  width: var(--head);
+  height: var(--head);
+}
+
+/* ---------- 大圆脑袋 ---------- */
+.mascot-head {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--head);
+  height: var(--head);
+  border-radius: 50%;
+  background: var(--mascot-primary);
+  border: calc(var(--head) * 0.05) solid var(--mascot-deep);
+  box-sizing: border-box;
+  box-shadow: 0 calc(var(--head) * 0.06) calc(var(--head) * 0.14) rgba(2, 136, 209, 0.16);
+}
+
+/* 两侧小耳朵，让轮廓更亲和 */
+.ear {
+  position: absolute;
+  top: calc(var(--head) * 0.08);
+  width: calc(var(--head) * 0.2);
+  height: calc(var(--head) * 0.2);
+  border-radius: 50%;
+  background: var(--mascot-deep);
+  opacity: 0.75;
+}
+
+.ear-left { left: calc(var(--head) * -0.08); }
+.ear-right { right: calc(var(--head) * -0.08); }
+
+.mascot-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- 眼睛 ---------- */
+.mascot-eyes {
+  position: absolute;
+  left: 0;
+  top: calc(var(--head) * 0.3);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.eye {
+  width: calc(var(--head) * 0.14);
+  height: calc(var(--head) * 0.14);
+  border-radius: 50%;
+  background: var(--mascot-ink);
+  box-sizing: border-box;
+}
+
+.eye-left { margin-right: calc(var(--head) * 0.2); }
+
+/* ---------- 嘴 ---------- */
+.mouth {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--head) * 0.2);
+  margin: 0 auto;
+  width: calc(var(--head) * 0.3);
+  height: calc(var(--head) * 0.12);
+  border-radius: 0 0 calc(var(--head) * 0.16) calc(var(--head) * 0.16);
+  background: var(--mascot-ink);
+  box-sizing: border-box;
+}
+
+/* ---------- 腮红 ---------- */
+.cheek {
+  position: absolute;
+  top: calc(var(--head) * 0.48);
+  width: calc(var(--head) * 0.18);
+  height: calc(var(--head) * 0.1);
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.cheek-left { left: calc(var(--head) * 0.06); }
+.cheek-right { right: calc(var(--head) * 0.06); }
+
+/* ---------- 顶部三个思考小圆点 ---------- */
+.mascot-dots {
+  position: absolute;
+  top: 0;
+  right: calc(var(--head) * -0.1);
+  display: flex;
+  align-items: flex-end;
+  height: calc(var(--head) * 0.3);
+}
+
+.dot {
+  width: calc(var(--head) * 0.11);
+  height: calc(var(--head) * 0.11);
+  border-radius: 50%;
+  background: var(--mascot-primary);
+  margin-left: calc(var(--head) * 0.06);
+  animation: mascot-dot 1.5s infinite ease-in-out;
+}
+
+.dot:nth-child(1) { opacity: 0.45; animation-delay: 0s; }
+.dot:nth-child(2) { opacity: 0.7; animation-delay: 0.18s; }
+.dot:nth-child(3) { opacity: 1; animation-delay: 0.36s; }
+
+@keyframes mascot-dot {
+  0% { transform: translateY(0) scale(0.75); }
+  50% { transform: translateY(calc(var(--head) * -0.14)) scale(1); }
+  100% { transform: translateY(0) scale(0.75); }
+}
+
+/* ============================================================
+   各状态的五官造型
+   ============================================================ */
+
+/* idle：待机，安静微笑 + 淡黄腮红 */
+.mascot-idle .eye {
+  animation: mascot-blink 4.5s infinite;
+}
+.mascot-idle .cheek { background: var(--c-yellow, #FFCA28); opacity: 0.7; }
+
+@keyframes mascot-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.14); }
+}
+
+/* thinking：一只眼睛半闭，嘴变成一条思索的小横线 */
+.mascot-thinking .eye-left { height: calc(var(--head) * 0.06); border-radius: 999rpx; }
+.mascot-thinking .mouth {
+  width: calc(var(--head) * 0.24);
+  height: calc(var(--head) * 0.05);
+  border-radius: 999rpx;
+}
+.mascot-thinking .cheek { background: var(--c-yellow, #FFCA28); opacity: 0.6; }
+
+/* correct：弯弯笑眼 + 张开笑嘴 + 绿色腮红 */
+.mascot-correct .eye {
+  background: transparent;
+  height: calc(var(--head) * 0.18);
+  border-top: calc(var(--head) * 0.06) solid var(--mascot-ink);
+  border-radius: calc(var(--head) * 0.18) calc(var(--head) * 0.18) 0 0;
+  animation: mascot-hop 0.6s ease;
+}
+.mascot-correct .mouth {
+  width: calc(var(--head) * 0.36);
+  height: calc(var(--head) * 0.22);
+  border-radius: 0 0 calc(var(--head) * 0.3) calc(var(--head) * 0.3);
+  background: var(--mascot-green);
+}
+.mascot-correct .cheek { background: var(--mascot-green); opacity: 0.5; }
+
+/* wrong：暖橙腮红 + 小小的嘟嘟嘴，不用纯红也不做哭脸 */
+.mascot-wrong .cheek { background: var(--mascot-orange); opacity: 0.55; }
+.mascot-wrong .mouth {
+  width: calc(var(--head) * 0.18);
+  height: calc(var(--head) * 0.16);
+  border-radius: 50%;
+  background: transparent;
+  border: calc(var(--head) * 0.05) solid var(--mascot-orange);
+}
+
+/* encourage：眼睛微微下垂，嘴巴小小的，温和地说"别着急" */
+.mascot-encourage .eye {
+  height: calc(var(--head) * 0.12);
+  border-radius: 999rpx;
+  background: var(--mascot-deep);
+}
+.mascot-encourage .cheek { background: var(--mascot-orange); opacity: 0.4; }
+.mascot-encourage .mouth {
+  width: calc(var(--head) * 0.24);
+  height: calc(var(--head) * 0.09);
+  border-radius: 999rpx;
+  background: var(--mascot-deep);
+}
+
+/* win：闭眼大笑 + 绿色腮红 + 轻轻跳一下 */
+.mascot-win .eye {
+  background: transparent;
+  height: calc(var(--head) * 0.18);
+  border-top: calc(var(--head) * 0.06) solid var(--mascot-ink);
+  border-radius: calc(var(--head) * 0.18) calc(var(--head) * 0.18) 0 0;
+  animation: mascot-hop 0.8s ease;
+}
+.mascot-win .mouth {
+  width: calc(var(--head) * 0.4);
+  height: calc(var(--head) * 0.26);
+  border-radius: 0 0 calc(var(--head) * 0.32) calc(var(--head) * 0.32);
+  background: var(--mascot-green);
+}
+.mascot-win .cheek { background: var(--mascot-green); opacity: 0.55; }
+
+@keyframes mascot-hop {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(calc(var(--head) * -0.1)); }
+  70% { transform: translateY(0); }
+  85% { transform: translateY(calc(var(--head) * -0.04)); }
+  100% { transform: translateY(0); }
+}
+
+/* ---------- 台词（字号跟随 size 分档） ---------- */
+.mascot-caption {
+  margin-top: 18rpx;
+  text-align: center;
+  font-size: 30rpx;
+  line-height: 1.5;
+  color: var(--c-sub, #7B8A99);
+}
+
+.mascot-sm .mascot-caption { margin-top: 12rpx; font-size: 28rpx; }
+.mascot-lg .mascot-caption { margin-top: 24rpx; font-size: 32rpx; font-weight: 600; }
+
+.mascot-correct .mascot-caption { color: var(--c-green, #66BB6A); font-weight: 600; }
+.mascot-win .mascot-caption { color: var(--c-green, #66BB6A); font-weight: 600; }
+.mascot-wrong .mascot-caption { color: var(--c-orange, #FF8A65); font-weight: 600; }
+.mascot-thinking .mascot-caption { color: var(--c-primary-deep, #0288D1); font-weight: 600; }
+.mascot-encourage .mascot-caption { color: var(--c-primary-deep, #0288D1); font-weight: 600; }
+
+.mascot-lg .mascot-stage {
+  padding-top: calc(var(--head) * 0.24);
+}

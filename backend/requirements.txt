@@ -1,0 +1,13 @@
+# 运行期依赖（Python 3.10+）
+# 安装：pip install -r requirements.txt
+# 说明：仓库内已自带依赖副本 backend/deps/，不安装也能直接启动（见 scripts/run_server.cmd）
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27
+pydantic>=2.5
+httpx>=0.26
+PyJWT>=2.8
+# 知识库文档解析的可选依赖：不装则仅支持 txt / md
+pypdf>=4.0
+docx2txt>=0.8
+# 管理端/论文图表生成脚本使用（可选）
+Pillow>=10.0

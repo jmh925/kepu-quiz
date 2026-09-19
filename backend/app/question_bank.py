@@ -1,0 +1,182 @@
+# -*- coding: utf-8 -*-
+"""内置科普题库：无大模型 API Key 时降级使用。
+覆盖天文 / 地理 / 生物 / 物理 / 化学 / 科技六大主题，内容均为准确科普常识。
+"""
+
+QUESTION_BANK = [
+    {
+        "theme": "天文",
+        "keywords": ["天文", "宇宙", "太阳系", "行星", "恒星", "月球", "火星", "太阳", "银河", "航天", "卫星", "太空"],
+        "questions": [
+            {"type": "single", "stem": "太阳系中体积和质量最大的行星是哪一颗？", "options": ["地球", "木星", "土星", "火星"], "answer": 1,
+             "analysis": "木星是太阳系中体积和质量最大的行星，质量约为其余七颗行星总和的 2.5 倍。", "knowledge_point": "太阳系八大行星"},
+            {"type": "single", "stem": "距离太阳最近的行星是哪一颗？", "options": ["金星", "地球", "水星", "火星"], "answer": 2,
+             "analysis": "水星是离太阳最近的行星，公转周期仅约 88 天。", "knowledge_point": "太阳系行星排列"},
+            {"type": "single", "stem": "地球唯一的天然卫星是什么？", "options": ["太阳", "月球", "金星", "北极星"], "answer": 1,
+             "analysis": "月球是地球唯一的天然卫星，绕地球公转一周约 27.3 天。", "knowledge_point": "地月系统"},
+            {"type": "single", "stem": "“光年”是用来计量什么的单位？", "options": ["时间", "距离", "速度", "亮度"], "answer": 1,
+             "analysis": "光年是距离单位，指光在真空中一年走过的距离，约 9.46 万亿千米。", "knowledge_point": "天文距离单位"},
+            {"type": "single", "stem": "太阳系中目前公认有几颗大行星？", "options": ["7 颗", "8 颗", "9 颗", "10 颗"], "answer": 1,
+             "analysis": "2006 年国际天文学联合会将冥王星降级为矮行星，太阳系大行星为 8 颗。", "knowledge_point": "行星定义"},
+            {"type": "single", "stem": "火星常被称为什么星球？", "options": ["蓝色星球", "红色星球", "黄色星球", "白色星球"], "answer": 1,
+             "analysis": "火星表面富含氧化铁，呈现红色，因此被称为“红色星球”。", "knowledge_point": "火星特征"},
+            {"type": "single", "stem": "日食现象发生时，是哪个天体挡住了太阳？", "options": ["月球", "地球", "金星", "火星"], "answer": 0,
+             "analysis": "日食是月球运行到太阳和地球之间，三者近似一线时，月球遮挡太阳所致。", "knowledge_point": "日月食成因"},
+            {"type": "single", "stem": "太阳本身属于哪一类天体？", "options": ["行星", "卫星", "恒星", "彗星"], "answer": 2,
+             "analysis": "太阳是能自身发光发热的恒星，也是太阳系的中心天体。", "knowledge_point": "恒星概念"},
+            {"type": "single", "stem": "银河系属于哪一类天体系统？", "options": ["星系", "星云", "行星系统", "恒星"], "answer": 0,
+             "analysis": "银河系是一个包含数千亿颗恒星的棒旋星系。", "knowledge_point": "星系"},
+            {"type": "single", "stem": "我国自主建造并运行的空间站名称是？", "options": ["和平号", "国际空间站", "天宫", "嫦娥"], "answer": 2,
+             "analysis": "中国空间站名为“天宫”，由天和核心舱、问天和梦天实验舱等组成。", "knowledge_point": "中国航天工程"},
+        ],
+    },
+    {
+        "theme": "地理",
+        "keywords": ["地理", "地球", "气候", "河流", "山脉", "海洋", "地震", "火山", "天气", "地形", "生态"],
+        "questions": [
+            {"type": "single", "stem": "地球表面大约有多大比例被海洋覆盖？", "options": ["约 30%", "约 50%", "约 71%", "约 90%"], "answer": 2,
+             "analysis": "地球表面约 71% 被海洋覆盖，因此被称为“蓝色星球”。", "knowledge_point": "海陆分布"},
+            {"type": "single", "stem": "世界上海拔最高的山峰是？", "options": ["乞力马扎罗山", "珠穆朗玛峰", "阿尔卑斯山", "富士山"], "answer": 1,
+             "analysis": "珠穆朗玛峰海拔约 8848.86 米，是世界最高峰。", "knowledge_point": "世界之最"},
+            {"type": "single", "stem": "中国最长的河流是哪一条？", "options": ["黄河", "长江", "珠江", "淮河"], "answer": 1,
+             "analysis": "长江全长约 6300 千米，是中国最长、世界第三长河流。", "knowledge_point": "中国河流"},
+            {"type": "single", "stem": "地球内部温度最高、压力最大的部分是？", "options": ["地壳", "地幔", "地核", "地表"], "answer": 2,
+             "analysis": "地核是地球内部最深处，温度可达约 5500℃。", "knowledge_point": "地球内部结构"},
+            {"type": "single", "stem": "七大洲中面积最大的是？", "options": ["非洲", "北美洲", "亚洲", "南美洲"], "answer": 2,
+             "analysis": "亚洲面积约 4400 万平方千米，是七大洲中最大的。", "knowledge_point": "世界大洲"},
+            {"type": "single", "stem": "地震的强度一般用什么来表示？", "options": ["摄氏度", "里氏震级", "帕斯卡", "焦耳"], "answer": 1,
+             "analysis": "地震强度常用里氏震级表示，数值越大能量越强。", "knowledge_point": "地震测量"},
+            {"type": "single", "stem": "赤道把地球分为哪两个半球？", "options": ["东西半球", "南北半球", "上下半球", "左右半球"], "answer": 1,
+             "analysis": "赤道是 0 度纬线，把地球分为北半球和南半球。", "knowledge_point": "经纬线"},
+            {"type": "single", "stem": "沙漠地区形成的根本原因通常是？", "options": ["气温过高", "降水稀少", "风太大", "土壤贫瘠"], "answer": 1,
+             "analysis": "沙漠形成的核心原因是降水稀少、蒸发量大，植被难以生长。", "knowledge_point": "荒漠成因"},
+            {"type": "single", "stem": "人在死海中能轻松浮起，主要原因是？", "options": ["水温高", "盐度极高", "深度浅", "风浪小"], "answer": 1,
+             "analysis": "死海盐度极高，密度大，浮力也大，人自然能浮起。", "knowledge_point": "浮力与密度"},
+            {"type": "single", "stem": "地震和火山多发与什么有关？", "options": ["洋流运动", "板块运动", "台风", "潮汐"], "answer": 1,
+             "analysis": "地壳板块交界处地壳运动活跃，是地震和火山多发地带。", "knowledge_point": "板块构造"},
+        ],
+    },
+    {
+        "theme": "生物",
+        "keywords": ["生物", "动物", "植物", "人体", "细胞", "基因", "进化", "生态", "健康", "昆虫", "微生物"],
+        "questions": [
+            {"type": "single", "stem": "人体面积最大的器官是？", "options": ["肝脏", "皮肤", "肺", "大脑"], "answer": 1,
+             "analysis": "皮肤覆盖全身，是人体面积最大的器官，成年人约 1.5~2 平方米。", "knowledge_point": "人体器官"},
+            {"type": "single", "stem": "植物进行光合作用制造养分，最离不开的条件是？", "options": ["氧气", "光照", "高温", "风"], "answer": 1,
+             "analysis": "光合作用需要光照、水和二氧化碳，叶绿体在光能作用下合成有机物。", "knowledge_point": "光合作用"},
+            {"type": "single", "stem": "成年人全身大约有多少块骨头？", "options": ["106 块", "206 块", "306 块", "506 块"], "answer": 1,
+             "analysis": "成年人骨骼约有 206 块，婴儿时期则多达 300 多块，后逐渐愈合。", "knowledge_point": "人体骨骼"},
+            {"type": "single", "stem": "昆虫的身体通常有几条腿？", "options": ["4 条", "6 条", "8 条", "10 条"], "answer": 1,
+             "analysis": "昆虫属于六足动物，成虫都有 6 条腿（三对足）。", "knowledge_point": "昆虫特征"},
+            {"type": "single", "stem": "企鹅主要生活在哪个极地地区？", "options": ["北极", "南极", "赤道", "温带"], "answer": 1,
+             "analysis": "企鹅主要分布在南半球，尤其以南极及周边地区最为集中。", "knowledge_point": "动物分布"},
+            {"type": "single", "stem": "DNA 在生物体内主要承担什么作用？", "options": ["储存遗传信息", "提供能量", "运输氧气", "催化反应"], "answer": 0,
+             "analysis": "DNA 是携带遗传信息的分子，决定生物性状并指导蛋白质合成。", "knowledge_point": "遗传物质"},
+            {"type": "single", "stem": "蝙蝠在黑暗中飞行主要依靠什么定位？", "options": ["灵敏的视力", "超声波回声定位", "嗅觉", "触觉"], "answer": 1,
+             "analysis": "蝙蝠发出超声波，靠回声定位判断障碍物和猎物位置。", "knowledge_point": "动物行为"},
+            {"type": "single", "stem": "蜜蜂在花间飞舞采蜜，同时也帮植物完成了什么？", "options": ["浇水", "传粉", "松土", "播种"], "answer": 1,
+             "analysis": "蜜蜂采蜜时身体沾上花粉，飞到另一朵花上完成异花传粉。", "knowledge_point": "传粉"},
+            {"type": "single", "stem": "人的心脏一共有几个腔室？", "options": ["2 个", "3 个", "4 个", "5 个"], "answer": 2,
+             "analysis": "人的心脏分左右心房和左右心室共 4 个腔室。", "knowledge_point": "循环系统"},
+            {"type": "single", "stem": "关于恐龙灭绝，目前最被广泛接受的原因是？", "options": ["火山喷发", "小行星撞击地球", "冰河时代", "疾病传播"], "answer": 1,
+             "analysis": "主流假说认为约 6600 万年前小行星撞击地球，导致恐龙灭绝。", "knowledge_point": "生物大灭绝"},
+        ],
+    },
+    {
+        "theme": "物理",
+        "keywords": ["物理", "光", "电", "力", "声", "热", "能量", "运动", "磁", "浮力", "重力"],
+        "questions": [
+            {"type": "single", "stem": "光在真空中的传播速度约为多少？", "options": ["30 万千米/秒", "30 千米/秒", "300 千米/秒", "3 万千米/秒"], "answer": 0,
+             "analysis": "光在真空中的速度约为 30 万千米/秒，是宇宙中的极限速度。", "knowledge_point": "光速"},
+            {"type": "single", "stem": "地球表面附近的重力加速度 g 约为多少？", "options": ["1.8 m/s²", "9.8 m/s²", "98 m/s²", "980 m/s²"], "answer": 1,
+             "analysis": "重力加速度 g 约为 9.8 m/s²，表示物体自由下落每秒速度增加约 9.8 m/s。", "knowledge_point": "重力加速度"},
+            {"type": "single", "stem": "声音在下列哪种介质中传播得最快？", "options": ["空气", "水", "固体", "真空"], "answer": 2,
+             "analysis": "声音在固体中传播最快，其次液体，空气最慢，真空中无法传播。", "knowledge_point": "声速与介质"},
+            {"type": "single", "stem": "在标准大气压下，纯水的沸点是？", "options": ["90℃", "100℃", "110℃", "80℃"], "answer": 1,
+             "analysis": "标准大气压下水的沸点是 100℃，海拔升高气压降低沸点也随之降低。", "knowledge_point": "沸点"},
+            {"type": "single", "stem": "摩擦起电的本质是什么？", "options": ["电荷凭空产生", "电子发生转移", "原子分裂", "温度升高"], "answer": 1,
+             "analysis": "摩擦起电是电子在物体间转移，使物体带上正电或负电。", "knowledge_point": "静电"},
+            {"type": "single", "stem": "雨后彩虹形成主要是由于光的什么现象？", "options": ["直线传播", "折射和反射", "衍射", "散射"], "answer": 1,
+             "analysis": "阳光经水滴折射、反射后色散成七色光，形成彩虹。", "knowledge_point": "光的色散"},
+            {"type": "single", "stem": "提出“给我一个支点，我就能撬动地球”的科学家是？", "options": ["牛顿", "阿基米德", "爱因斯坦", "伽利略"], "answer": 1,
+             "analysis": "阿基米德提出杠杆原理，并用这句话形象说明杠杆的省力作用。", "knowledge_point": "杠杆原理"},
+            {"type": "single", "stem": "电流的国际单位是？", "options": ["伏特", "瓦特", "安培", "欧姆"], "answer": 2,
+             "analysis": "电流单位是安培（A），电压单位伏特，电阻单位欧姆。", "knowledge_point": "电学单位"},
+            {"type": "single", "stem": "能量既不会凭空产生也不会凭空消失，只能转化或转移，这被称为？", "options": ["万有引力定律", "能量守恒定律", "惯性定律", "牛顿第三定律"], "answer": 1,
+             "analysis": "能量守恒定律是物理学基本定律，能量总量保持不变。", "knowledge_point": "能量守恒"},
+            {"type": "single", "stem": "晴朗天空呈现蓝色，主要原因是？", "options": ["海水反射", "大气散射", "阳光太强", "云层遮挡"], "answer": 1,
+             "analysis": "阳光穿过大气时，波长较短的蓝光被大气分子散射得更多，天空显蓝。", "knowledge_point": "光的散射"},
+        ],
+    },
+    {
+        "theme": "化学",
+        "keywords": ["化学", "元素", "分子", "原子", "反应", "物质", "氧气", "二氧化碳", "酸", "碱", "金属"],
+        "questions": [
+            {"type": "single", "stem": "水的化学式是？", "options": ["H2O", "CO2", "O2", "H2"], "answer": 0,
+             "analysis": "水由 2 个氢原子和 1 个氧原子组成，化学式为 H2O。", "knowledge_point": "水的组成"},
+            {"type": "single", "stem": "空气中含量最多的气体是？", "options": ["氧气", "二氧化碳", "氮气", "稀有气体"], "answer": 2,
+             "analysis": "氮气约占空气体积的 78%，氧气约占 21%。", "knowledge_point": "空气成分"},
+            {"type": "single", "stem": "元素周期表中排在第一位的元素是？", "options": ["氧", "氢", "碳", "氮"], "answer": 1,
+             "analysis": "氢是原子序数为 1 的元素，也是宇宙中含量最多的元素。", "knowledge_point": "元素周期表"},
+            {"type": "single", "stem": "食盐的主要化学成分是？", "options": ["氯化钠", "碳酸钙", "硫酸铜", "氢氧化钠"], "answer": 0,
+             "analysis": "食盐的主要成分是氯化钠（NaCl）。", "knowledge_point": "常见化合物"},
+            {"type": "single", "stem": "氧气约占空气体积的多少？", "options": ["约 78%", "约 21%", "约 1%", "约 50%"], "answer": 1,
+             "analysis": "氧气约占空气体积的 21%，是支持呼吸和燃烧的气体。", "knowledge_point": "空气成分"},
+            {"type": "single", "stem": "铁生锈通常需要哪两个条件？", "options": ["水和氧气", "光和热", "酸和碱", "氮气和氢气"], "answer": 0,
+             "analysis": "铁生锈是铁与水和氧气共同作用生成氧化铁的过程。", "knowledge_point": "金属锈蚀"},
+            {"type": "single", "stem": "pH 值小于 7 的溶液呈什么性？", "options": ["中性", "碱性", "酸性", "无法判断"], "answer": 2,
+             "analysis": "pH<7 为酸性，pH=7 为中性，pH>7 为碱性。", "knowledge_point": "酸碱度"},
+            {"type": "single", "stem": "钻石和石墨的化学本质都由哪种元素组成？", "options": ["硅", "碳", "氧", "钙"], "answer": 1,
+             "analysis": "钻石和石墨都是碳的单质，只是原子排列方式不同。", "knowledge_point": "同素异形体"},
+            {"type": "single", "stem": "二氧化碳的化学式是？", "options": ["CO", "CO2", "O2", "CH4"], "answer": 1,
+             "analysis": "二氧化碳由 1 个碳原子和 2 个氧原子组成，化学式为 CO2。", "knowledge_point": "常见化合物"},
+            {"type": "single", "stem": "物质燃烧一般需要哪种气体支持？", "options": ["氮气", "二氧化碳", "氧气", "氢气"], "answer": 2,
+             "analysis": "燃烧是可燃物与氧气发生的剧烈氧化反应，需要氧气支持。", "knowledge_point": "燃烧条件"},
+        ],
+    },
+    {
+        "theme": "科技",
+        "keywords": ["科技", "计算机", "互联网", "人工智能", "AI", "编程", "芯片", "5G", "机器人", "发明", "软件"],
+        "questions": [
+            {"type": "single", "stem": "计算机内部使用什么进制表示数据？", "options": ["十进制", "二进制", "八进制", "十六进制"], "answer": 1,
+             "analysis": "计算机用二进制（0 和 1）表示和存储所有数据。", "knowledge_point": "计算机基础"},
+            {"type": "single", "stem": "“AI”是下列哪个词的缩写？", "options": ["自动输入", "人工智能", "互联网", "高级编程"], "answer": 1,
+             "analysis": "AI 是 Artificial Intelligence 的缩写，即人工智能。", "knowledge_point": "人工智能"},
+            {"type": "single", "stem": "世界上第一台通用电子计算机是？", "options": ["ENIAC", "IBM PC", "苹果 I", "图灵机"], "answer": 0,
+             "analysis": "1946 年诞生的 ENIAC 是世界第一台通用电子计算机。", "knowledge_point": "计算机历史"},
+            {"type": "single", "stem": "“5G”中的 G 代表什么意思？", "options": ["吉比特", "第五代", "全球", "高速"], "answer": 1,
+             "analysis": "5G 指第五代移动通信技术，具有高速率、低时延等特点。", "knowledge_point": "通信技术"},
+            {"type": "single", "stem": "二维码的主要作用是什么？", "options": ["装饰", "快速识别信息", "放大图片", "加密声音"], "answer": 1,
+             "analysis": "二维码通过黑白图案编码信息，可被设备快速扫描识别。", "knowledge_point": "信息编码"},
+            {"type": "single", "stem": "用于判断机器是否具有智能的经典测试叫？", "options": ["图灵测试", "牛顿测试", "欧拉测试", "伽利略测试"], "answer": 0,
+             "analysis": "图灵测试由艾伦·图灵提出，用于判断机器是否表现出智能。", "knowledge_point": "人工智能"},
+            {"type": "single", "stem": "手机、电脑中的芯片本质上是什么？", "options": ["电池", "集成电路", "天线", "显示屏"], "answer": 1,
+             "analysis": "芯片是把大量晶体管等元件集成在硅片上的集成电路。", "knowledge_point": "集成电路"},
+            {"type": "single", "stem": "光纤通信利用什么来传输信息？", "options": ["电流", "光信号", "声波", "无线电"], "answer": 1,
+             "analysis": "光纤利用光的全反射原理传输光信号，实现高速通信。", "knowledge_point": "通信技术"},
+            {"type": "single", "stem": "我国自主建设的全球卫星导航系统是？", "options": ["GPS", "北斗", "伽利略", "格洛纳斯"], "answer": 1,
+             "analysis": "北斗卫星导航系统是我国自主研发、自主运行的全球导航系统。", "knowledge_point": "卫星导航"},
+            {"type": "single", "stem": "编写程序让计算机按指令工作，这一过程叫？", "options": ["编程", "排版", "绘画", "计算"], "answer": 0,
+             "analysis": "编程是用程序设计语言编写代码，指挥计算机完成任务的过程。", "knowledge_point": "程序设计"},
+        ],
+    },
+]
+
+
+def all_questions():
+    """展平为题目列表，附带主题信息"""
+    flat = []
+    for group in QUESTION_BANK:
+        for q in group["questions"]:
+            flat.append({"theme": group["theme"], **q})
+    return flat
+
+
+def match_theme(user_input):
+    """根据用户输入匹配主题，未命中返回 None"""
+    text = user_input or ""
+    for group in QUESTION_BANK:
+        for kw in group["keywords"]:
+            if kw in text:
+                return group["theme"]
+    return None

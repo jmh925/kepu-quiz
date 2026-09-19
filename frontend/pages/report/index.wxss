@@ -1,0 +1,144 @@
+/* 复盘报告页专属样式：颜色一律取 app.wxss 的 CSS 变量，不写死色值 */
+
+/* ---------- 得分区 ---------- */
+.score-card {
+  text-align: center;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12rpx 0 28rpx;
+}
+
+.score-num {
+  font-size: 108rpx;
+  line-height: 1.1;
+  color: var(--c-primary-deep);
+  margin-right: 24rpx;
+}
+
+.score-unit {
+  font-size: 44rpx;
+  margin-left: 4rpx;
+}
+
+.score-meta {
+  text-align: left;
+}
+
+.mastery-bar {
+  height: 24rpx;
+}
+
+.mastery-label {
+  margin-top: 12rpx;
+}
+
+/* ---------- 报告正文 ---------- */
+.level-row {
+  margin-bottom: 12rpx;
+}
+
+.mastery-text {
+  margin-left: 20rpx;
+}
+
+.suggest-box {
+  background: var(--c-bg);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-top: 24rpx;
+}
+
+.wp-box {
+  margin-top: 24rpx;
+}
+
+.pills {
+  margin-top: 16rpx;
+}
+
+.pill-gap {
+  margin: 0 12rpx 12rpx 0;
+}
+
+.retry-btn {
+  margin-top: 24rpx;
+}
+
+/* ---------- 结算区 ---------- */
+.settle-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.settle-item {
+  width: 50%;
+  text-align: center;
+  padding: 18rpx 0;
+  box-sizing: border-box;
+}
+
+.settle-num {
+  font-size: 52rpx;
+  color: var(--c-primary-deep);
+}
+
+/* ---------- 本次答题回顾 ---------- */
+.review-head {
+  min-height: 88rpx;
+}
+
+.review-tip {
+  margin-top: 8rpx;
+}
+
+.review-item {
+  border-top: 2rpx solid var(--c-line);
+  padding: 24rpx 0 12rpx;
+}
+
+.review-line {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 14rpx;
+}
+
+.line-key {
+  flex-shrink: 0;
+  width: 150rpx;
+  font-size: 28rpx;
+  color: var(--c-sub);
+}
+
+.line-val {
+  flex: 1;
+  font-size: 32rpx;
+}
+
+/* 答错用暖橙，答对用绿色：完全走 CSS 变量 */
+.your-val {
+  color: var(--c-orange);
+}
+
+.right-val {
+  color: var(--c-green);
+}
+
+.analysis {
+  background: var(--c-bg);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-top: 20rpx;
+}
+
+/* ---------- 底部入口 ---------- */
+.foot-btn {
+  margin-bottom: 20rpx;
+}
+
+.no-data-text {
+  margin: 20rpx 0 28rpx;
+}
