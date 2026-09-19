@@ -24,6 +24,11 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 > 也可以直接双击 `scripts\run_server.cmd`（Windows 一键启动）。
 > 网页版**不需要任何构建步骤**，也**不需要微信开发者工具**，打开就能用。
+>
+> `/app/` 未登录时是入口页，三个页签分别是「学生登录」「学生注册」「管理员」：
+> 学生用登录名（3~20 位字母、数字或下划线）与口令（6~32 位）注册登录，
+> 也可以点「先逛逛」以游客身份直接体验，注册后游客期间的闯关记录、错题与经验值会并到正式账号；
+> 「管理员」页签直接调用管理端登录接口，成功后跳 `/admin/`，不用手敲地址。
 
 ---
 
@@ -57,7 +62,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 | 链路 | 首选方案 | 降级方案 |
 | --- | --- | --- |
-| 出题 | 调用 DeepSeek 生成题目 | 内置 60 题科普题库 / 管理端题库资源池（按主题匹配 + 随机抽样） |
+| 出题 | 调用 DeepSeek 生成题目 | 内置 150 题科普题库 / 管理端题库资源池（按主题匹配 + 随机抽样） |
 | 复盘报告 | 大模型生成掌握度与建议 | 按正确率分档的规则模板 |
 | 复习 | —— | 「只练错题」直接用错题重组练习卷，不调用大模型，毫秒级返回 |
 
@@ -72,13 +77,15 @@ kepu-quiz/
 ├── backend/                服务端（Python + FastAPI + SQLite）
 │   ├── app/                应用代码
 │   │   ├── main.py             应用入口：路由装配、统一异常处理、CORS、静态托管
-│   │   ├── routers.py          学生端 16 个接口
-│   │   ├── admin.py            管理端 13 个接口
-│   │   ├── services.py         业务服务层（出题 / 判题 / 报告 / 检索 / 错题本）
-│   │   ├── admin_db.py         管理端数据访问（账号、题库资源池、统计、日志）
+│   │   ├── routers.py          学生端 19 个接口
+│   │   ├── admin.py            管理端 14 个接口
+│   │   ├── services.py         业务服务层（注册登录 / 出题 / 判题 / 报告 / 检索 / 错题本）
+│   │   ├── admin_db.py         管理端数据访问（账号、题库资源池、统计、日志、单学生答题详情）
 │   │   ├── database.py         SQLite 数据访问层（10 张表、自动建表与迁移）
 │   │   ├── llm.py              大模型调用与降级
-│   │   ├── question_bank.py    内置科普题库 60 题 / 6 大主题
+│   │   ├── question_bank.py    内置科普题库载入（150 题 / 6 大主题，每主题 25 题）
+│   │   ├── bank_part_a.json    题库数据：天文 / 地理 / 生物（75 题）
+│   │   ├── bank_part_b.json    题库数据：物理 / 化学 / 科技（75 题）
 │   │   ├── grades.py           学段适配参数
 │   │   ├── safety.py           内容安全过滤
 │   │   ├── wrongbook.py        错题本
@@ -198,16 +205,18 @@ copy .env.example .env
 
 统一前缀 `/api/v1`，统一响应 `{code, message, data}`（`code = 0` 为成功）。
 
-**学生端（13 个）**：`GET /health`、`GET /grades`、
+**学生端（19 个）**：`GET /health`、`GET /grades`、
 `POST /quiz/generate`、`POST /quiz/submit`、`POST /report/generate`、
-`POST /user/login`、`GET /user/profile`、
+`POST /user/register`、`POST /user/login`、`POST /user/guest`、`POST /user/merge-guest`、`GET /user/profile`、
 `POST /knowledge/documents`、`GET /knowledge/documents`、`DELETE /knowledge/documents/{doc_id}`、
-`GET /wrong/questions`、`POST /wrong/practice`、`DELETE /wrong/questions`。
+`GET /wrong/questions`、`POST /wrong/practice`、`DELETE /wrong/questions`、
+`PUT /wrong/questions`、`DELETE /wrong/questions/item`、`DELETE /wrong/questions/{stem}`。
 
-**管理端（13 个，请求头 `X-Admin-Token`）**：`POST /admin/login`、`GET /admin/me`、
-`GET /admin/dashboard`、`GET /admin/trend`、`GET /admin/users`、`POST /admin/users/{id}/status`、
+**管理端（14 个，请求头 `X-Admin-Token`）**：`POST /admin/login`、`GET /admin/me`、
+`GET /admin/dashboard`、`GET /admin/trend`、`GET /admin/users`、`GET /admin/users/{user_id}`、
+`POST /admin/users/{user_id}/status`、
 `GET /admin/questions`、`GET /admin/questions/themes`、`POST /admin/questions`、
-`PUT /admin/questions/{id}`、`DELETE /admin/questions/{id}`、
+`PUT /admin/questions/{qid}`、`DELETE /admin/questions/{qid}`、
 `GET /admin/sessions`、`GET /admin/logs`。
 
 **错误码**：`4000` 参数错误 · `4001` 文档解析失败 · `4002` 内容不合规 · `4003` 错题本为空 ·
@@ -222,6 +231,9 @@ copy .env.example .env
 `users` 用户 · `quiz_sessions` 闯关会话 · `answer_records` 答题记录 · `reports` 复盘报告 ·
 `knowledge_docs` 知识库文档 · `knowledge_chunks` 知识库分块 · `wrong_questions` 错题本 ·
 `admins` 管理端账号 · `question_pool` 题目资源池 · `admin_logs` 操作日志。
+
+`users` 表含 `username`、`password_hash`、`salt` 三个学生账号字段，并为 `username` 建唯一索引；
+旧库由 `_MIGRATIONS` 自动补列。
 
 表结构字典见 `docs/repo/数据库字典.md`。系统启动时自动建表，并对旧版本数据库做补列迁移
 （`CREATE TABLE IF NOT EXISTS` 不会补列，因此额外实现了 `_migrate`）。
@@ -279,8 +291,11 @@ python tools/md2docx.py          # 合并分章 Markdown 并导出 Word
 2. 管理端口令使用 PBKDF2-HMAC-SHA256（12 万次迭代 + 每账号随机盐）存储，不存明文。
 3. 内容安全目前是**最小可用实现**（敏感词表 + 长度校验），生产环境应替换为
    微信内容安全接口或更完整的词库；接口设计已预留，替换时无需改动调用方。
-4. 微信登录为**预留接入点**：当前 `POST /api/v1/user/login` 以本地账号实现，
-   接入 `jscode2session` 时只需替换 `services.login()` 内部实现。
+4. 微信登录为**预留接入点**：`POST /api/v1/user/login` 收到小程序 `code` 时以本地账号实现，
+   接入微信服务端校验（换取 openid）时只需替换 `services.login()` 内部实现。
+   学生账号本身已可用——`POST /api/v1/user/register` 用「登录名 + 口令」注册，
+   口令以 PBKDF2-HMAC-SHA256（12 万次迭代 + 每账号随机盐）存储，不存明文；
+   游客账号由 `POST /api/v1/user/guest` 建立，其数据可经 `POST /api/v1/user/merge-guest` 并入正式账号。
 
 ---
 

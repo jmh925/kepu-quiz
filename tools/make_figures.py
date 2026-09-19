@@ -313,7 +313,8 @@ def figure_4_4():
         return (cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)
 
     users = entity(150, 150, "users 用户表",
-                   ["id 主键", "openid 唯一", "nickname", "total_xp 经验值", "status 状态", "grade 学段"])
+                   ["id 主键", "openid 唯一", "username 登录名唯一", "password_hash / salt",
+                    "nickname", "total_xp 经验值", "status 状态", "grade 学段"])
     quizzes = entity(450, 150, "quiz_sessions 闯关会话表",
                      ["id 主键", "quiz_id 唯一", "user_id 外键", "title / grade / source",
                       "questions_json"])
@@ -393,7 +394,7 @@ def figure_3_1():
         c.text_center(cx, cy, text, size=12, color=INK)
 
     student_cases = [
-        (145, "登录 / 游客模式进入"),
+        (145, "注册登录 / 游客模式进入"),
         (197, "按主题出题（可基于知识库资料）"),
         (249, "答题闯关与即时讲解"),
         (301, "查看复盘报告"),

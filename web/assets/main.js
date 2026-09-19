@@ -25,7 +25,12 @@
     docName: '',
     lastQuiz: null,
     lastResult: null,
-    totalXp: 0
+    totalXp: 0,
+    // 想显示入口页的哪个页签：'login' / 'register' / 'admin'。
+    // 必须记在 state 里，因为 `location.hash = '#/login'` 会触发 hashchange，
+    // 由 routes.login 重新渲染一次；不记住的话那次重渲染会把页签打回「登录」，
+    // 于是游客点「注册以保存记录」结果停在登录页、页面上根本没有注册才有的昵称输入框。
+    loginMode: 'login'
   };
 
   function gradeLabel(g) {
@@ -172,6 +177,7 @@
   function renderLogin(mode) {
     var isRegister = mode === 'register';
     var isAdmin = mode === 'admin';
+    state.loginMode = isAdmin ? 'admin' : (isRegister ? 'register' : 'login');
 
     var tabs = '<div class="row" style="gap:10px;margin-bottom:18px">'
       + '  <button id="tab-login" class="btn ' + (!isRegister && !isAdmin ? 'btn-primary' : 'btn-ghost') + ' grow">学生登录</button>'
@@ -187,13 +193,14 @@
         + '<div class="card">'
         + tabs
         + '  <div class="field"><label>管理员账号</label>'
-        + '    <input id="auth-user" class="input" placeholder="默认 admin" value="' + util.esc(state.lastAdmin || '') + '"></div>'
+        + '    <input id="auth-user" class="input" placeholder="管理员登录名" value="' + util.esc(state.lastAdmin || '') + '"></div>'
         + '  <div class="field"><label>管理员口令</label>'
-        + '    <input id="auth-pass" class="input" type="password" placeholder="默认 kepu@2026"></div>'
+        + '    <input id="auth-pass" class="input" type="password" placeholder="6~32 位；首次部署的默认口令见 README"></div>'
         + '  <button id="auth-submit" class="btn btn-primary btn-block" style="margin-top:6px">进入管理端</button>'
         + '  <div class="muted" style="margin-top:12px;text-align:center">'
         + '    这里看的是每个学生的闯关记录与错题分类，也能维护题库；'
-        + '    登录后直接进 <a href="/admin/">/admin/</a>。</div>'
+        + '    登录后直接进 <a href="/admin/">/admin/</a>。'
+        + '    口令在 config.py / 环境变量里改，正式部署前请务必换掉默认值。</div>'
         + '</div>'
         + '</div>';
 
@@ -247,7 +254,8 @@
       + (isRegister ? '注册并开始闯关' : '登录') + '</button>'
       + '  <button id="auth-guest" class="btn btn-ghost btn-block" style="margin-top:10px">先逛逛（游客体验）</button>'
       + '  <div class="muted" style="margin-top:12px;text-align:center">'
-      + '    游客也能答题，但错题本和经验值不会保存；注册后会把游客期间的记录并过来。</div>'
+      + '    游客也能答题，错题本和经验值先记在这个临时身份上——换设备或清掉浏览器记录就找不回来了；'
+      + '注册后小科会把它们并到你的账号里。</div>'
       + '</div>'
       + '<div class="card" style="text-align:left">'
       + '  <div class="h3" style="margin-bottom:8px">老师 / 管理员</div>'
@@ -321,7 +329,7 @@
 
   /* ================= 路由 ================= */
   var routes = {
-    login: function () { renderLogin(); },
+    login: function () { renderLogin(state.loginMode); },
     home: renderHome,
     quiz: renderQuiz,
     report: renderReport,
@@ -347,7 +355,7 @@
     // 之前错题本就是这样，用户看到的是「答错了但错题本一直是空的」。
     var needLogin = ['wrong', 'profile', 'knowledge'];
     if (needLogin.indexOf(name) !== -1 && !api.getToken()) {
-      renderLogin();
+      renderLogin('login');
       return;
     }
     document.querySelectorAll('[data-nav]').forEach(function (a) {
@@ -1134,8 +1142,9 @@
           + (state.isGuest
             ? '<div class="card" style="background:#FFF9E8">'
               + '<div class="h3">你正在用游客身份</div>'
-              + '<div class="muted" style="margin:6px 0 12px">游客答题不会保存错题与经验值。'
-              + '注册一个账号（口令随便设，6 位以上），小科会把这段时间的记录并过去，不会白玩。</div>'
+              + '<div class="muted" style="margin:6px 0 12px">游客期间的成绩和错题只认这台浏览器——'
+              + '清掉浏览器记录或换台设备就找不回来了。注册一个账号（口令随便设，6 位以上），'
+              + '小科会把这段时间的记录并过去，不会白玩。</div>'
               + '<button class="btn btn-primary" id="go-register">注册账号，保存记录</button>'
               + '</div>'
             : '')
