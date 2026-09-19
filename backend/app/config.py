@@ -7,9 +7,45 @@
 - 管理端口令与 JWT 密钥都支持环境变量注入，源码中不含真实密钥。
 """
 import os
+import secrets                                            # noqa: F401  (供 gen_secrets 复用)
 
 # backend/ 目录（本文件位于 backend/app/config.py）
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _load_env_file():
+    """把 backend/.env 里的 KEY=VALUE 读进环境变量（文件不存在就跳过）。
+
+    用标准库自己解析，不引入 python-dotenv：这个项目的定位就是"不装依赖也能跑"，
+    为了读一个 KEY=VALUE 文本再加一个第三方包不划算。
+
+    规则：
+    - `#` 开头的行与空行忽略；
+    - 已经存在的环境变量优先，不被文件覆盖 —— 这样临时用环境变量压过 .env 很自然；
+    - 允许值两侧带引号（写成 KEY="a b" 时把引号去掉）。
+    """
+    path = os.path.join(BASE_DIR, ".env")
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            for raw in fh:
+                line = raw.strip()
+                if not line or line.startswith("#") or line.startswith("export "):
+                    continue
+                if "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key, value = key.strip(), value.strip()
+                if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+                    value = value[1:-1]
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except OSError:
+        pass
+
+
+_load_env_file()
 
 
 def _path(value, default):

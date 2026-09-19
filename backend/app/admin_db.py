@@ -40,14 +40,33 @@ def verify_password(password, hash_hex, salt_hex):
 
 # ---------------- 账号 ----------------
 def ensure_default_admin():
-    """首次启动时按配置创建默认管理员（幂等）。"""
-    row = db.query_one("SELECT id FROM admins WHERE username=?", (settings.admin_username,))
-    if row:
-        return False
-    pw_hash, salt = hash_password(settings.admin_password)
-    db.execute("INSERT INTO admins(username, password_hash, salt, role) VALUES(?,?,?,?)",
-               (settings.admin_username, pw_hash, salt, "admin"))
-    return True
+    """首次启动时按配置创建默认管理员（幂等）。
+
+    配置里的口令是**权威来源**：如果库里已存在的账号口令与当前配置对不上，
+    就按配置重算哈希并写回。
+
+    为什么要这样改：原来只判「用户名是否存在」，存在就直接 return，
+    于是把 ADMIN_PASSWORD 改掉再重启完全不起作用——库里还是老口令的哈希。
+    这个坑很隐蔽也很危险：有人以为改了 .env 就安全了，实际上公开仓库里那个
+    默认口令照样能登进管理端（管理端能看所有学生的答题记录、能改题库）。
+    现在「改 .env → 重启 → 生效」是真的成立的。
+
+    管理端没有改口令的界面，口令只可能来自配置，所以这样覆盖不会顶掉别处设的值。
+    """
+    row = db.query_one("SELECT * FROM admins WHERE username=?", (settings.admin_username,))
+    if not row:
+        pw_hash, salt = hash_password(settings.admin_password)
+        db.execute("INSERT INTO admins(username, password_hash, salt, role) VALUES(?,?,?,?)",
+                   (settings.admin_username, pw_hash, salt, "admin"))
+        return True
+    if not verify_password(settings.admin_password, row["password_hash"], row["salt"]):
+        pw_hash, salt = hash_password(settings.admin_password)
+        db.execute("UPDATE admins SET password_hash=?, salt=? WHERE id=?",
+                   (pw_hash, salt, row["id"]))
+        log(settings.admin_username, "admin.password_sync",
+            "按配置更新管理员口令（原库存口令与配置不一致）")
+        return True
+    return False
 
 
 def locked_seconds(username):

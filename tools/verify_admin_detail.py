@@ -20,11 +20,14 @@ from playwright.sync_api import sync_playwright      # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = os.path.join(ROOT, "web", "shots")
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import kepu_env                                        # noqa: E402
+
 WEB = "http://127.0.0.1:8000/app/"
 ADMIN = "http://127.0.0.1:8000/admin/"
 API = "http://127.0.0.1:8000/api/v1"
-ADMIN_USER = "admin"
-ADMIN_PWD = "kepu@2026"
+# 口令从 backend/.env 取（tools/gen_secrets.py 生成过就是随机的），不要写死默认值
+ADMIN_USER, ADMIN_PWD = kepu_env.admin_credentials()
 
 USER = "stu" + str(int(time.time()))[-8:]
 PWD = "kepu123456"
@@ -114,7 +117,7 @@ with sync_playwright() as p:
     shot("12_入口页_管理员登录")
     # 先故意输错，确认报错而不是静默跳转
     pg.locator("#auth-user").fill(ADMIN_USER)
-    pg.locator("#auth-pass").fill("wrong-password")
+    pg.locator("#auth-pass").fill("wrong-password-xyz")
     pg.locator("#auth-submit").click()
     pg.wait_for_timeout(2500)
     check("/app/" in pg.url, "口令不对时留在入口页（未跳转），URL=%s" % pg.url.split("8000")[-1])

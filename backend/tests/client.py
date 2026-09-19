@@ -5,10 +5,35 @@
 这样在只装了 Python 的机器上也能复现论文第 6 章的实测数据。
 """
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+
+_ENV_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+
+
+def _read_env_file(path=_ENV_FILE):
+    """读 backend/.env（不存在就返回空 dict）。仅标准库，不依赖 python-dotenv。"""
+    out = {}
+    if not os.path.exists(path):
+        return out
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            for raw in fh:
+                line = raw.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key, val = key.strip(), val.strip()
+                if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+                    val = val[1:-1]
+                if key:
+                    out[key] = val
+    except OSError:
+        pass
+    return out
 
 
 def _encode_path(path):
@@ -114,7 +139,18 @@ class Client(object):
             self.token = resp.data["token"]
         return resp
 
-    def admin_login(self, username="admin", password="kepu@2026"):
+    def admin_login(self, username=None, password=None):
+        """管理端登录。
+
+        账号口令不写死：轮换过口令（tools/gen_secrets.py 写进 backend/.env）
+        之后，写死默认值的脚本会全部失败。取值顺序：调用方传入 > 环境变量 >
+        backend/.env > config.py 的默认值。
+        """
+        import os
+        env = _read_env_file()
+        username = username or os.getenv("ADMIN_USERNAME") or env.get("ADMIN_USERNAME") or "admin"
+        password = (password or os.getenv("ADMIN_PASSWORD") or env.get("ADMIN_PASSWORD")
+                    or "kepu@2026")
         body = {"username": username, "password": password}
         headers = {"X-Admin-Token": ""}          # 登录接口本身不需要管理端 Token
         resp = self.post("/api/v1/admin/login", body, headers=headers)

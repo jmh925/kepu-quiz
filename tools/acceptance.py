@@ -136,6 +136,10 @@ def main():
     ok = run([PY, os.path.join("tools", "verify_admin_detail.py")])
     results.append(("管理端答题详情分类面板", ok))
 
+    section("9. 密钥自检（公开仓库里的默认口令是否已失去作用）")
+    ok = run([PY, os.path.join("tools", "check_secrets.py")])
+    results.append(("默认口令轮换自检", ok))
+
     section("验收汇总")
     failed = 0
     for name, ok in results:
