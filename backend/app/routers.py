@@ -17,7 +17,7 @@ from . import services
 from .config import settings
 from .schemas import (
     AnswerSubmitRequest, LoginRequest, QuizGenerateRequest,
-    ReportGenerateRequest, WrongPracticeRequest,
+    ReportGenerateRequest, WrongItemRequest, WrongPracticeRequest,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -166,6 +166,48 @@ async def wrong_clear(user_id: Optional[int] = Depends(get_optional_user)):
         return fail(4010, "登录后才能把错题存下来哦", 401)
     services.clear_wrong(user_id)
     return ok({"cleared": True})
+
+
+# 14. 修改单条错题（错题本里的「改」）
+@router.put("/wrong/questions")
+async def wrong_update(req: WrongItemRequest,
+                       user_id: Optional[int] = Depends(get_optional_user)):
+    if user_id is None:
+        return fail(4010, "登录后才能修改错题哦", 401)
+    if not req.stem:
+        return fail(4000, "请说明要改哪一道错题")
+    payload = req.model_dump(exclude_none=True)
+    payload.pop("stem", None)
+    if req.new_stem:
+        payload["stem"] = req.new_stem
+    result, err = services.update_wrong_item(user_id, req.stem, payload)
+    if err:
+        return fail(4003 if "不在错题本" in err else 4000, err, 404 if "不在错题本" in err else 400)
+    return ok(result)
+
+
+# 15. 删除单条错题（错题本里的「删」）
+# 提供两种调用方式：路径里带题干，或用请求体传（题干是长中文时推荐后者，
+# 免得依赖 URL 百分号编码的长度与转义细节）。
+@router.delete("/wrong/questions/item")
+async def wrong_delete_by_body(req: WrongItemRequest,
+                               user_id: Optional[int] = Depends(get_optional_user)):
+    if user_id is None:
+        return fail(4010, "登录后才能修改错题哦", 401)
+    if not req.stem:
+        return fail(4000, "请说明要删哪一道错题")
+    if not services.delete_wrong_item(user_id, req.stem):
+        return fail(4003, "这道错题不在错题本里", 404)
+    return ok({"deleted": req.stem})
+
+
+@router.delete("/wrong/questions/{stem}")
+async def wrong_delete(stem: str, user_id: Optional[int] = Depends(get_optional_user)):
+    if user_id is None:
+        return fail(4010, "登录后才能修改错题哦", 401)
+    if not services.delete_wrong_item(user_id, stem):
+        return fail(4003, "这道错题不在错题本里", 404)
+    return ok({"deleted": stem})
 
 
 # ---------------- 文档文本提取 ----------------

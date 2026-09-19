@@ -55,6 +55,18 @@ class WrongPracticeRequest(BaseModel):
     grade: Optional[str] = Field(None, description="学段")
 
 
+class WrongItemRequest(BaseModel):
+    """修改错题本里的单条错题（只提交要改的字段）。"""
+    stem: Optional[str] = Field(None, description="题干（同时作为定位依据）")
+    new_stem: Optional[str] = Field(None, description="改后的题干")
+    options: Optional[List[str]] = Field(None, description="选项列表")
+    answer: Optional[int] = Field(None, description="正确答案下标（0 起）")
+    analysis: Optional[str] = Field(None, description="解析")
+    knowledge_point: Optional[str] = Field(None, description="知识点")
+    wrong_count: Optional[int] = Field(None, description="累计答错次数")
+    user_answer: Optional[int] = Field(None, description="最近一次所选下标")
+
+
 # ---------------- 管理端 ----------------
 class AdminLoginRequest(BaseModel):
     username: str

@@ -1,4 +1,4 @@
-# 前端开发规范（微信小程序原生框架）
+﻿# 前端开发规范（微信小程序原生框架）
 
 > 本文件是页面实现的唯一依据。所有页面必须严格遵守，否则会出现风格与接口不一致。
 > 后端接口地址：`frontend/config.js` 里的 `BASE_URL`（默认 `http://127.0.0.1:8000/api/v1`）。
@@ -105,6 +105,8 @@ App 的性格是：**一个叫「小科」的科学小伙伴**，耐心、爱鼓
 | DELETE | `/knowledge/documents/{doc_id}` | — | `{ deleted }` |
 | GET | `/wrong/questions` | — | `{ questions:[{stem,options,answer,analysis,knowledge_point,wrong_count,last_wrong_at}], weak_points:[{knowledge_point,questions,wrong_times}], total }` |
 | POST | `/wrong/practice` | `{count?, grade?}` | 与 `/quiz/generate` 同结构，`source` 为 `wrongbook` |
+| PUT | `/wrong/questions` | `{stem, new_stem?, options?, answer?, analysis?, knowledge_point?, wrong_count?}` | `{ stem }` |
+| DELETE | `/wrong/questions/item` | `{stem}` | `{ deleted }` |
 | DELETE | `/wrong/questions` | — | `{ cleared: true }` |
 
 **题目对象（questions 数组元素）**：
@@ -198,7 +200,13 @@ App 的性格是：**一个叫「小科」的科学小伙伴**，耐心、爱鼓
   - 顶部统计卡：错题总数 + 「薄弱知识点」胶囊列表
   - 「只练错题」大按钮（`btn btn-primary`，宽度撑满）→ `api.post('/wrong/practice', { count: 8, grade: app.globalData.grade })` → 存 `app.globalData.lastQuiz` → 跳答题页。按钮下方小字提示「不用等 AI 出题，马上就能开始」。错题数为 0 时按钮置灰。
   - 错题列表：题干 + 知识点胶囊 + 「错过 N 次」+ 点击展开（正确答案、你的答案、解析）
-  - 「清空错题本」文字按钮（二次确认）
+  - **每条错题可以改、可以删**（错题本自己也要能维护，不然攒久了就没法用）：
+  - 展开讲解后出现两个按钮：「改一改」进入内联编辑（题干 / 知识点 / 解析 + 点选项胶囊设正确答案），
+    保存走 `api.put('/wrong/questions', {stem, new_stem?, knowledge_point?, analysis?, answer?})`；
+  - 「不用留了」删除单条：二次确认后走 `api.delBody('/wrong/questions/item', {stem})`
+    （题干是长中文，走请求体比塞进 URL 稳妥）；
+  - 删除后刷新列表。
+- 「清空错题本」文字按钮（二次确认）
 - 空态：`<mascot state="idle" size="sm">` + 「还没有错题，去闯一关吧！」+ 「去闯关」按钮（`wx.switchTab('/pages/index/index')`）。
 - 下拉刷新（`onPullDownRefresh`）。
 

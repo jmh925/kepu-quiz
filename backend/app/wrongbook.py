@@ -122,6 +122,75 @@ def clear(user_id):
     return 1
 
 
+def find_wrong(user_id, stem):
+    """按题干定位一条错题，返回记录或 None。"""
+    if not user_id or not stem:
+        return None
+    return db.query_one(
+        "SELECT * FROM wrong_questions WHERE user_id=? AND stem=?", (user_id, stem))
+
+
+def delete_wrong(user_id, stem):
+    """删除单条错题（错题本里的「删」）。返回是否删除成功。"""
+    if not user_id or not stem:
+        return False
+    row = find_wrong(user_id, stem)
+    if not row:
+        return False
+    db.execute("DELETE FROM wrong_questions WHERE id=?", (row["id"],))
+    return True
+
+
+def update_wrong(user_id, stem, payload):
+    """修改单条错题（错题本里的「改」）。
+
+    允许改的字段都做了白名单校验：题干、选项、正确答案下标、解析、知识点、错误次数。
+    正确答案下标必须落在选项范围内，否则宁可拒绝也不写入脏数据——
+    错题本里的题会被「只练错题」直接拿去出卷，写坏了会连带把孩子练错。
+    """
+    if not user_id or not stem:
+        return None, "缺少要修改的题目"
+    row = find_wrong(user_id, stem)
+    if not row:
+        return None, "这道错题不在错题本里"
+
+    options = payload.get("options")
+    if options is None:
+        options = json.loads(row["options_json"] or "[]")
+    if not isinstance(options, list) or len(options) < 2:
+        return None, "选项至少要有两个"
+
+    try:
+        answer = int(payload.get("answer", row["correct_answer"]))
+    except (TypeError, ValueError):
+        return None, "正确答案必须是选项的序号"
+    if answer < 0 or answer >= len(options):
+        return None, "正确答案的序号超出了选项范围"
+
+    # 支持两种写法：new_stem（推荐，语义清晰）与 stem（直接覆盖）
+    new_stem = (payload.get("new_stem") or payload.get("stem") or row["stem"]).strip()
+    if not new_stem:
+        return None, "题干不能为空"
+    # 改题干时不能与已有错题撞车（同一用户下题干是唯一键）
+    if new_stem != row["stem"] and find_wrong(user_id, new_stem):
+        return None, "错题本里已经有一道一样的题了"
+
+    wrong_count = payload.get("wrong_count", row["wrong_count"])
+    try:
+        wrong_count = max(1, int(wrong_count))
+    except (TypeError, ValueError):
+        wrong_count = row["wrong_count"]
+
+    db.execute(
+        "UPDATE wrong_questions SET stem=?, options_json=?, correct_answer=?, analysis=?, "
+        "knowledge_point=?, wrong_count=?, user_answer=COALESCE(?, user_answer) WHERE id=?",
+        (new_stem, json.dumps(options, ensure_ascii=False), answer,
+         payload.get("analysis", row["analysis"]) or "",
+         payload.get("knowledge_point", row["knowledge_point"]) or "科普知识",
+         wrong_count, payload.get("user_answer"), row["id"]))
+    return {"stem": new_stem}, None
+
+
 def build_practice_quiz(user_id, count=8):
     """只用错题重组一套练习卷；无需调用大模型，秒级返回。
 

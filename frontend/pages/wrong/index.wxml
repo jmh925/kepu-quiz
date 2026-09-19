@@ -63,6 +63,51 @@
               <view class="body">{{item.analysis}}</view>
             </view>
             <view class="muted last-at" wx:if="{{item.lastAt}}">最近一次：{{item.lastAt}}</view>
+
+            <!-- 改 / 删：错题本也要能维护，不然攒久了就没法用了 -->
+            <view class="row actions-row" wx:if="{{editingIndex !== index}}">
+              <view class="btn btn-ghost btn-sm act-btn" data-index="{{index}}" bindtap="onStartEdit">改一改</view>
+              <view class="btn btn-ghost btn-sm act-btn act-del" data-index="{{index}}" bindtap="onDeleteItem">不用留了</view>
+            </view>
+
+            <!-- 内联编辑表单 -->
+            <view class="edit-box" wx:if="{{editingIndex === index}}">
+              <view class="h3 edit-title">改一改这道题</view>
+
+              <view class="edit-field">
+                <text class="edit-label">题干</text>
+                <input class="input edit-input" value="{{editStem}}" bindinput="onEditInput" data-field="stem"
+                       placeholder="题干" />
+              </view>
+
+              <view class="edit-field">
+                <text class="edit-label">知识点</text>
+                <input class="input edit-input" value="{{editKnowledge}}" bindinput="onEditInput" data-field="knowledge_point"
+                       placeholder="比如：月球运动" />
+              </view>
+
+              <view class="edit-field">
+                <text class="edit-label">选项（点一下就是正确答案）</text>
+                <view class="wrap">
+                  <view class="chip-opt {{editAnswer === i ? 'chip-opt-on' : ''}}"
+                        wx:for="{{editOptions}}" wx:key="index" data-index="{{index}}" bindtap="onPickAnswer">
+                    <text class="chip-opt-key">{{editKeys[index]}}</text>
+                    <text class="chip-opt-text">{{item}}</text>
+                  </view>
+                </view>
+              </view>
+
+              <view class="edit-field">
+                <text class="edit-label">解析</text>
+                <textarea class="input edit-textarea" value="{{editAnalysis}}" bindinput="onEditInput" data-field="analysis"
+                          placeholder="用一句话讲清楚为什么"></textarea>
+              </view>
+
+              <view class="row actions-row">
+                <view class="btn btn-primary btn-sm act-btn" bindtap="onSaveEdit">就改这样</view>
+                <view class="btn btn-ghost btn-sm act-btn" bindtap="onCancelEdit">算了</view>
+              </view>
+            </view>
           </view>
         </view>
       </block>

@@ -175,13 +175,16 @@ def main():
         shot("06_复盘报告")
 
         # ---------- 7. 其余三个 tab ----------
-        for tab, keyword, name in (("错题本", "只练错题", "07_错题本"),
-                                   ("知识库", "资料", "08_知识库"),
-                                   ("我的", "经验值", "09_我的")):
-            page.locator(".mp-tab", has_text=tab).click()
-            page.wait_for_timeout(1400)
+        # 说明：复盘报告不是 tab 页，小程序在非 tab 页也会隐藏 tabBar，
+        # 所以这里不像用户那样点 tab，而是走 router（等价于 wx.switchTab）切过去。
+        for path, keyword, name, title in (
+                ("pages/wrong", "只练错题", "07_错题本", "错题本"),
+                ("pages/knowledge", "资料", "08_知识库", "知识库"),
+                ("pages/profile", "经验值", "09_我的", "我的")):
+            page.evaluate("(p) => window.__kepuDebug.router.replace('/' + p + '/index')", path)
+            page.wait_for_timeout(1500)
             t = view.inner_text()
-            note(keyword in t or "小科" in t, "%s页渲染成功" % tab)
+            note(keyword in t or "小科" in t, "%s页渲染成功" % title)
             shot(name)
 
         real_errors = [e for e in errors if "favicon" not in e and "Failed to load resource" not in e]

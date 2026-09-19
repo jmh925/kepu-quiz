@@ -37,7 +37,17 @@ Page({
     practicing: false,
     total: 0,
     weakPoints: [],
-    questions: []
+    questions: [],
+
+    // 编辑态（错题本里的「改」）：一次只改一道
+    editingIndex: -1,
+    editStem: '',
+    editKnowledge: '',
+    editAnalysis: '',
+    editAnswer: 0,
+    editOptions: [],
+    editKeys: LETTERS,
+    saving: false
   },
 
   onShow: function () {
@@ -78,7 +88,10 @@ Page({
             yourAnswer: optionText(q.options, q.user_answer),
             analysis: q.analysis || '小科还在想更清楚的讲法，先把正确答案记下来吧',
             lastAt: shortTime(q.last_wrong_at),
-            expanded: false
+            expanded: false,
+            // 编辑时要回填的原始数据（选项要留完整列表，不能只留文字）
+            options: q.options || [],
+            answerIndex: typeof q.answer === 'number' ? q.answer : 0
           });
         }
         that.setData({
@@ -199,5 +212,126 @@ Page({
   /** 去闯关：回首页挑一个想探索的主题 */
   onGoQuiz: function () {
     wx.switchTab({ url: '/pages/index/index' });
+  },
+
+  /* ---------------- 错题本的「改」 ---------------- */
+
+  /** 进入编辑态：把这道题当前的内容填进表单 */
+  onStartEdit: function (e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const item = this.data.questions[index];
+    if (!item) {
+      return;
+    }
+    this.setData({
+      editingIndex: index,
+      editStem: item.stem,
+      editKnowledge: item.knowledgePoint,
+      editAnalysis: item.analysis,
+      editAnswer: item.answerIndex,
+      editOptions: item.options
+    });
+  },
+
+  /** 输入框变化：按 data-field 写回对应字段 */
+  onEditInput: function (e) {
+    const field = e.currentTarget.dataset.field;
+    const value = e.detail.value || '';
+    if (field === 'stem') {
+      this.setData({ editStem: value });
+    } else if (field === 'knowledge_point') {
+      this.setData({ editKnowledge: value });
+    } else if (field === 'analysis') {
+      this.setData({ editAnalysis: value });
+    }
+  },
+
+  /** 点某个选项 = 把它设为正确答案（错题本里常见要修的就是这个） */
+  onPickAnswer: function (e) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (!isNaN(index)) {
+      this.setData({ editAnswer: index });
+    }
+  },
+
+  onCancelEdit: function () {
+    this.setData({ editingIndex: -1 });
+  },
+
+  /** 保存修改 */
+  onSaveEdit: function () {
+    const index = this.data.editingIndex;
+    const item = this.data.questions[index];
+    if (!item || this.data.saving) {
+      return;
+    }
+    const stem = (this.data.editStem || '').trim();
+    if (!stem) {
+      api.toast('题干不能空着哦');
+      return;
+    }
+
+    const that = this;
+    this.setData({ saving: true });
+    api.loading('小科正在记下改动…');
+
+    const payload = { stem: item.stem, answer: Number(this.data.editAnswer) };
+    if (stem !== item.stem) {
+      payload.new_stem = stem;
+    }
+    if (this.data.editKnowledge !== item.knowledgePoint) {
+      payload.knowledge_point = this.data.editKnowledge;
+    }
+    if (this.data.editAnalysis !== item.analysis) {
+      payload.analysis = this.data.editAnalysis;
+    }
+
+    api.put('/wrong/questions', payload)
+      .then(function () {
+        api.hideLoading();
+        that.setData({ saving: false, editingIndex: -1 });
+        api.toast('改好了，这道题更清楚了', 'success');
+        return that.refresh();
+      })
+      .catch(function () {
+        api.hideLoading();
+        that.setData({ saving: false });
+      });
+  },
+
+  /** 删除单条错题：二次确认，避免手滑 */
+  onDeleteItem: function (e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const item = this.data.questions[index];
+    if (!item) {
+      return;
+    }
+    const that = this;
+    wx.showModal({
+      title: '这道题不留了？',
+      content: '删掉之后这道题就不在错题本里了，练过的记录也跟着一起清掉。',
+      confirmText: '删掉',
+      cancelText: '再留着',
+      confirmColor: '#FF8A65',
+      success: function (res) {
+        if (!res.confirm) {
+          return;
+        }
+        api.loading('小科正在收拾…');
+        // 题干里有中文与问号，走请求体传更稳妥，不依赖 URL 转义
+        api.delBody('/wrong/questions/item', { stem: item.stem })
+          .then(function () {
+            api.hideLoading();
+            api.toast('删掉啦', 'success');
+            if (that.data.editingIndex === index) {
+              that.setData({ editingIndex: -1 });
+            }
+            return that.refresh();
+          })
+          .catch(function () {
+            api.hideLoading();
+          });
+      }
+    });
   }
 });

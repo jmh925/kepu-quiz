@@ -1024,6 +1024,71 @@
 .mp-page[data-page="pages/wrong"] .clear-btn {
   margin-bottom: 20px;
 }
+.mp-page[data-page="pages/wrong"] .actions-row {
+  margin-top: 10px;
+  gap: 8px;
+}
+.mp-page[data-page="pages/wrong"] .act-btn {
+  min-height: 44px;
+  padding: 0 16px;
+}
+.mp-page[data-page="pages/wrong"] .act-del {
+  border-color: var(--c-orange);
+  color: #C24A22;
+}
+.mp-page[data-page="pages/wrong"] .edit-box {
+  margin-top: 10px;
+  padding: 12px;
+  background: #F7FBFF;
+  border-radius: 10px;
+}
+.mp-page[data-page="pages/wrong"] .edit-title {
+  margin-bottom: 8px;
+}
+.mp-page[data-page="pages/wrong"] .edit-field {
+  margin-bottom: 10px;
+}
+.mp-page[data-page="pages/wrong"] .edit-label {
+  display: block;
+  font-size: 14px;
+  color: var(--c-sub);
+  margin-bottom: 5px;
+}
+.mp-page[data-page="pages/wrong"] .edit-input {
+  width: 100%;
+  min-height: 44px;
+}
+.mp-page[data-page="pages/wrong"] .edit-textarea {
+  width: 100%;
+  min-height: 70px;
+}
+.mp-page[data-page="pages/wrong"] .chip-opt {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  margin: 0 8px 8px 0;
+  background: #FFFFFF;
+  border: 1.5px solid var(--c-line);
+  border-radius: var(--r-pill);
+}
+.mp-page[data-page="pages/wrong"] .chip-opt-on {
+  border-color: var(--c-green);
+  background: #EEF9EF;
+}
+.mp-page[data-page="pages/wrong"] .chip-opt-key {
+  font-weight: 700;
+  color: var(--c-primary-deep);
+  margin-right: 6px;
+  font-size: 15px;
+}
+.mp-page[data-page="pages/wrong"] .chip-opt-on .chip-opt-key {
+  color: #2E7D32;
+}
+.mp-page[data-page="pages/wrong"] .chip-opt-text {
+  font-size: 15px;
+  color: var(--c-text);
+}
 
 /* ---- pages/knowledge ---- */
 .mp-page[data-page="pages/knowledge"] .center-col {
@@ -1242,6 +1307,10 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
  *   wx.navigateTo / wx.switchTab / wx.reLaunch / wx.navigateBack
  *   App / Page / Component 注册、setData、WXML 模板渲染（{{}}、wx:if/elif/else、wx:for）
  *   hover-class、data-* 数据集、bindtap/bindinput/bindconfirm 事件
+ *
+ * 渲染方式：**按节点对比更新 DOM**（不是每次 setData 都重建 innerHTML）。
+ * 这一点很关键——页面在 bindinput 里会 setData，如果整段重建，
+ * 正在输入的 input 会被销毁，表现就是「打一个字就丢焦点」。
  */
 (function () {
   /* ---------------- 请求地址与存储 ---------------- */
@@ -1376,6 +1445,7 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
     if (m) return { dynamic: m[1].trim() };
     return String(raw).replace(/^["']|["']$/g, '');
   }
+
   /** 找到标签真正的结束位置：引号内的 > 不算（例如 wx:if="{{total > 0}}"）。 */
   function findTagEnd(src, from) {
     var quote = null;
@@ -1401,6 +1471,7 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
     }
     return out;
   }
+
   function parseWxml(src) {
     var root = { tag: '#root', attrs: [], children: [] };
     var stack = [root];
@@ -1618,6 +1689,238 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
     return html;
   }
 
+  /* ---------------- DOM 更新：按节点对比，保留输入焦点 ---------------- */
+  var EVENTS = ['tap', 'input', 'change', 'confirm', 'blur', 'focus', 'longpress', 'submit'];
+  var DOM_EVENT = {
+    tap: 'click', input: 'input', change: 'change', confirm: 'keydown',
+    blur: 'blur', focus: 'focus', longpress: 'contextmenu', submit: 'submit'
+  };
+
+  function bindEvents(scopeEl, inst) {
+    EVENTS.forEach(function (evt) {
+      var nodes = scopeEl.querySelectorAll('[data-ev-' + evt + ']:not([data-ev-bound])');
+      Array.prototype.forEach.call(nodes, function (node) {
+        node.setAttribute('data-ev-bound', '1');
+        node.addEventListener(DOM_EVENT[evt], function (e) {
+          if (evt === 'confirm' && e.key !== 'Enter') return;
+          var handler = node.getAttribute('data-handler');
+          var fn = inst.__options[handler];
+          if (typeof fn !== 'function') return;
+          var dataset = {};
+          Array.prototype.forEach.call(node.attributes, function (at) {
+            if (at.name.indexOf('data-') === 0 && at.name.indexOf('data-ev-') !== 0
+                && at.name !== 'data-handler') {
+              dataset[at.name.slice(5)] = at.value;
+            }
+          });
+          fn.call(inst, {
+            type: evt,
+            detail: { value: node.value },
+            currentTarget: { dataset: dataset, id: node.id },
+            target: { dataset: dataset, id: node.id }
+          });
+        });
+      });
+    });
+  }
+
+  function makeElement(html, inst) {
+    var holder = document.createElement('div');
+    holder.innerHTML = html;
+    var el = holder.firstElementChild || holder.firstChild;
+    if (!el) return null;
+    bindEvents(el.nodeType === 1 ? el : holder, inst);
+    return el;
+  }
+
+  function attrsOf(el, skipValue) {
+    var map = {};
+    for (var i = 0; i < el.attributes.length; i++) {
+      var a = el.attributes[i];
+      if (a.name === 'data-ev-bound') continue;                // 运行时内部标记
+      if (skipValue && (a.name === 'value')) continue;         // 输入框当前值单独处理
+      map[a.name] = a.value;
+    }
+    return map;
+  }
+
+  function applyAttrs(el, want, skipValue) {
+    var has = attrsOf(el, skipValue);
+    Object.keys(want).forEach(function (name) {
+      if (name === 'data-ev-bound') return;
+      if (name === 'value') {
+        if (el.value !== want[name]) { try { el.value = want[name]; } catch (e) {} }
+        return;
+      }
+      if (has[name] !== want[name]) {
+        try { el.setAttribute(name, want[name]); } catch (e) {}
+      }
+    });
+    Object.keys(has).forEach(function (name) {
+      if (name === 'value' && skipValue) return;
+      if (!(name in want)) el.removeAttribute(name);
+    });
+  }
+
+  /** 节点的「身份」：优先 wx:key 对应的 data-key，否则用标签 + 类名 + 事件处理器。 */
+  function sigOf(node) {
+    if (node.nodeType === 3) return '#text';
+    var tag = node.nodeName;
+    var key = node.getAttribute ? node.getAttribute('data-key') : null;
+    if (key) return tag + '|key=' + key;
+    var cls = node.getAttribute ? (node.getAttribute('class') || '') : '';
+    var handler = node.getAttribute ? (node.getAttribute('data-handler') || '') : '';
+    var onClick = node.onclick ? 'onclick' : '';
+    return tag + '|' + cls + '|' + handler + '|' + onClick;
+  }
+
+  /**
+   * 用新的 HTML 片段更新容器内容。
+   *
+   * 两个要点（都在实测里踩过坑）：
+   * 1. **不能整段 innerHTML 重建**：页面在 bindinput 里会 setData，
+   *    重建会销毁正在输入的 input，表现成「打一个字就丢焦点」。
+   * 2. **不能只按序号对比**：WXML 里 wx:if / wx:for 会让节点数量变化
+   *    （例如「先告诉小科你想学什么吧」这行提示消失时），
+   *    按序号硬配会把节点错配、插入错位置，页面直接失灵。
+   *    因此这里用「身份 + 序列匹配」对齐新旧节点。
+   */
+  function reconcile(oldNodes, newNodes) {
+    var pairs = oldNodes.map(function () { return null; });
+    var used = newNodes.map(function () { return false; });
+    var start = 0;
+    // 1) 先吃掉前后完全匹配的部分（绝大多数更新都走到这里）
+    while (start < oldNodes.length && start < newNodes.length
+           && sigOf(oldNodes[start]) === sigOf(newNodes[start])) {
+      pairs[start] = start;
+      used[start] = true;
+      start++;
+    }
+    var oi = oldNodes.length - 1;
+    var ni = newNodes.length - 1;
+    while (oi >= start && ni >= start && sigOf(oldNodes[oi]) === sigOf(newNodes[ni])) {
+      pairs[oi] = ni;
+      used[ni] = true;
+      oi--;
+      ni--;
+    }
+    // 2) 中间部分用身份做贪心匹配，并**强制保持前后顺序**：
+    //    一旦允许交叉配对，后面的插入锚点就会错位，导致兄弟节点被吞掉。
+    var lastJ = start - 1;
+    for (var i = start; i <= oi; i++) {
+      var sig = sigOf(oldNodes[i]);
+      for (var j = lastJ + 1; j <= ni; j++) {
+        if (!used[j] && sigOf(newNodes[j]) === sig) {
+          pairs[i] = j;
+          used[j] = true;
+          lastJ = j;
+          break;
+        }
+      }
+    }
+    return pairs;
+  }
+
+  function patchChildren(container, html, inst) {
+    var holder = document.createElement('div');
+    holder.innerHTML = html;
+    var newNodes = Array.prototype.slice.call(holder.childNodes);
+    var oldNodes = Array.prototype.slice.call(container.childNodes);
+    var pairs = reconcile(oldNodes, newNodes);
+
+    // 第一遍：删掉在新片段里找不到对应身份的旧节点
+    for (var i = 0; i < oldNodes.length; i++) {
+      if (pairs[i] === null && oldNodes[i].parentNode === container) {
+        container.removeChild(oldNodes[i]);
+      }
+    }
+
+    // 第二遍：按新片段的顺序走一遍，缺的插进去、错位的挪位置、其余就地打补丁。
+    // 锚点用「下一个已经挂在容器里的新节点」，这样插入位置一定正确
+    // （之前用旧节点数组当锚点，插入会和删除互相干扰，把兄弟节点吞掉）。
+    for (var k = 0; k < newNodes.length; k++) {
+      var node = newNodes[k];
+      if (node.parentNode === container) continue;
+
+      var anchor = null;
+      for (var t = k + 1; t < newNodes.length; t++) {
+        if (newNodes[t].parentNode === container) { anchor = newNodes[t]; break; }
+      }
+
+      // 找到与它配对的旧节点
+      var matched = null;
+      for (var o = 0; o < oldNodes.length; o++) {
+        if (pairs[o] === k && oldNodes[o].parentNode === container) { matched = oldNodes[o]; break; }
+      }
+
+      if (matched && sigOf(matched) === sigOf(node)) {
+        if (matched.nextSibling !== anchor && matched !== anchor) {
+          container.insertBefore(matched, anchor);
+        }
+        patchNode(container, matched, node, inst);
+      } else {
+        if (matched) container.removeChild(matched);
+        container.insertBefore(node, anchor);
+        bindEvents(node.nodeType === 1 ? node : container, inst);
+      }
+    }
+  }
+
+  function patchNode(parent, oldNode, newNode, inst) {
+    if (oldNode.nodeType !== newNode.nodeType || oldNode.nodeName !== newNode.nodeName) {
+      var fresh = newNode;
+      parent.replaceChild(fresh, oldNode);
+      bindEvents(fresh.nodeType === 1 ? fresh : parent, inst);
+      return;
+    }
+    if (oldNode.nodeType === 3) {                 // 文本节点
+      if (oldNode.nodeValue !== newNode.nodeValue) oldNode.nodeValue = newNode.nodeValue;
+      return;
+    }
+
+    var el = oldNode;
+    var isField = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
+    var want = {};
+    for (var i = 0; i < newNode.attributes.length; i++) {
+      var a = newNode.attributes[i];
+      want[a.name] = a.value;
+    }
+    var focused = el === document.activeElement;
+    if (focused && want.class && want.class.indexOf(' focus') === -1) {
+      want.class = want.class + ' focus';        // 聚焦态是运行时加的，比较时忽略
+    }
+    applyAttrs(el, want, isField);
+    if (isField) return;                          // 输入框没有子节点
+
+    var oldKids = Array.prototype.slice.call(el.childNodes);
+    var newKids = Array.prototype.slice.call(newNode.childNodes);
+    for (var j = 0; j < Math.max(oldKids.length, newKids.length); j++) {
+      var ok = oldKids[j];
+      var nk = newKids[j];
+      if (ok && nk) {
+        patchNode(el, ok, nk, inst);
+      } else if (nk) {
+        el.appendChild(nk);
+        bindEvents(nk.nodeType === 1 ? nk : el, inst);
+      } else if (ok) {
+        el.removeChild(ok);
+      }
+    }
+  }
+
+  function render(inst) {
+    var src = pageSources()[inst.__key];
+    if (!src) return;
+    if (!inst.__tree) inst.__tree = parseWxml(src);
+    var scope = Object.create(null);
+    for (var k in inst.data) scope[k] = inst.data[k];
+    inst.__scope = scope;
+
+    var host = document.getElementById('mp-view');
+    patchChildren(host, renderList(inst.__tree.children, scope), inst);
+    bindEvents(host, inst);
+  }
+
   /* ---------------- 页面注册与挂载 ---------------- */
   // 注意：页面源与路由表由生成脚本在其后的 <script> 里挂到 window 上，
   // 因此这里**不能在启动时缓存**，必须在每次使用时现读，
@@ -1646,76 +1949,40 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
     if (el) el.textContent = t || '科普闯关';
   }
 
-  function render(inst) {
-    var src = pageSources()[inst.__key];
-    if (!src) return;
-    if (!inst.__tree) inst.__tree = parseWxml(src);
-    var scope = Object.create(null);
-    for (var k in inst.data) scope[k] = inst.data[k];
-
-    var host = document.getElementById('mp-view');
-    var active = document.activeElement;
-    var focusId = (active && active.id) ? active.id : null;
-    var caret = null;
-    if (focusId && active.setSelectionRange) { try { caret = active.selectionStart; } catch (e) {} }
-
-    // 用普通对象承载作用域（而不是 Object.create 出来的原型链对象），
-    // 便于排查问题，也避免原型链上的键干扰 for-in 遍历。
-    inst.__scope = scope;
-    host.innerHTML = renderList(inst.__tree.children, scope);
-    bindEvents(host, inst);
-
-    if (focusId) {
-      var again = document.getElementById(focusId);
-      if (again) {
-        again.focus();
-        if (caret !== null && again.setSelectionRange) {
-          try { again.setSelectionRange(caret, caret); } catch (e) {}
-        }
-      }
-    }
-  }
-
-  var EVENTS = ['tap', 'input', 'change', 'confirm', 'blur', 'focus', 'longpress', 'submit'];
-  var DOM_EVENT = {
-    tap: 'click', input: 'input', change: 'change', confirm: 'keydown',
-    blur: 'blur', focus: 'focus', longpress: 'contextmenu', submit: 'submit'
-  };
-
-  function bindEvents(host, inst) {
-    EVENTS.forEach(function (evt) {
-      var nodes = host.querySelectorAll('[data-ev-' + evt + ']');
-      Array.prototype.forEach.call(nodes, function (node) {
-        node.addEventListener(DOM_EVENT[evt], function (e) {
-          if (evt === 'confirm' && e.key !== 'Enter') return;
-          var handler = node.getAttribute('data-handler');
-          var fn = inst.__options[handler];
-          if (typeof fn !== 'function') return;
-          var dataset = {};
-          Array.prototype.forEach.call(node.attributes, function (at) {
-            if (at.name.indexOf('data-') === 0 && at.name.indexOf('data-ev-') !== 0
-                && at.name !== 'data-handler') {
-              dataset[at.name.slice(5)] = at.value;
-            }
-          });
-          fn.call(inst, {
-            type: evt,
-            detail: { value: node.value },
-            currentTarget: { dataset: dataset, id: node.id },
-            target: { dataset: dataset, id: node.id }
-          });
-        });
-      });
-    });
-  }
-
   function instantiate(key, options) {
     var inst = {};
     inst.__key = key;
     inst.__options = options;
     inst.data = JSON.parse(JSON.stringify(options.data || {}));
+
+    /**
+     * 支持小程序 setData 的「路径写法」。
+     *
+     * 页面里会用 this.setData({ 'questions[0].expanded': true }) 这种写法，
+     * 如果不解析路径、直接当普通键名塞进去，界面就永远不会更新
+     * （错题本展开讲解点了没反应，就是这么来的）。
+     */
+    function setByPath(path, value) {
+      var keys = String(path).replace(/\[(\d+)\]/g, '.$1').split('.');
+      var target = inst.data;
+      for (var i = 0; i < keys.length - 1; i++) {
+        var k = keys[i];
+        if (target[k] === undefined || target[k] === null || typeof target[k] !== 'object') {
+          target[k] = /^\d+$/.test(keys[i + 1]) ? [] : {};
+        }
+        target = target[k];
+      }
+      target[keys[keys.length - 1]] = value;
+    }
+
     inst.setData = function (patch, cb) {
-      for (var k in patch) inst.data[k] = patch[k];
+      for (var k in patch) {
+        if (k.indexOf('.') !== -1 || k.indexOf('[') !== -1) {
+          setByPath(k, patch[k]);
+        } else {
+          inst.data[k] = patch[k];
+        }
+      }
       render(inst);
       if (cb) cb();
     };
@@ -1732,24 +1999,14 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
   }
 
   function show(key, query) {
-    Array.prototype.forEach.call(document.querySelectorAll('.mp-page'), function (p) {
-      p.style.display = 'none';
-    });
     var host = document.getElementById('mp-view');
     var tabKeys = ['pages/index', 'pages/wrong', 'pages/knowledge', 'pages/profile'];
-    if (tabKeys.indexOf(key) !== -1) {
-      var entry = document.querySelector('[data-page="' + key + '"]');
-      if (entry) entry.style.display = 'flex';
-    } else {
-      document.querySelector('[data-page="pages/index"]').style.display = 'flex';
-      document.getElementById('mp-title').textContent = ((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关';
-    }
     Array.prototype.forEach.call(document.querySelectorAll('.mp-tab'), function (t) {
       t.classList.toggle('on', t.getAttribute('data-page') === key);
     });
-    if (tabKeys.indexOf(key) !== -1) {
-      setTitle(((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关');
-    }
+    setTitle(((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关');
+    document.getElementById('mp-tabbar').style.visibility =
+      (tabKeys.indexOf(key) !== -1) ? 'visible' : 'hidden';
 
     var inst = instances[key];
     if (!inst) {
@@ -1760,6 +2017,7 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
       }
       inst = instantiate(key, opts);
       instances[key] = inst;
+      host.innerHTML = '';                  // 换页时清空，避免残留上一页节点
       if (inst.onLoad) inst.onLoad(query || {});
       render(inst);
       if (inst.onShow) inst.onShow();
@@ -1796,13 +2054,15 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
   window.Page = function (options) { window.__kepuCurrentPage = options; };
   window.Component = function (options) { window.__kepuCurrentComponent = options; };
 
-  /* ---------------- 启动 ---------------- */
-  /* 调试钩子：便于定位模板渲染问题（正常使用不影响） */
+  /* ---------------- 调试钩子（便于定位渲染问题，正常使用无影响） ---------------- */
   window.__kepuDebug = {
     parseWxml: parseWxml, renderList: renderList, evalExpr: evalExpr,
-    directives: directives, attrValue: attrValue, instances: instances
+    directives: directives, attrValue: attrValue, instances: instances,
+    patchChildren: patchChildren, router: router,
+    sigOf: sigOf, reconcile: reconcile
   };
 
+  /* ---------------- 启动 ---------------- */
   window.__kepuBoot = function () {
     if (window.__kepuApp && window.__kepuApp.onLaunch) window.__kepuApp.onLaunch();
     var tabbar = document.getElementById('mp-tabbar');
@@ -1822,7 +2082,7 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
 </script>
 <script>
 /* ---------- 页面源与路由表（供运行时渲染使用） ---------- */
-window.__kepuPageSources = {"pages/index":"<!-- 首页 —— 去闯关：选学段、写主题、出题等待 -->\n<view class=\"page\">\n\n  <!-- 顶部问候 -->\n  <view class=\"greet-card\">\n    <view class=\"greet-left\">\n      <view class=\"h1\">去闯关</view>\n      <view class=\"greet-line body\">今天想探索什么？你是{{gradeLabel}}哦</view>\n      <view class=\"muted\">小科负责出题，你只管大胆猜。</view>\n    </view>\n    <mascot state=\"idle\" size=\"md\" caption=\"\"></mascot>\n  </view>\n\n  <!-- 出题中：分档台词 + 科普轮播 + 取消入口 -->\n  <block wx:if=\"{{asking}}\">\n    <view class=\"card asking-card\">\n      <mascot state=\"thinking\" size=\"lg\" caption=\"{{askCaption}}\"></mascot>\n\n      <view class=\"fact-box\">\n        <view class=\"fact-head row\">\n          <text class=\"fact-emoji\">💡</text>\n          <text class=\"fact-title\">等一会儿，先看条小知识</text>\n        </view>\n        <view class=\"fact-text\">{{currentFact}}</view>\n        <view class=\"muted fact-index\">第 {{factIndex + 1}} / {{facts.length}} 条</view>\n      </view>\n\n      <view class=\"ask-hint muted\">已经等了 {{askElapsed}} 秒，出题一般需要 20—40 秒</view>\n      <view class=\"btn btn-ghost ask-cancel\" hover-class=\"hover-soft\" bindtap=\"onCancelAsk\">先不出了</view>\n    </view>\n  </block>\n\n  <!-- 表单态 -->\n  <block wx:else>\n\n    <!-- 学段选择 -->\n    <view class=\"card\">\n      <view class=\"card-title\">先选一个学段</view>\n      <view class=\"grade-list\">\n        <view\n          wx:for=\"{{grades}}\"\n          wx:key=\"value\"\n          class=\"grade-btn {{gradeValue === item.value ? 'grade-on' : ''}}\"\n          data-value=\"{{item.value}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onPickGrade\"\n        >\n          <text class=\"grade-emoji\">{{item.emoji}}</text>\n          <text class=\"grade-name\">{{item.short}}</text>\n        </view>\n      </view>\n      <view class=\"muted grade-tip\">换学段会让题目变难或变简单，随时可以换回来。</view>\n    </view>\n\n    <!-- 主题输入 -->\n    <view class=\"card\">\n      <view class=\"card-title\">想探索什么主题？</view>\n\n      <!-- 来自知识库的资料 -->\n      <view class=\"doc-card\" wx:if=\"{{docId}}\">\n        <view class=\"row\">\n          <text class=\"doc-emoji\">📘</text>\n          <view class=\"grow\">\n            <view class=\"doc-title\">本次将基于《{{docName}}》出题</view>\n            <view class=\"muted\">小科会照着这份资料来出题</view>\n          </view>\n        </view>\n      </view>\n\n      <input\n        class=\"input\"\n        type=\"text\"\n        value=\"{{topic}}\"\n        maxlength=\"30\"\n        placeholder=\"比如：太阳系、恐龙、彩虹是怎么来的\"\n        placeholder-class=\"input-ph\"\n        confirm-type=\"done\"\n        bindinput=\"onTopicInput\"\n        bindconfirm=\"onStartAsk\"\n      />\n\n      <view class=\"chip-wrap wrap\">\n        <view\n          wx:for=\"{{chips}}\"\n          wx:key=\"label\"\n          class=\"chip\"\n          data-topic=\"{{item.topic}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onTapChip\"\n        >\n          <text class=\"chip-emoji\">{{item.emoji}}</text>\n          <text>{{item.label}}</text>\n        </view>\n      </view>\n\n      <view class=\"ask-warn muted\" wx:if=\"{{!canAsk}}\">先告诉小科你想学什么吧</view>\n\n      <view\n        class=\"btn btn-primary btn-block {{canAsk ? '' : 'disabled'}}\"\n        hover-class=\"{{canAsk ? 'hover-soft' : ''}}\"\n        bindtap=\"onStartAsk\"\n      >开始出题</view>\n    </view>\n\n  </block>\n\n</view>\n","pages/quiz":"<!-- 答题闯关页：本地即时判分 + 随堂讲解 -->\n<view class=\"page\" wx:if=\"{{hasQuiz}}\">\n\n  <!-- 进度区 -->\n  <view class=\"head\">\n    <view class=\"between head-top\">\n      <text class=\"h3 head-title\">{{title}}</text>\n      <text class=\"pill\">{{gradeLabel}}</text>\n    </view>\n\n    <view class=\"progress head-bar\">\n      <view class=\"progress-inner\" style=\"width: {{progress}}%;\"></view>\n    </view>\n\n    <view class=\"between head-bottom\">\n      <text class=\"h3\">第 {{current + 1}} / {{total}} 题</text>\n      <text class=\"tag\">{{sourceLabel}}</text>\n    </view>\n  </view>\n\n  <!-- 题干 -->\n  <view class=\"card\" wx:if=\"{{currentQuestion}}\">\n    <view class=\"h2 stem\">{{currentQuestion.stem}}</view>\n    <view class=\"muted stem-tip\">选出你觉得对的那一个</view>\n  </view>\n\n  <!-- 选项 -->\n  <view class=\"option-list\">\n    <view\n      wx:for=\"{{options}}\"\n      wx:key=\"no\"\n      class=\"option {{item.state}} {{judged ? 'disabled' : ''}}\"\n      data-index=\"{{item.no}}\"\n      hover-class=\"{{judged ? '' : 'hover-soft'}}\"\n      bindtap=\"onSelectOption\"\n    >\n      <view class=\"option-key\">{{item.key}}</view>\n      <view class=\"grow option-text\">{{item.text}}</view>\n      <text class=\"opt-mark mark-correct\" wx:if=\"{{item.state === 'correct'}}\">✓</text>\n      <text class=\"opt-mark mark-wrong\" wx:if=\"{{item.state === 'wrong'}}\">再想想</text>\n    </view>\n  </view>\n\n  <!-- 讲解卡：判完分马上给，不对也不错得不明不白 -->\n  <view class=\"card feedback-card\" wx:if=\"{{judged}}\">\n    <view class=\"row feedback-head\">\n      <mascot state=\"{{mascotState}}\" size=\"sm\" caption=\"{{mascotCaption}}\"></mascot>\n    </view>\n\n    <view class=\"encourage-box\" wx:if=\"{{encourage}}\">\n      <text class=\"encourage-emoji\">🤝</text>\n      <text class=\"encourage-text\">要不要先看看解析？看懂了再往下走，一点也不急。</text>\n    </view>\n\n    <view class=\"pill pill-orange point-pill\" wx:if=\"{{currentQuestion.knowledge_point}}\">{{currentQuestion.knowledge_point}}</view>\n\n    <view class=\"analysis-title h3\">小科讲讲这道题</view>\n    <view class=\"analysis-text body\">{{currentQuestion.analysis}}</view>\n  </view>\n\n  <!-- 底部按钮 -->\n  <view class=\"footer\">\n    <view\n      class=\"btn btn-primary btn-block {{(selected < 0 && !judged) ? 'disabled' : ''}}\"\n      hover-class=\"{{submitting ? '' : 'hover-soft'}}\"\n      bindtap=\"onJudge\"\n    >\n      <block wx:if=\"{{!judged}}\">就选这个</block>\n      <block wx:elif=\"{{current + 1 < total}}\">下一题</block>\n      <block wx:else>看看我的报告</block>\n    </view>\n    <view class=\"muted footer-tip\" wx:if=\"{{submitting}}\">{{submitTip}}</view>\n    <view class=\"muted footer-tip\" wx:elif=\"{{judged && current + 1 < total}}\">想清楚了就继续，小科在这儿等你。</view>\n  </view>\n\n</view>\n","pages/report":"<!-- 复盘报告：先看得分，再看小科的复盘，最后是这一局的收获与回顾 -->\n<view class=\"page\">\n\n  <!-- 一、得分区 -->\n  <view class=\"card score-card\" wx:if=\"{{hasResult || reportReady}}\">\n    <mascot state=\"{{mascotState}}\" size=\"lg\"></mascot>\n\n    <view class=\"score-row\">\n      <view class=\"score-num mono-num\">{{accuracy}}<text class=\"score-unit\">%</text></view>\n      <view class=\"score-meta\">\n        <view class=\"h3\">这一局的正确率</view>\n        <view class=\"muted\">答对 {{correct}} / {{total}} 题</view>\n      </view>\n    </view>\n\n    <view class=\"progress mastery-bar\">\n      <view class=\"progress-inner\" style=\"width: {{mastery}}%;\"></view>\n    </view>\n    <view class=\"between mastery-label\">\n      <text class=\"muted\">掌握度</text>\n      <text class=\"muted\">{{mastery}} 分</text>\n    </view>\n  </view>\n\n  <!-- 二、小科正在写报告 -->\n  <view class=\"card\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"md\" caption=\"小科在写复盘报告…\"></mascot>\n  </view>\n\n  <!-- 三、报告没拿到时的重试入口 -->\n  <view class=\"card\" wx:if=\"{{!loading && !reportReady && (hasResult || fromHistory)}}\">\n    <view class=\"body\">小科这份复盘还没写好，要不要再写一次？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetryReport\">再写一次</button>\n  </view>\n\n  <!-- 四、复盘报告正文 -->\n  <view class=\"card\" wx:if=\"{{reportReady}}\">\n    <view class=\"between\">\n      <text class=\"card-title\">小科的复盘</text>\n      <text class=\"tag\" wx:if=\"{{reportSourceLabel}}\">{{reportSourceLabel}}</text>\n    </view>\n\n    <view class=\"row level-row\" wx:if=\"{{level}}\">\n      <text class=\"pill pill-yellow\">{{level}}</text>\n      <text class=\"muted mastery-text\">掌握度 {{mastery}} 分</text>\n    </view>\n\n    <view class=\"divider\"></view>\n    <view class=\"body\">{{summary}}</view>\n\n    <view class=\"suggest-box\" wx:if=\"{{suggestion}}\">\n      <view class=\"h3\">下一步可以这样</view>\n      <view class=\"body\">{{suggestion}}</view>\n    </view>\n\n    <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n      <view class=\"h3\">值得再看看的知识点</view>\n      <view class=\"wrap pills\">\n        <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"*this\">{{item}}</text>\n      </view>\n    </view>\n  </view>\n\n  <!-- 五、结算区：只在手上有本次判题结果时出现 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"card-title\">这一局的收获</view>\n    <view class=\"settle-grid\">\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">+{{xpGained}}</view>\n        <view class=\"muted\">经验值</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongAdded}}</view>\n        <view class=\"muted\">新收的错题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{mastered}}</view>\n        <view class=\"muted\">已经掌握的题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongTotal}}</view>\n        <view class=\"muted\">错题本共</view>\n      </view>\n    </view>\n  </view>\n\n  <!-- 六、本次答题回顾：只列答错的题，可以折叠 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"between review-head\" bindtap=\"onToggleReview\">\n      <text class=\"card-title\">本次答题回顾</text>\n      <text class=\"muted\">{{reviewOpen ? '收起' : '展开'}}</text>\n    </view>\n\n    <view class=\"body\" wx:if=\"{{!wrongList.length}}\">这一局全都答对啦，真厉害！</view>\n\n    <view class=\"muted review-tip\" wx:if=\"{{!reviewOpen && wrongList.length}}\">\n      有 {{wrongList.length}} 道题想和你再聊聊，点上面展开看看～\n    </view>\n\n    <block wx:if=\"{{reviewOpen}}\">\n      <view class=\"review-item\" wx:for=\"{{wrongList}}\" wx:key=\"key\">\n        <view class=\"h3\">{{item.index}}. {{item.stem}}</view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">你的答案</text>\n          <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n        </view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">正确答案</text>\n          <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n        </view>\n        <view class=\"analysis\">\n          <text class=\"tag\">{{item.knowledgePoint}}</text>\n          <view class=\"body\">{{item.analysis}}</view>\n        </view>\n      </view>\n    </block>\n  </view>\n\n  <!-- 七、底部入口 -->\n  <view class=\"foot-btns\" wx:if=\"{{hasResult || reportReady}}\">\n    <button class=\"btn btn-primary foot-btn\" bindtap=\"onAgain\">再来一局</button>\n    <button class=\"btn btn-ghost foot-btn\" bindtap=\"onGoWrong\">去错题本</button>\n  </view>\n\n  <!-- 八、没有可看的报告时 -->\n  <view class=\"card\" wx:if=\"{{noData}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"center h3 no-data-text\">还没有报告可以看，先去闯一关吧</view>\n    <button class=\"btn btn-primary\" bindtap=\"onAgain\">去闯关</button>\n  </view>\n\n</view>\n","pages/wrong":"<!-- 错题本：统计 → 只练错题 → 错题清单 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">登录后才能把错题存下来哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 二、读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在翻错题本…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n      <!-- 三、统计卡 -->\n      <view class=\"card stat-card\">\n        <view class=\"total-num mono-num\">{{total}}</view>\n        <view class=\"muted\">错题本里一共有这么多题</view>\n        <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n          <view class=\"h3\">薄弱知识点</view>\n          <view class=\"wrap\">\n            <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n              {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n            </text>\n          </view>\n        </view>\n      </view>\n\n      <!-- 四、只练错题 -->\n      <view class=\"card\">\n        <button class=\"btn btn-primary practice-btn\" disabled=\"{{total === 0}}\"\n                loading=\"{{practicing}}\" bindtap=\"onPractice\">只练错题</button>\n        <view class=\"muted center tip-text\">不用等 AI 出题，马上就能开始</view>\n      </view>\n\n      <!-- 五、错题清单 -->\n      <block wx:if=\"{{questions.length}}\">\n        <view class=\"card\" wx:for=\"{{questions}}\" wx:key=\"stem\">\n          <view class=\"item-head\" data-index=\"{{index}}\" bindtap=\"onToggleItem\">\n            <view class=\"h3 stem-text\">{{index + 1}}. {{item.stem}}</view>\n            <view class=\"wrap meta-row\">\n              <text class=\"pill meta-item\">{{item.knowledgePoint}}</text>\n              <text class=\"pill pill-orange meta-item\">错过 {{item.wrongCount}} 次</text>\n              <text class=\"muted meta-item\">{{item.expanded ? '收起讲解' : '看看讲解'}}</text>\n            </view>\n          </view>\n\n          <view class=\"detail\" wx:if=\"{{item.expanded}}\">\n            <view class=\"review-line\" wx:if=\"{{item.yourAnswer}}\">\n              <text class=\"line-key\">你的答案</text>\n              <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n            </view>\n            <view class=\"review-line\" wx:if=\"{{item.rightAnswer}}\">\n              <text class=\"line-key\">正确答案</text>\n              <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n            </view>\n            <view class=\"analysis\">\n              <text class=\"tag\">{{item.knowledgePoint}}</text>\n              <view class=\"body\">{{item.analysis}}</view>\n            </view>\n            <view class=\"muted last-at\" wx:if=\"{{item.lastAt}}\">最近一次：{{item.lastAt}}</view>\n          </view>\n        </view>\n      </block>\n\n      <!-- 六、空态 -->\n      <view class=\"card center-col\" wx:if=\"{{!questions.length}}\">\n        <mascot state=\"idle\" size=\"sm\"></mascot>\n        <view class=\"h3 empty-text\">还没有错题，去闯一关吧！</view>\n        <button class=\"btn btn-primary guest-btn\" bindtap=\"onGoQuiz\">去闯关</button>\n      </view>\n\n      <!-- 七、清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" wx:if=\"{{total > 0}}\" bindtap=\"onClearWrong\">清空错题本</button>\n    </block>\n\n  </block>\n\n</view>\n","pages/knowledge":"<!-- 知识库：上传资料 → 照着资料出题 -->\n<view class=\"page\">\n\n  <!-- 一、说明卡 -->\n  <view class=\"card\">\n    <view class=\"h2\">知识库</view>\n    <view class=\"body intro-text\">把讲义或课外读本传上来，小科就能照着它出题。</view>\n    <button class=\"btn btn-primary upload-btn\" loading=\"{{uploading}}\" bindtap=\"onUpload\">上传资料</button>\n  </view>\n\n  <!-- 二、读取中 -->\n  <view class=\"card center-col\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理资料…\"></mascot>\n  </view>\n\n  <!-- 三、列表没拿到时的重试 -->\n  <view class=\"card\" wx:if=\"{{!loading && !loadOk}}\">\n    <view class=\"body\">小科这会儿没翻到资料架，要不要再看一眼？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetry\">再看一眼</button>\n  </view>\n\n  <!-- 四、资料列表 -->\n  <block wx:if=\"{{!loading && loadOk && documents.length}}\">\n    <view class=\"card\" wx:for=\"{{documents}}\" wx:key=\"docId\">\n      <view class=\"h3 doc-name\">{{item.filename}}</view>\n      <view class=\"wrap meta-row\">\n        <text class=\"tag meta-item\">{{item.typeText}}</text>\n        <text class=\"tag meta-item\">{{item.sizeText}}</text>\n        <text class=\"{{item.statusClass}} meta-item\">{{item.statusText}}</text>\n        <text class=\"muted time-text\">{{item.timeText}}</text>\n      </view>\n      <view class=\"row doc-actions\">\n        <button class=\"btn btn-primary btn-sm action-btn\" loading=\"{{usingId === item.docId}}\"\n                data-doc-id=\"{{item.docId}}\" data-doc-name=\"{{item.filename}}\"\n                bindtap=\"onUseDoc\">用它出题</button>\n        <button class=\"btn btn-ghost btn-sm action-btn action-btn-last\"\n                data-doc-id=\"{{item.docId}}\" bindtap=\"onDeleteDoc\">删除</button>\n      </view>\n    </view>\n  </block>\n\n  <!-- 五、空态 -->\n  <view class=\"card center-col\" wx:if=\"{{!loading && loadOk && !documents.length}}\">\n    <mascot state=\"idle\" size=\"sm\"></mascot>\n    <view class=\"h3 empty-text\">还没有资料，传一份上来试试吧</view>\n    <view class=\"muted\">讲义、读本、课堂笔记都可以，小科会照着它们出题。</view>\n  </view>\n\n  <!-- 六、诚实说明 -->\n  <view class=\"card note-card\">\n    <view class=\"h3\">小科的小说明</view>\n    <view class=\"body\">当前直接支持 txt / md 文本；pdf / docx 需要服务端安装 pypdf、docx2txt 依赖。</view>\n  </view>\n\n</view>\n","pages/profile":"<!-- 我的：游客态一句说明 + 登录；登录后是经验值、错题、薄弱知识点与历史闯关 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">你来啦！登录后才有经验值和错题本哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <!-- 二、已登录 -->\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n\n      <!-- 个人概览 -->\n      <view class=\"card hero\">\n        <view class=\"h2\">{{nickname}}</view>\n        <view class=\"xp-box\">\n          <view class=\"xp-num mono-num\">{{totalXp}}</view>\n          <view class=\"muted\">累计经验值</view>\n        </view>\n        <view class=\"wrap stat-wrap\">\n          <view class=\"stat-item\">\n            <view class=\"stat-num mono-num\">{{wrongCount}}</view>\n            <view class=\"muted\">错题本里的题</view>\n          </view>\n          <view class=\"stat-item\">\n            <view class=\"stat-text\">{{gradeLabel}}</view>\n            <view class=\"muted\">当前学段</view>\n          </view>\n        </view>\n      </view>\n\n      <!-- 薄弱知识点 -->\n      <view class=\"card\">\n        <view class=\"card-title\">要多看两眼的知识点</view>\n        <view class=\"wrap\" wx:if=\"{{weakPoints.length}}\">\n          <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n            {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n          </text>\n        </view>\n        <view class=\"body\" wx:if=\"{{!weakPoints.length}}\">还没有薄弱知识点，保持这个势头！</view>\n      </view>\n\n      <!-- 历史闯关 -->\n      <view class=\"card\">\n        <view class=\"card-title\">历史闯关</view>\n        <block wx:if=\"{{sessions.length}}\">\n          <view class=\"session-item\" wx:for=\"{{sessions}}\" wx:key=\"quizId\"\n                data-quiz-id=\"{{item.quizId}}\" bindtap=\"onOpenSession\">\n            <view class=\"between\">\n              <text class=\"h3 session-title\">{{item.title}}</text>\n              <text class=\"tag\">{{item.timeText}}</text>\n            </view>\n            <view class=\"wrap session-tags\">\n              <text class=\"pill session-tag\" wx:if=\"{{item.gradeLabel}}\">{{item.gradeLabel}}</text>\n              <text class=\"tag session-tag\" wx:if=\"{{item.sourceLabel}}\">{{item.sourceLabel}}</text>\n              <text class=\"muted go-text\">看看这一局的复盘 ›</text>\n            </view>\n          </view>\n        </block>\n        <view class=\"body\" wx:if=\"{{!sessions.length}}\">还没有闯关记录，去闯一关吧！</view>\n      </view>\n\n      <!-- 清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" bindtap=\"onClearWrong\">清空错题本</button>\n\n    </block>\n  </block>\n\n</view>\n"};
+window.__kepuPageSources = {"pages/index":"<!-- 首页 —— 去闯关：选学段、写主题、出题等待 -->\n<view class=\"page\">\n\n  <!-- 顶部问候 -->\n  <view class=\"greet-card\">\n    <view class=\"greet-left\">\n      <view class=\"h1\">去闯关</view>\n      <view class=\"greet-line body\">今天想探索什么？你是{{gradeLabel}}哦</view>\n      <view class=\"muted\">小科负责出题，你只管大胆猜。</view>\n    </view>\n    <mascot state=\"idle\" size=\"md\" caption=\"\"></mascot>\n  </view>\n\n  <!-- 出题中：分档台词 + 科普轮播 + 取消入口 -->\n  <block wx:if=\"{{asking}}\">\n    <view class=\"card asking-card\">\n      <mascot state=\"thinking\" size=\"lg\" caption=\"{{askCaption}}\"></mascot>\n\n      <view class=\"fact-box\">\n        <view class=\"fact-head row\">\n          <text class=\"fact-emoji\">💡</text>\n          <text class=\"fact-title\">等一会儿，先看条小知识</text>\n        </view>\n        <view class=\"fact-text\">{{currentFact}}</view>\n        <view class=\"muted fact-index\">第 {{factIndex + 1}} / {{facts.length}} 条</view>\n      </view>\n\n      <view class=\"ask-hint muted\">已经等了 {{askElapsed}} 秒，出题一般需要 20—40 秒</view>\n      <view class=\"btn btn-ghost ask-cancel\" hover-class=\"hover-soft\" bindtap=\"onCancelAsk\">先不出了</view>\n    </view>\n  </block>\n\n  <!-- 表单态 -->\n  <block wx:else>\n\n    <!-- 学段选择 -->\n    <view class=\"card\">\n      <view class=\"card-title\">先选一个学段</view>\n      <view class=\"grade-list\">\n        <view\n          wx:for=\"{{grades}}\"\n          wx:key=\"value\"\n          class=\"grade-btn {{gradeValue === item.value ? 'grade-on' : ''}}\"\n          data-value=\"{{item.value}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onPickGrade\"\n        >\n          <text class=\"grade-emoji\">{{item.emoji}}</text>\n          <text class=\"grade-name\">{{item.short}}</text>\n        </view>\n      </view>\n      <view class=\"muted grade-tip\">换学段会让题目变难或变简单，随时可以换回来。</view>\n    </view>\n\n    <!-- 主题输入 -->\n    <view class=\"card\">\n      <view class=\"card-title\">想探索什么主题？</view>\n\n      <!-- 来自知识库的资料 -->\n      <view class=\"doc-card\" wx:if=\"{{docId}}\">\n        <view class=\"row\">\n          <text class=\"doc-emoji\">📘</text>\n          <view class=\"grow\">\n            <view class=\"doc-title\">本次将基于《{{docName}}》出题</view>\n            <view class=\"muted\">小科会照着这份资料来出题</view>\n          </view>\n        </view>\n      </view>\n\n      <input\n        class=\"input\"\n        type=\"text\"\n        value=\"{{topic}}\"\n        maxlength=\"30\"\n        placeholder=\"比如：太阳系、恐龙、彩虹是怎么来的\"\n        placeholder-class=\"input-ph\"\n        confirm-type=\"done\"\n        bindinput=\"onTopicInput\"\n        bindconfirm=\"onStartAsk\"\n      />\n\n      <view class=\"chip-wrap wrap\">\n        <view\n          wx:for=\"{{chips}}\"\n          wx:key=\"label\"\n          class=\"chip\"\n          data-topic=\"{{item.topic}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onTapChip\"\n        >\n          <text class=\"chip-emoji\">{{item.emoji}}</text>\n          <text>{{item.label}}</text>\n        </view>\n      </view>\n\n      <view class=\"ask-warn muted\" wx:if=\"{{!canAsk}}\">先告诉小科你想学什么吧</view>\n\n      <view\n        class=\"btn btn-primary btn-block {{canAsk ? '' : 'disabled'}}\"\n        hover-class=\"{{canAsk ? 'hover-soft' : ''}}\"\n        bindtap=\"onStartAsk\"\n      >开始出题</view>\n    </view>\n\n  </block>\n\n</view>\n","pages/quiz":"<!-- 答题闯关页：本地即时判分 + 随堂讲解 -->\n<view class=\"page\" wx:if=\"{{hasQuiz}}\">\n\n  <!-- 进度区 -->\n  <view class=\"head\">\n    <view class=\"between head-top\">\n      <text class=\"h3 head-title\">{{title}}</text>\n      <text class=\"pill\">{{gradeLabel}}</text>\n    </view>\n\n    <view class=\"progress head-bar\">\n      <view class=\"progress-inner\" style=\"width: {{progress}}%;\"></view>\n    </view>\n\n    <view class=\"between head-bottom\">\n      <text class=\"h3\">第 {{current + 1}} / {{total}} 题</text>\n      <text class=\"tag\">{{sourceLabel}}</text>\n    </view>\n  </view>\n\n  <!-- 题干 -->\n  <view class=\"card\" wx:if=\"{{currentQuestion}}\">\n    <view class=\"h2 stem\">{{currentQuestion.stem}}</view>\n    <view class=\"muted stem-tip\">选出你觉得对的那一个</view>\n  </view>\n\n  <!-- 选项 -->\n  <view class=\"option-list\">\n    <view\n      wx:for=\"{{options}}\"\n      wx:key=\"no\"\n      class=\"option {{item.state}} {{judged ? 'disabled' : ''}}\"\n      data-index=\"{{item.no}}\"\n      hover-class=\"{{judged ? '' : 'hover-soft'}}\"\n      bindtap=\"onSelectOption\"\n    >\n      <view class=\"option-key\">{{item.key}}</view>\n      <view class=\"grow option-text\">{{item.text}}</view>\n      <text class=\"opt-mark mark-correct\" wx:if=\"{{item.state === 'correct'}}\">✓</text>\n      <text class=\"opt-mark mark-wrong\" wx:if=\"{{item.state === 'wrong'}}\">再想想</text>\n    </view>\n  </view>\n\n  <!-- 讲解卡：判完分马上给，不对也不错得不明不白 -->\n  <view class=\"card feedback-card\" wx:if=\"{{judged}}\">\n    <view class=\"row feedback-head\">\n      <mascot state=\"{{mascotState}}\" size=\"sm\" caption=\"{{mascotCaption}}\"></mascot>\n    </view>\n\n    <view class=\"encourage-box\" wx:if=\"{{encourage}}\">\n      <text class=\"encourage-emoji\">🤝</text>\n      <text class=\"encourage-text\">要不要先看看解析？看懂了再往下走，一点也不急。</text>\n    </view>\n\n    <view class=\"pill pill-orange point-pill\" wx:if=\"{{currentQuestion.knowledge_point}}\">{{currentQuestion.knowledge_point}}</view>\n\n    <view class=\"analysis-title h3\">小科讲讲这道题</view>\n    <view class=\"analysis-text body\">{{currentQuestion.analysis}}</view>\n  </view>\n\n  <!-- 底部按钮 -->\n  <view class=\"footer\">\n    <view\n      class=\"btn btn-primary btn-block {{(selected < 0 && !judged) ? 'disabled' : ''}}\"\n      hover-class=\"{{submitting ? '' : 'hover-soft'}}\"\n      bindtap=\"onJudge\"\n    >\n      <block wx:if=\"{{!judged}}\">就选这个</block>\n      <block wx:elif=\"{{current + 1 < total}}\">下一题</block>\n      <block wx:else>看看我的报告</block>\n    </view>\n    <view class=\"muted footer-tip\" wx:if=\"{{submitting}}\">{{submitTip}}</view>\n    <view class=\"muted footer-tip\" wx:elif=\"{{judged && current + 1 < total}}\">想清楚了就继续，小科在这儿等你。</view>\n  </view>\n\n</view>\n","pages/report":"<!-- 复盘报告：先看得分，再看小科的复盘，最后是这一局的收获与回顾 -->\n<view class=\"page\">\n\n  <!-- 一、得分区 -->\n  <view class=\"card score-card\" wx:if=\"{{hasResult || reportReady}}\">\n    <mascot state=\"{{mascotState}}\" size=\"lg\"></mascot>\n\n    <view class=\"score-row\">\n      <view class=\"score-num mono-num\">{{accuracy}}<text class=\"score-unit\">%</text></view>\n      <view class=\"score-meta\">\n        <view class=\"h3\">这一局的正确率</view>\n        <view class=\"muted\">答对 {{correct}} / {{total}} 题</view>\n      </view>\n    </view>\n\n    <view class=\"progress mastery-bar\">\n      <view class=\"progress-inner\" style=\"width: {{mastery}}%;\"></view>\n    </view>\n    <view class=\"between mastery-label\">\n      <text class=\"muted\">掌握度</text>\n      <text class=\"muted\">{{mastery}} 分</text>\n    </view>\n  </view>\n\n  <!-- 二、小科正在写报告 -->\n  <view class=\"card\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"md\" caption=\"小科在写复盘报告…\"></mascot>\n  </view>\n\n  <!-- 三、报告没拿到时的重试入口 -->\n  <view class=\"card\" wx:if=\"{{!loading && !reportReady && (hasResult || fromHistory)}}\">\n    <view class=\"body\">小科这份复盘还没写好，要不要再写一次？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetryReport\">再写一次</button>\n  </view>\n\n  <!-- 四、复盘报告正文 -->\n  <view class=\"card\" wx:if=\"{{reportReady}}\">\n    <view class=\"between\">\n      <text class=\"card-title\">小科的复盘</text>\n      <text class=\"tag\" wx:if=\"{{reportSourceLabel}}\">{{reportSourceLabel}}</text>\n    </view>\n\n    <view class=\"row level-row\" wx:if=\"{{level}}\">\n      <text class=\"pill pill-yellow\">{{level}}</text>\n      <text class=\"muted mastery-text\">掌握度 {{mastery}} 分</text>\n    </view>\n\n    <view class=\"divider\"></view>\n    <view class=\"body\">{{summary}}</view>\n\n    <view class=\"suggest-box\" wx:if=\"{{suggestion}}\">\n      <view class=\"h3\">下一步可以这样</view>\n      <view class=\"body\">{{suggestion}}</view>\n    </view>\n\n    <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n      <view class=\"h3\">值得再看看的知识点</view>\n      <view class=\"wrap pills\">\n        <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"*this\">{{item}}</text>\n      </view>\n    </view>\n  </view>\n\n  <!-- 五、结算区：只在手上有本次判题结果时出现 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"card-title\">这一局的收获</view>\n    <view class=\"settle-grid\">\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">+{{xpGained}}</view>\n        <view class=\"muted\">经验值</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongAdded}}</view>\n        <view class=\"muted\">新收的错题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{mastered}}</view>\n        <view class=\"muted\">已经掌握的题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongTotal}}</view>\n        <view class=\"muted\">错题本共</view>\n      </view>\n    </view>\n  </view>\n\n  <!-- 六、本次答题回顾：只列答错的题，可以折叠 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"between review-head\" bindtap=\"onToggleReview\">\n      <text class=\"card-title\">本次答题回顾</text>\n      <text class=\"muted\">{{reviewOpen ? '收起' : '展开'}}</text>\n    </view>\n\n    <view class=\"body\" wx:if=\"{{!wrongList.length}}\">这一局全都答对啦，真厉害！</view>\n\n    <view class=\"muted review-tip\" wx:if=\"{{!reviewOpen && wrongList.length}}\">\n      有 {{wrongList.length}} 道题想和你再聊聊，点上面展开看看～\n    </view>\n\n    <block wx:if=\"{{reviewOpen}}\">\n      <view class=\"review-item\" wx:for=\"{{wrongList}}\" wx:key=\"key\">\n        <view class=\"h3\">{{item.index}}. {{item.stem}}</view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">你的答案</text>\n          <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n        </view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">正确答案</text>\n          <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n        </view>\n        <view class=\"analysis\">\n          <text class=\"tag\">{{item.knowledgePoint}}</text>\n          <view class=\"body\">{{item.analysis}}</view>\n        </view>\n      </view>\n    </block>\n  </view>\n\n  <!-- 七、底部入口 -->\n  <view class=\"foot-btns\" wx:if=\"{{hasResult || reportReady}}\">\n    <button class=\"btn btn-primary foot-btn\" bindtap=\"onAgain\">再来一局</button>\n    <button class=\"btn btn-ghost foot-btn\" bindtap=\"onGoWrong\">去错题本</button>\n  </view>\n\n  <!-- 八、没有可看的报告时 -->\n  <view class=\"card\" wx:if=\"{{noData}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"center h3 no-data-text\">还没有报告可以看，先去闯一关吧</view>\n    <button class=\"btn btn-primary\" bindtap=\"onAgain\">去闯关</button>\n  </view>\n\n</view>\n","pages/wrong":"<!-- 错题本：统计 → 只练错题 → 错题清单 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">登录后才能把错题存下来哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 二、读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在翻错题本…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n      <!-- 三、统计卡 -->\n      <view class=\"card stat-card\">\n        <view class=\"total-num mono-num\">{{total}}</view>\n        <view class=\"muted\">错题本里一共有这么多题</view>\n        <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n          <view class=\"h3\">薄弱知识点</view>\n          <view class=\"wrap\">\n            <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n              {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n            </text>\n          </view>\n        </view>\n      </view>\n\n      <!-- 四、只练错题 -->\n      <view class=\"card\">\n        <button class=\"btn btn-primary practice-btn\" disabled=\"{{total === 0}}\"\n                loading=\"{{practicing}}\" bindtap=\"onPractice\">只练错题</button>\n        <view class=\"muted center tip-text\">不用等 AI 出题，马上就能开始</view>\n      </view>\n\n      <!-- 五、错题清单 -->\n      <block wx:if=\"{{questions.length}}\">\n        <view class=\"card\" wx:for=\"{{questions}}\" wx:key=\"stem\">\n          <view class=\"item-head\" data-index=\"{{index}}\" bindtap=\"onToggleItem\">\n            <view class=\"h3 stem-text\">{{index + 1}}. {{item.stem}}</view>\n            <view class=\"wrap meta-row\">\n              <text class=\"pill meta-item\">{{item.knowledgePoint}}</text>\n              <text class=\"pill pill-orange meta-item\">错过 {{item.wrongCount}} 次</text>\n              <text class=\"muted meta-item\">{{item.expanded ? '收起讲解' : '看看讲解'}}</text>\n            </view>\n          </view>\n\n          <view class=\"detail\" wx:if=\"{{item.expanded}}\">\n            <view class=\"review-line\" wx:if=\"{{item.yourAnswer}}\">\n              <text class=\"line-key\">你的答案</text>\n              <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n            </view>\n            <view class=\"review-line\" wx:if=\"{{item.rightAnswer}}\">\n              <text class=\"line-key\">正确答案</text>\n              <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n            </view>\n            <view class=\"analysis\">\n              <text class=\"tag\">{{item.knowledgePoint}}</text>\n              <view class=\"body\">{{item.analysis}}</view>\n            </view>\n            <view class=\"muted last-at\" wx:if=\"{{item.lastAt}}\">最近一次：{{item.lastAt}}</view>\n\n            <!-- 改 / 删：错题本也要能维护，不然攒久了就没法用了 -->\n            <view class=\"row actions-row\" wx:if=\"{{editingIndex !== index}}\">\n              <view class=\"btn btn-ghost btn-sm act-btn\" data-index=\"{{index}}\" bindtap=\"onStartEdit\">改一改</view>\n              <view class=\"btn btn-ghost btn-sm act-btn act-del\" data-index=\"{{index}}\" bindtap=\"onDeleteItem\">不用留了</view>\n            </view>\n\n            <!-- 内联编辑表单 -->\n            <view class=\"edit-box\" wx:if=\"{{editingIndex === index}}\">\n              <view class=\"h3 edit-title\">改一改这道题</view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">题干</text>\n                <input class=\"input edit-input\" value=\"{{editStem}}\" bindinput=\"onEditInput\" data-field=\"stem\"\n                       placeholder=\"题干\" />\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">知识点</text>\n                <input class=\"input edit-input\" value=\"{{editKnowledge}}\" bindinput=\"onEditInput\" data-field=\"knowledge_point\"\n                       placeholder=\"比如：月球运动\" />\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">选项（点一下就是正确答案）</text>\n                <view class=\"wrap\">\n                  <view class=\"chip-opt {{editAnswer === i ? 'chip-opt-on' : ''}}\"\n                        wx:for=\"{{editOptions}}\" wx:key=\"index\" data-index=\"{{index}}\" bindtap=\"onPickAnswer\">\n                    <text class=\"chip-opt-key\">{{editKeys[index]}}</text>\n                    <text class=\"chip-opt-text\">{{item}}</text>\n                  </view>\n                </view>\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">解析</text>\n                <textarea class=\"input edit-textarea\" value=\"{{editAnalysis}}\" bindinput=\"onEditInput\" data-field=\"analysis\"\n                          placeholder=\"用一句话讲清楚为什么\"></textarea>\n              </view>\n\n              <view class=\"row actions-row\">\n                <view class=\"btn btn-primary btn-sm act-btn\" bindtap=\"onSaveEdit\">就改这样</view>\n                <view class=\"btn btn-ghost btn-sm act-btn\" bindtap=\"onCancelEdit\">算了</view>\n              </view>\n            </view>\n          </view>\n        </view>\n      </block>\n\n      <!-- 六、空态 -->\n      <view class=\"card center-col\" wx:if=\"{{!questions.length}}\">\n        <mascot state=\"idle\" size=\"sm\"></mascot>\n        <view class=\"h3 empty-text\">还没有错题，去闯一关吧！</view>\n        <button class=\"btn btn-primary guest-btn\" bindtap=\"onGoQuiz\">去闯关</button>\n      </view>\n\n      <!-- 七、清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" wx:if=\"{{total > 0}}\" bindtap=\"onClearWrong\">清空错题本</button>\n    </block>\n\n  </block>\n\n</view>\n","pages/knowledge":"<!-- 知识库：上传资料 → 照着资料出题 -->\n<view class=\"page\">\n\n  <!-- 一、说明卡 -->\n  <view class=\"card\">\n    <view class=\"h2\">知识库</view>\n    <view class=\"body intro-text\">把讲义或课外读本传上来，小科就能照着它出题。</view>\n    <button class=\"btn btn-primary upload-btn\" loading=\"{{uploading}}\" bindtap=\"onUpload\">上传资料</button>\n  </view>\n\n  <!-- 二、读取中 -->\n  <view class=\"card center-col\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理资料…\"></mascot>\n  </view>\n\n  <!-- 三、列表没拿到时的重试 -->\n  <view class=\"card\" wx:if=\"{{!loading && !loadOk}}\">\n    <view class=\"body\">小科这会儿没翻到资料架，要不要再看一眼？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetry\">再看一眼</button>\n  </view>\n\n  <!-- 四、资料列表 -->\n  <block wx:if=\"{{!loading && loadOk && documents.length}}\">\n    <view class=\"card\" wx:for=\"{{documents}}\" wx:key=\"docId\">\n      <view class=\"h3 doc-name\">{{item.filename}}</view>\n      <view class=\"wrap meta-row\">\n        <text class=\"tag meta-item\">{{item.typeText}}</text>\n        <text class=\"tag meta-item\">{{item.sizeText}}</text>\n        <text class=\"{{item.statusClass}} meta-item\">{{item.statusText}}</text>\n        <text class=\"muted time-text\">{{item.timeText}}</text>\n      </view>\n      <view class=\"row doc-actions\">\n        <button class=\"btn btn-primary btn-sm action-btn\" loading=\"{{usingId === item.docId}}\"\n                data-doc-id=\"{{item.docId}}\" data-doc-name=\"{{item.filename}}\"\n                bindtap=\"onUseDoc\">用它出题</button>\n        <button class=\"btn btn-ghost btn-sm action-btn action-btn-last\"\n                data-doc-id=\"{{item.docId}}\" bindtap=\"onDeleteDoc\">删除</button>\n      </view>\n    </view>\n  </block>\n\n  <!-- 五、空态 -->\n  <view class=\"card center-col\" wx:if=\"{{!loading && loadOk && !documents.length}}\">\n    <mascot state=\"idle\" size=\"sm\"></mascot>\n    <view class=\"h3 empty-text\">还没有资料，传一份上来试试吧</view>\n    <view class=\"muted\">讲义、读本、课堂笔记都可以，小科会照着它们出题。</view>\n  </view>\n\n  <!-- 六、诚实说明 -->\n  <view class=\"card note-card\">\n    <view class=\"h3\">小科的小说明</view>\n    <view class=\"body\">当前直接支持 txt / md 文本；pdf / docx 需要服务端安装 pypdf、docx2txt 依赖。</view>\n  </view>\n\n</view>\n","pages/profile":"<!-- 我的：游客态一句说明 + 登录；登录后是经验值、错题、薄弱知识点与历史闯关 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">你来啦！登录后才有经验值和错题本哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <!-- 二、已登录 -->\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n\n      <!-- 个人概览 -->\n      <view class=\"card hero\">\n        <view class=\"h2\">{{nickname}}</view>\n        <view class=\"xp-box\">\n          <view class=\"xp-num mono-num\">{{totalXp}}</view>\n          <view class=\"muted\">累计经验值</view>\n        </view>\n        <view class=\"wrap stat-wrap\">\n          <view class=\"stat-item\">\n            <view class=\"stat-num mono-num\">{{wrongCount}}</view>\n            <view class=\"muted\">错题本里的题</view>\n          </view>\n          <view class=\"stat-item\">\n            <view class=\"stat-text\">{{gradeLabel}}</view>\n            <view class=\"muted\">当前学段</view>\n          </view>\n        </view>\n      </view>\n\n      <!-- 薄弱知识点 -->\n      <view class=\"card\">\n        <view class=\"card-title\">要多看两眼的知识点</view>\n        <view class=\"wrap\" wx:if=\"{{weakPoints.length}}\">\n          <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n            {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n          </text>\n        </view>\n        <view class=\"body\" wx:if=\"{{!weakPoints.length}}\">还没有薄弱知识点，保持这个势头！</view>\n      </view>\n\n      <!-- 历史闯关 -->\n      <view class=\"card\">\n        <view class=\"card-title\">历史闯关</view>\n        <block wx:if=\"{{sessions.length}}\">\n          <view class=\"session-item\" wx:for=\"{{sessions}}\" wx:key=\"quizId\"\n                data-quiz-id=\"{{item.quizId}}\" bindtap=\"onOpenSession\">\n            <view class=\"between\">\n              <text class=\"h3 session-title\">{{item.title}}</text>\n              <text class=\"tag\">{{item.timeText}}</text>\n            </view>\n            <view class=\"wrap session-tags\">\n              <text class=\"pill session-tag\" wx:if=\"{{item.gradeLabel}}\">{{item.gradeLabel}}</text>\n              <text class=\"tag session-tag\" wx:if=\"{{item.sourceLabel}}\">{{item.sourceLabel}}</text>\n              <text class=\"muted go-text\">看看这一局的复盘 ›</text>\n            </view>\n          </view>\n        </block>\n        <view class=\"body\" wx:if=\"{{!sessions.length}}\">还没有闯关记录，去闯一关吧！</view>\n      </view>\n\n      <!-- 清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" bindtap=\"onClearWrong\">清空错题本</button>\n\n    </block>\n  </block>\n\n</view>\n"};
 window.__kepuPageMeta = {"pages/index":{"title":"去闯关"},"pages/quiz":{"title":"答题闯关"},"pages/report":{"title":"复盘报告"},"pages/wrong":{"title":"错题本"},"pages/knowledge":{"title":"知识库"},"pages/profile":{"title":"我的"}};
 window.__kepuTabBar = [{"pagePath":"pages/index/index","text":"去闯关"},{"pagePath":"pages/wrong/index","text":"错题本"},{"pagePath":"pages/knowledge/index","text":"知识库"},{"pagePath":"pages/profile/index","text":"我的"}];
 </script>
@@ -1830,7 +2090,7 @@ window.__kepuTabBar = [{"pagePath":"pages/index/index","text":"去闯关"},{"pag
 /* ---------- 依赖注入：把 utils/request.js 与 config.js 接进来 ---------- */
 (function () {
   var CONFIG_SRC = "/**\n * 后端接口地址配置\n *\n * 本地联调：保持 127.0.0.1，并在「微信开发者工具 → 详情 → 本地设置」中\n *           勾选「不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书」。\n * 上线部署：改成已备案的 https 域名，并在小程序后台配置 request 合法域名。\n */\nconst IS_DEV = true;\n\nmodule.exports = {\n  IS_DEV: IS_DEV,\n  BASE_URL: IS_DEV\n    ? 'http://127.0.0.1:8000/api/v1'\n    : 'https://your-domain.com/api/v1'\n};\n";
-  var REQUEST_SRC = "/**\n * 统一请求封装：自动附带 JWT、统一拆包、统一错误提示。\n * 页面里不要直接调用 wx.request，一律走这里，便于集中处理鉴权与错误。\n */\nconst { BASE_URL } = require('../config');\n\nconst TOKEN_KEY = 'token';\nconst USER_KEY = 'user';\n\nfunction getToken() {\n  try {\n    return wx.getStorageSync(TOKEN_KEY) || '';\n  } catch (e) {\n    return '';\n  }\n}\n\nfunction saveSession(token, user) {\n  try {\n    if (token) wx.setStorageSync(TOKEN_KEY, token);\n    if (user) wx.setStorageSync(USER_KEY, user);\n  } catch (e) {}\n}\n\nfunction clearSession() {\n  try {\n    wx.removeStorageSync(TOKEN_KEY);\n    wx.removeStorageSync(USER_KEY);\n  } catch (e) {}\n}\n\nfunction toast(message, icon) {\n  wx.showToast({\n    title: message || '没成功，要不要再试一次？',\n    icon: icon || 'none',\n    duration: 2000\n  });\n}\n\nfunction loading(title) {\n  wx.showLoading({ title: title || '小科正在准备…', mask: true });\n}\n\nfunction hideLoading() {\n  wx.hideLoading();\n}\n\n/**\n * 发起请求\n * @param {string} method  GET/POST/PUT/DELETE\n * @param {string} url     以 / 开头，例如 /quiz/generate\n * @param {object} data    请求体\n * @param {object} options { silent: 不弹错误提示, timeout: 超时毫秒 }\n */\nfunction request(method, url, data, options) {\n  const opts = options || {};\n  return new Promise(function (resolve, reject) {\n    const header = { 'Content-Type': 'application/json' };\n    const token = getToken();\n    if (token) {\n      header.Authorization = 'Bearer ' + token;\n    }\n    wx.request({\n      url: BASE_URL + url,\n      method: method,\n      data: data || {},\n      header: header,\n      timeout: opts.timeout || 60000,\n      success: function (res) {\n        const body = res.data || {};\n        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {\n          resolve(body.data);\n          return;\n        }\n        const err = new Error(body.message || ('这一步没走通（' + res.statusCode + '），再试一次吧'));\n        err.code = body.code;\n        err.statusCode = res.statusCode;\n        if (res.statusCode === 401) {\n          clearSession();\n        }\n        if (!opts.silent) {\n          toast(err.message);\n        }\n        reject(err);\n      },\n      fail: function () {\n        const err = new Error('连不上服务器，检查一下后端是否已启动～');\n        err.code = -1;\n        if (!opts.silent) {\n          toast(err.message);\n        }\n        reject(err);\n      }\n    });\n  });\n}\n\n/** 上传文件（知识库用），返回 Promise */\nfunction upload(url, filePath, name, formData) {\n  return new Promise(function (resolve, reject) {\n    const header = {};\n    const token = getToken();\n    if (token) {\n      header.Authorization = 'Bearer ' + token;\n    }\n    wx.uploadFile({\n      url: BASE_URL + url,\n      filePath: filePath,\n      name: name || 'file',\n      formData: formData || {},\n      header: header,\n      timeout: 120000,\n      success: function (res) {\n        let body = {};\n        try {\n          body = JSON.parse(res.data);\n        } catch (e) {\n          body = {};\n        }\n        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {\n          resolve(body.data);\n          return;\n        }\n        const err = new Error(body.message || '这份资料小科没读进去，换个小一点的文本文件试试');\n        err.code = body.code;\n        toast(err.message);\n        reject(err);\n      },\n      fail: function () {\n        const err = new Error('上传没成功，检查一下网络～');\n        toast(err.message);\n        reject(err);\n      }\n    });\n  });\n}\n\nmodule.exports = {\n  get: function (url, options) {\n    return request('GET', url, null, options);\n  },\n  post: function (url, data, options) {\n    return request('POST', url, data, options);\n  },\n  put: function (url, data, options) {\n    return request('PUT', url, data, options);\n  },\n  del: function (url, options) {\n    return request('DELETE', url, null, options);\n  },\n  upload: upload,\n  getToken: getToken,\n  saveSession: saveSession,\n  clearSession: clearSession,\n  toast: toast,\n  loading: loading,\n  hideLoading: hideLoading\n};\n";
+  var REQUEST_SRC = "/**\n * 统一请求封装：自动附带 JWT、统一拆包、统一错误提示。\n * 页面里不要直接调用 wx.request，一律走这里，便于集中处理鉴权与错误。\n */\nconst { BASE_URL } = require('../config');\n\nconst TOKEN_KEY = 'token';\nconst USER_KEY = 'user';\n\nfunction getToken() {\n  try {\n    return wx.getStorageSync(TOKEN_KEY) || '';\n  } catch (e) {\n    return '';\n  }\n}\n\nfunction saveSession(token, user) {\n  try {\n    if (token) wx.setStorageSync(TOKEN_KEY, token);\n    if (user) wx.setStorageSync(USER_KEY, user);\n  } catch (e) {}\n}\n\nfunction clearSession() {\n  try {\n    wx.removeStorageSync(TOKEN_KEY);\n    wx.removeStorageSync(USER_KEY);\n  } catch (e) {}\n}\n\nfunction toast(message, icon) {\n  wx.showToast({\n    title: message || '没成功，要不要再试一次？',\n    icon: icon || 'none',\n    duration: 2000\n  });\n}\n\nfunction loading(title) {\n  wx.showLoading({ title: title || '小科正在准备…', mask: true });\n}\n\nfunction hideLoading() {\n  wx.hideLoading();\n}\n\n/**\n * 发起请求\n * @param {string} method  GET/POST/PUT/DELETE\n * @param {string} url     以 / 开头，例如 /quiz/generate\n * @param {object} data    请求体\n * @param {object} options { silent: 不弹错误提示, timeout: 超时毫秒 }\n */\nfunction request(method, url, data, options) {\n  const opts = options || {};\n  return new Promise(function (resolve, reject) {\n    const header = { 'Content-Type': 'application/json' };\n    const token = getToken();\n    if (token) {\n      header.Authorization = 'Bearer ' + token;\n    }\n    wx.request({\n      url: BASE_URL + url,\n      method: method,\n      data: data || {},\n      header: header,\n      timeout: opts.timeout || 60000,\n      success: function (res) {\n        const body = res.data || {};\n        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {\n          resolve(body.data);\n          return;\n        }\n        const err = new Error(body.message || ('这一步没走通（' + res.statusCode + '），再试一次吧'));\n        err.code = body.code;\n        err.statusCode = res.statusCode;\n        if (res.statusCode === 401) {\n          clearSession();\n        }\n        if (!opts.silent) {\n          toast(err.message);\n        }\n        reject(err);\n      },\n      fail: function () {\n        const err = new Error('连不上服务器，检查一下后端是否已启动～');\n        err.code = -1;\n        if (!opts.silent) {\n          toast(err.message);\n        }\n        reject(err);\n      }\n    });\n  });\n}\n\n/** 上传文件（知识库用），返回 Promise */\nfunction upload(url, filePath, name, formData) {\n  return new Promise(function (resolve, reject) {\n    const header = {};\n    const token = getToken();\n    if (token) {\n      header.Authorization = 'Bearer ' + token;\n    }\n    wx.uploadFile({\n      url: BASE_URL + url,\n      filePath: filePath,\n      name: name || 'file',\n      formData: formData || {},\n      header: header,\n      timeout: 120000,\n      success: function (res) {\n        let body = {};\n        try {\n          body = JSON.parse(res.data);\n        } catch (e) {\n          body = {};\n        }\n        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {\n          resolve(body.data);\n          return;\n        }\n        const err = new Error(body.message || '这份资料小科没读进去，换个小一点的文本文件试试');\n        err.code = body.code;\n        toast(err.message);\n        reject(err);\n      },\n      fail: function () {\n        const err = new Error('上传没成功，检查一下网络～');\n        toast(err.message);\n        reject(err);\n      }\n    });\n  });\n}\n\n/** 删除但需要带请求体（题干里有中文与问号时比塞进 URL 稳妥） */\nfunction delBody(url, data, options) {\n  return new Promise(function (resolve, reject) {\n    const header = { 'Content-Type': 'application/json' };\n    const token = getToken();\n    if (token) {\n      header.Authorization = 'Bearer ' + token;\n    }\n    wx.request({\n      url: BASE_URL + url,\n      method: 'DELETE',\n      data: data || {},\n      header: header,\n      timeout: (options && options.timeout) || 60000,\n      success: function (res) {\n        const body = res.data || {};\n        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {\n          resolve(body.data);\n          return;\n        }\n        const err = new Error(body.message || '没删成，要不要再试一次？');\n        err.code = body.code;\n        if (!(options && options.silent)) {\n          toast(err.message);\n        }\n        reject(err);\n      },\n      fail: function () {\n        const err = new Error('连不上服务器，检查一下后端是否已启动～');\n        err.code = -1;\n        if (!(options && options.silent)) {\n          toast(err.message);\n        }\n        reject(err);\n      }\n    });\n  });\n}\n\nmodule.exports = {\n  get: function (url, options) {\n    return request('GET', url, null, options);\n  },\n  post: function (url, data, options) {\n    return request('POST', url, data, options);\n  },\n  put: function (url, data, options) {\n    return request('PUT', url, data, options);\n  },\n  del: function (url, options) {\n    return request('DELETE', url, null, options);\n  },\n  delBody: delBody,\n  upload: upload,\n  getToken: getToken,\n  saveSession: saveSession,\n  clearSession: clearSession,\n  toast: toast,\n  loading: loading,\n  hideLoading: hideLoading\n};\n";
   function runModule(src, name) {
     var mod = { exports: {} };
     var fn = new Function('module', 'exports', 'require', 'wx', src);
@@ -2784,7 +3044,17 @@ Page({
     practicing: false,
     total: 0,
     weakPoints: [],
-    questions: []
+    questions: [],
+
+    // 编辑态（错题本里的「改」）：一次只改一道
+    editingIndex: -1,
+    editStem: '',
+    editKnowledge: '',
+    editAnalysis: '',
+    editAnswer: 0,
+    editOptions: [],
+    editKeys: LETTERS,
+    saving: false
   },
 
   onShow: function () {
@@ -2825,7 +3095,10 @@ Page({
             yourAnswer: optionText(q.options, q.user_answer),
             analysis: q.analysis || '小科还在想更清楚的讲法，先把正确答案记下来吧',
             lastAt: shortTime(q.last_wrong_at),
-            expanded: false
+            expanded: false,
+            // 编辑时要回填的原始数据（选项要留完整列表，不能只留文字）
+            options: q.options || [],
+            answerIndex: typeof q.answer === 'number' ? q.answer : 0
           });
         }
         that.setData({
@@ -2946,6 +3219,127 @@ Page({
   /** 去闯关：回首页挑一个想探索的主题 */
   onGoQuiz: function () {
     wx.switchTab({ url: '/pages/index/index' });
+  },
+
+  /* ---------------- 错题本的「改」 ---------------- */
+
+  /** 进入编辑态：把这道题当前的内容填进表单 */
+  onStartEdit: function (e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const item = this.data.questions[index];
+    if (!item) {
+      return;
+    }
+    this.setData({
+      editingIndex: index,
+      editStem: item.stem,
+      editKnowledge: item.knowledgePoint,
+      editAnalysis: item.analysis,
+      editAnswer: item.answerIndex,
+      editOptions: item.options
+    });
+  },
+
+  /** 输入框变化：按 data-field 写回对应字段 */
+  onEditInput: function (e) {
+    const field = e.currentTarget.dataset.field;
+    const value = e.detail.value || '';
+    if (field === 'stem') {
+      this.setData({ editStem: value });
+    } else if (field === 'knowledge_point') {
+      this.setData({ editKnowledge: value });
+    } else if (field === 'analysis') {
+      this.setData({ editAnalysis: value });
+    }
+  },
+
+  /** 点某个选项 = 把它设为正确答案（错题本里常见要修的就是这个） */
+  onPickAnswer: function (e) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (!isNaN(index)) {
+      this.setData({ editAnswer: index });
+    }
+  },
+
+  onCancelEdit: function () {
+    this.setData({ editingIndex: -1 });
+  },
+
+  /** 保存修改 */
+  onSaveEdit: function () {
+    const index = this.data.editingIndex;
+    const item = this.data.questions[index];
+    if (!item || this.data.saving) {
+      return;
+    }
+    const stem = (this.data.editStem || '').trim();
+    if (!stem) {
+      api.toast('题干不能空着哦');
+      return;
+    }
+
+    const that = this;
+    this.setData({ saving: true });
+    api.loading('小科正在记下改动…');
+
+    const payload = { stem: item.stem, answer: Number(this.data.editAnswer) };
+    if (stem !== item.stem) {
+      payload.new_stem = stem;
+    }
+    if (this.data.editKnowledge !== item.knowledgePoint) {
+      payload.knowledge_point = this.data.editKnowledge;
+    }
+    if (this.data.editAnalysis !== item.analysis) {
+      payload.analysis = this.data.editAnalysis;
+    }
+
+    api.put('/wrong/questions', payload)
+      .then(function () {
+        api.hideLoading();
+        that.setData({ saving: false, editingIndex: -1 });
+        api.toast('改好了，这道题更清楚了', 'success');
+        return that.refresh();
+      })
+      .catch(function () {
+        api.hideLoading();
+        that.setData({ saving: false });
+      });
+  },
+
+  /** 删除单条错题：二次确认，避免手滑 */
+  onDeleteItem: function (e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const item = this.data.questions[index];
+    if (!item) {
+      return;
+    }
+    const that = this;
+    wx.showModal({
+      title: '这道题不留了？',
+      content: '删掉之后这道题就不在错题本里了，练过的记录也跟着一起清掉。',
+      confirmText: '删掉',
+      cancelText: '再留着',
+      confirmColor: '#FF8A65',
+      success: function (res) {
+        if (!res.confirm) {
+          return;
+        }
+        api.loading('小科正在收拾…');
+        // 题干里有中文与问号，走请求体传更稳妥，不依赖 URL 转义
+        api.delBody('/wrong/questions/item', { stem: item.stem })
+          .then(function () {
+            api.hideLoading();
+            api.toast('删掉啦', 'success');
+            if (that.data.editingIndex === index) {
+              that.setData({ editingIndex: -1 });
+            }
+            return that.refresh();
+          })
+          .catch(function () {
+            api.hideLoading();
+          });
+      }
+    });
   }
 });
 

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """极简 HTTP 客户端（仅标准库）：供冒烟测试与验收脚本复用。
 
 为什么不用 requests：测试脚本要求「零第三方依赖即可运行」，
@@ -7,7 +7,20 @@
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
+
+
+def _encode_path(path):
+    """只对路径部分做百分号编码，保留 / ? & = 等分隔符与已有的编码。"""
+    if not any(ord(ch) > 127 for ch in path):
+        return path
+    parts = urllib.parse.urlsplit(path)
+    return urllib.parse.urlunsplit((
+        parts.scheme, parts.netloc,
+        urllib.parse.quote(parts.path, safe="/%"),
+        urllib.parse.quote(parts.query, safe="=&%"),
+        parts.fragment))
 
 
 class Response(object):
@@ -45,7 +58,9 @@ class Client(object):
     # ---------- 底层请求 ----------
     def request(self, method, path, json_body=None, headers=None, raw_body=None,
                 content_type="application/json"):
-        url = self.base_url + path
+        # 路径里的中文必须编码：题干会被放进 DELETE 路径，
+        # 不编码时 urllib 会以 ascii 编解码失败（报 codec can't encode characters）。
+        url = self.base_url + _encode_path(path)
         data = None
         hdrs = {"Accept": "application/json"}
         if json_body is not None:

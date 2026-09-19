@@ -110,7 +110,11 @@ def main():
     ok = run([PY, os.path.join("tools", "verify_frontend.py")])
     results.append(("前端静态检查", ok))
 
-    section("4. 论文成稿检查")
+    section("4. 错题本增删改查（接口层）")
+    ok = run([PY, os.path.join("tools", "check_wrongbook_crud.py")])
+    results.append(("错题本 CRUD（接口层，15 项）", ok))
+
+    section("5. 论文成稿检查")
     ok = run([PY, os.path.join("tools", "check_thesis.py")])
     results.append(("论文成稿检查", ok))
 

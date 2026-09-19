@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """从源码自动生成接口清单与数据库字典。
 
 为什么用脚本生成：手写的接口文档必然与代码脱节。这里直接从 FastAPI 的
@@ -131,7 +131,10 @@ API_TITLES = {
     ("DELETE", "/api/v1/knowledge/documents/{doc_id}"): "删除知识库文档",
     ("GET", "/api/v1/wrong/questions"): "错题本总览",
     ("POST", "/api/v1/wrong/practice"): "只练错题组卷",
+    ("PUT", "/api/v1/wrong/questions"): "修改单条错题",
     ("DELETE", "/api/v1/wrong/questions"): "清空错题本",
+    ("DELETE", "/api/v1/wrong/questions/item"): "删除单条错题（请求体传题干）",
+    ("DELETE", "/api/v1/wrong/questions/{stem}"): "删除单条错题（路径传题干）",
     ("POST", "/api/v1/admin/login"): "管理端登录",
     ("GET", "/api/v1/admin/me"): "校验管理端登录态",
     ("GET", "/api/v1/admin/dashboard"): "运行看板统计",

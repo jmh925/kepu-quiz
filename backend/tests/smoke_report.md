@@ -3,8 +3,8 @@
 | 项目 | 内容 |
 | --- | --- |
 | 被测服务 | http://127.0.0.1:8000 |
-| 测试时间 | 2026-09-19 12:12:18 |
-| 测试耗时 | 2.3 秒 |
+| 测试时间 | 2026-09-19 14:22:55 |
+| 测试耗时 | 2.4 秒 |
 | 测试脚本 | `backend/tests/smoke_test.py`（仅标准库，可重复运行） |
 | 用例构成 | 40 条功能用例 + 7 条性能用例 + 9 条降级用例 |
 | 通过情况 | 49 / 49（通过率 100.0%） |
@@ -22,7 +22,7 @@
 | TC-05 | 超长主题入参校验 | POST /api/v1/quiz/generate topic=80字 | code=4000 | code=4000 | 通过 |
 | TC-06 | 内容安全前置校验 | POST /api/v1/quiz/generate topic=制造炸弹 | code=4002 | code=4002 message=这个主题不太适合小朋友哦，换一个科学小知识试试看吧 | 通过 |
 | TC-07 | 学段题量收敛 | 小学低年级请求 99 题 | 题量收敛到 8 题 | 题量=8 | 通过 |
-| TC-08 | 题目字段完整性 | 检查首题字段 | 含题干/选项/答案下标/解析/知识点 | 字段=8 选项数=4 answer=2 | 通过 |
+| TC-08 | 题目字段完整性 | 检查首题字段 | 含题干/选项/答案下标/解析/知识点 | 字段=8 选项数=4 answer=1 | 通过 |
 | TC-09 | 答题提交与判题 | POST /api/v1/quiz/submit | code=0 且题数一致 | 题数=8 答对=4 正确率=50.0 | 通过 |
 | TC-10 | 经验值结算规则 | 完成闯关+10、答对每题+2 | xp=18 | xp=18 | 通过 |
 | TC-11 | 错题自动入库 | 答错题写入错题本 | 新增错题=4 | 新增错题=4 | 通过 |
@@ -35,7 +35,7 @@
 | TC-18 | 未登录访问个人中心 | GET /api/v1/user/profile 无 Token | code=4010 | code=4010 | 通过 |
 | TC-19 | 未登录访问错题本 | GET /api/v1/wrong/questions 无 Token | code=4010 | code=4010 | 通过 |
 | TC-20 | 空错题本练习容错 | POST /api/v1/wrong/practice 错题本为空 | code=4003 | code=4003 | 通过 |
-| TC-21 | 知识库文档上传 | POST /api/v1/knowledge/documents (txt) | code=0 且返回分块数 | 文档ID=4f15673f9ae7 分块=1 | 通过 |
+| TC-21 | 知识库文档上传 | POST /api/v1/knowledge/documents (txt) | code=0 且返回分块数 | 文档ID=1375026c0ab4 分块=1 | 通过 |
 | TC-22 | 知识库列表 | GET /api/v1/knowledge/documents | code=0 且包含刚上传文档 | 文档数=1 | 通过 |
 | TC-23 | 检索增强（RAG）出题 | POST /api/v1/quiz/generate 带 doc_id | code=0 且返回命中片段数 | 命中片段=1 来源=bank | 通过 |
 | TC-24 | 不支持的文件格式 | 上传 .exe 文件 | code=4001 | code=4001 | 通过 |
@@ -45,28 +45,28 @@
 | TC-28 | 管理端登录 | POST /api/v1/admin/login | code=0 且返回 Token | code=0 | 通过 |
 | TC-29 | 管理端口令错误 | POST /api/v1/admin/login 错误口令 | code=4011 | code=4011 message=账号或口令不正确 | 通过 |
 | TC-30 | 管理端未授权访问 | GET /api/v1/admin/dashboard 无 Token | code=4011 | code=4011 | 通过 |
-| TC-31 | 管理端运行看板 | GET /api/v1/admin/dashboard | code=0 且含用户/闯关/错题统计 | 用户数=13 闯关数=53 平均正确率=72.9 | 通过 |
-| TC-32 | 管理端新增题目 | POST /api/v1/admin/questions | code=0 且返回新题 ID | 新题ID=3 | 通过 |
+| TC-31 | 管理端运行看板 | GET /api/v1/admin/dashboard | code=0 且含用户/闯关/错题统计 | 用户数=96 闯关数=138 平均正确率=53.2 | 通过 |
+| TC-32 | 管理端新增题目 | POST /api/v1/admin/questions | code=0 且返回新题 ID | 新题ID=7 | 通过 |
 | TC-33 | 管理端题库查询 | GET /api/v1/admin/questions?keyword=月球 | code=0 且命中 1 条 | 命中=1 | 通过 |
 | TC-34 | 管理端题目参数校验 | answer 下标越界 | code=4000 | code=4000 message=正确答案下标超出选项范围 | 通过 |
 | TC-35 | 管理端修改题目 | PUT /api/v1/admin/questions/{id} | code=0 | code=0 | 通过 |
 | TC-36 | 资源池题目参与出题 | 出题时优先命中管理端题库 | 题目中包含新增题 | 命中=True | 通过 |
 | TC-37 | 管理端删除题目 | DELETE /api/v1/admin/questions/{id} | code=0 | code=0 | 通过 |
-| TC-38 | 管理端用户列表 | GET /api/v1/admin/users | code=0 且含闯关数统计 | 用户数=13 | 通过 |
-| TC-39 | 管理端闯关记录 | GET /api/v1/admin/sessions | code=0 | 记录数=5 总数=54 | 通过 |
-| TC-40 | 管理端操作日志留痕 | GET /api/v1/admin/logs | code=0 且包含题库操作记录 | 日志条数=12 | 通过 |
+| TC-38 | 管理端用户列表 | GET /api/v1/admin/users | code=0 且含闯关数统计 | 用户数=96 | 通过 |
+| TC-39 | 管理端闯关记录 | GET /api/v1/admin/sessions | code=0 | 记录数=5 总数=139 | 通过 |
+| TC-40 | 管理端操作日志留痕 | GET /api/v1/admin/logs | code=0 且包含题库操作记录 | 日志条数=20 | 通过 |
 
 ## 表 6-2 接口响应时间测试结果
 
 | 接口 | 功能 | 重复次数 | 平均响应时间(ms) | 最小(ms) | 最大(ms) |
 | --- | --- | --- | --- | --- | --- |
-| GET /api/v1/grades | 学段选项查询 | 3 | 17 | 15 | 22 |
-| POST /api/v1/user/login | 用户登录 | 3 | 11 | 11 | 12 |
-| POST /api/v1/quiz/generate | 出题（题库降级路径） | 3 | 25 | 13 | 31 |
-| POST /api/v1/quiz/submit | 判题与结算 | 3 | 30 | 24 | 43 |
-| POST /api/v1/report/generate | 复盘报告（规则降级路径） | 3 | 20 | 14 | 30 |
-| GET /api/v1/wrong/questions | 错题本查询 | 3 | 4 | 4 | 5 |
-| POST /api/v1/wrong/practice | 只练错题组卷 | 3 | 28 | 23 | 31 |
+| GET /api/v1/grades | 学段选项查询 | 3 | 18 | 16 | 24 |
+| POST /api/v1/user/login | 用户登录 | 3 | 29 | 25 | 31 |
+| POST /api/v1/quiz/generate | 出题（题库降级路径） | 3 | 32 | 31 | 32 |
+| POST /api/v1/quiz/submit | 判题与结算 | 3 | 37 | 35 | 39 |
+| POST /api/v1/report/generate | 复盘报告（规则降级路径） | 3 | 27 | 21 | 35 |
+| GET /api/v1/wrong/questions | 错题本查询 | 3 | 14 | 3 | 24 |
+| POST /api/v1/wrong/practice | 只练错题组卷 | 3 | 21 | 13 | 29 |
 
 > 说明：以上为题库降级路径（未配置大模型 Key）的实测值，不含大模型网络往返时间。配置 DeepSeek Key 后，出题接口耗时主要由模型推理决定，通常在 10～40 秒；因此小程序端设计了分档等待台词与科普轮播，把等待时间转化为学习时间（见 4.9、5.8 节）。
 

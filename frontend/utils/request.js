@@ -135,6 +135,45 @@ function upload(url, filePath, name, formData) {
   });
 }
 
+/** 删除但需要带请求体（题干里有中文与问号时比塞进 URL 稳妥） */
+function delBody(url, data, options) {
+  return new Promise(function (resolve, reject) {
+    const header = { 'Content-Type': 'application/json' };
+    const token = getToken();
+    if (token) {
+      header.Authorization = 'Bearer ' + token;
+    }
+    wx.request({
+      url: BASE_URL + url,
+      method: 'DELETE',
+      data: data || {},
+      header: header,
+      timeout: (options && options.timeout) || 60000,
+      success: function (res) {
+        const body = res.data || {};
+        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {
+          resolve(body.data);
+          return;
+        }
+        const err = new Error(body.message || '没删成，要不要再试一次？');
+        err.code = body.code;
+        if (!(options && options.silent)) {
+          toast(err.message);
+        }
+        reject(err);
+      },
+      fail: function () {
+        const err = new Error('连不上服务器，检查一下后端是否已启动～');
+        err.code = -1;
+        if (!(options && options.silent)) {
+          toast(err.message);
+        }
+        reject(err);
+      }
+    });
+  });
+}
+
 module.exports = {
   get: function (url, options) {
     return request('GET', url, null, options);
@@ -148,6 +187,7 @@ module.exports = {
   del: function (url, options) {
     return request('DELETE', url, null, options);
   },
+  delBody: delBody,
   upload: upload,
   getToken: getToken,
   saveSession: saveSession,

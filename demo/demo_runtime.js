@@ -11,6 +11,10 @@
  *   wx.navigateTo / wx.switchTab / wx.reLaunch / wx.navigateBack
  *   App / Page / Component 注册、setData、WXML 模板渲染（{{}}、wx:if/elif/else、wx:for）
  *   hover-class、data-* 数据集、bindtap/bindinput/bindconfirm 事件
+ *
+ * 渲染方式：**按节点对比更新 DOM**（不是每次 setData 都重建 innerHTML）。
+ * 这一点很关键——页面在 bindinput 里会 setData，如果整段重建，
+ * 正在输入的 input 会被销毁，表现就是「打一个字就丢焦点」。
  */
 (function () {
   /* ---------------- 请求地址与存储 ---------------- */
@@ -145,6 +149,7 @@
     if (m) return { dynamic: m[1].trim() };
     return String(raw).replace(/^["']|["']$/g, '');
   }
+
   /** 找到标签真正的结束位置：引号内的 > 不算（例如 wx:if="{{total > 0}}"）。 */
   function findTagEnd(src, from) {
     var quote = null;
@@ -170,6 +175,7 @@
     }
     return out;
   }
+
   function parseWxml(src) {
     var root = { tag: '#root', attrs: [], children: [] };
     var stack = [root];
@@ -387,6 +393,238 @@
     return html;
   }
 
+  /* ---------------- DOM 更新：按节点对比，保留输入焦点 ---------------- */
+  var EVENTS = ['tap', 'input', 'change', 'confirm', 'blur', 'focus', 'longpress', 'submit'];
+  var DOM_EVENT = {
+    tap: 'click', input: 'input', change: 'change', confirm: 'keydown',
+    blur: 'blur', focus: 'focus', longpress: 'contextmenu', submit: 'submit'
+  };
+
+  function bindEvents(scopeEl, inst) {
+    EVENTS.forEach(function (evt) {
+      var nodes = scopeEl.querySelectorAll('[data-ev-' + evt + ']:not([data-ev-bound])');
+      Array.prototype.forEach.call(nodes, function (node) {
+        node.setAttribute('data-ev-bound', '1');
+        node.addEventListener(DOM_EVENT[evt], function (e) {
+          if (evt === 'confirm' && e.key !== 'Enter') return;
+          var handler = node.getAttribute('data-handler');
+          var fn = inst.__options[handler];
+          if (typeof fn !== 'function') return;
+          var dataset = {};
+          Array.prototype.forEach.call(node.attributes, function (at) {
+            if (at.name.indexOf('data-') === 0 && at.name.indexOf('data-ev-') !== 0
+                && at.name !== 'data-handler') {
+              dataset[at.name.slice(5)] = at.value;
+            }
+          });
+          fn.call(inst, {
+            type: evt,
+            detail: { value: node.value },
+            currentTarget: { dataset: dataset, id: node.id },
+            target: { dataset: dataset, id: node.id }
+          });
+        });
+      });
+    });
+  }
+
+  function makeElement(html, inst) {
+    var holder = document.createElement('div');
+    holder.innerHTML = html;
+    var el = holder.firstElementChild || holder.firstChild;
+    if (!el) return null;
+    bindEvents(el.nodeType === 1 ? el : holder, inst);
+    return el;
+  }
+
+  function attrsOf(el, skipValue) {
+    var map = {};
+    for (var i = 0; i < el.attributes.length; i++) {
+      var a = el.attributes[i];
+      if (a.name === 'data-ev-bound') continue;                // 运行时内部标记
+      if (skipValue && (a.name === 'value')) continue;         // 输入框当前值单独处理
+      map[a.name] = a.value;
+    }
+    return map;
+  }
+
+  function applyAttrs(el, want, skipValue) {
+    var has = attrsOf(el, skipValue);
+    Object.keys(want).forEach(function (name) {
+      if (name === 'data-ev-bound') return;
+      if (name === 'value') {
+        if (el.value !== want[name]) { try { el.value = want[name]; } catch (e) {} }
+        return;
+      }
+      if (has[name] !== want[name]) {
+        try { el.setAttribute(name, want[name]); } catch (e) {}
+      }
+    });
+    Object.keys(has).forEach(function (name) {
+      if (name === 'value' && skipValue) return;
+      if (!(name in want)) el.removeAttribute(name);
+    });
+  }
+
+  /** 节点的「身份」：优先 wx:key 对应的 data-key，否则用标签 + 类名 + 事件处理器。 */
+  function sigOf(node) {
+    if (node.nodeType === 3) return '#text';
+    var tag = node.nodeName;
+    var key = node.getAttribute ? node.getAttribute('data-key') : null;
+    if (key) return tag + '|key=' + key;
+    var cls = node.getAttribute ? (node.getAttribute('class') || '') : '';
+    var handler = node.getAttribute ? (node.getAttribute('data-handler') || '') : '';
+    var onClick = node.onclick ? 'onclick' : '';
+    return tag + '|' + cls + '|' + handler + '|' + onClick;
+  }
+
+  /**
+   * 用新的 HTML 片段更新容器内容。
+   *
+   * 两个要点（都在实测里踩过坑）：
+   * 1. **不能整段 innerHTML 重建**：页面在 bindinput 里会 setData，
+   *    重建会销毁正在输入的 input，表现成「打一个字就丢焦点」。
+   * 2. **不能只按序号对比**：WXML 里 wx:if / wx:for 会让节点数量变化
+   *    （例如「先告诉小科你想学什么吧」这行提示消失时），
+   *    按序号硬配会把节点错配、插入错位置，页面直接失灵。
+   *    因此这里用「身份 + 序列匹配」对齐新旧节点。
+   */
+  function reconcile(oldNodes, newNodes) {
+    var pairs = oldNodes.map(function () { return null; });
+    var used = newNodes.map(function () { return false; });
+    var start = 0;
+    // 1) 先吃掉前后完全匹配的部分（绝大多数更新都走到这里）
+    while (start < oldNodes.length && start < newNodes.length
+           && sigOf(oldNodes[start]) === sigOf(newNodes[start])) {
+      pairs[start] = start;
+      used[start] = true;
+      start++;
+    }
+    var oi = oldNodes.length - 1;
+    var ni = newNodes.length - 1;
+    while (oi >= start && ni >= start && sigOf(oldNodes[oi]) === sigOf(newNodes[ni])) {
+      pairs[oi] = ni;
+      used[ni] = true;
+      oi--;
+      ni--;
+    }
+    // 2) 中间部分用身份做贪心匹配，并**强制保持前后顺序**：
+    //    一旦允许交叉配对，后面的插入锚点就会错位，导致兄弟节点被吞掉。
+    var lastJ = start - 1;
+    for (var i = start; i <= oi; i++) {
+      var sig = sigOf(oldNodes[i]);
+      for (var j = lastJ + 1; j <= ni; j++) {
+        if (!used[j] && sigOf(newNodes[j]) === sig) {
+          pairs[i] = j;
+          used[j] = true;
+          lastJ = j;
+          break;
+        }
+      }
+    }
+    return pairs;
+  }
+
+  function patchChildren(container, html, inst) {
+    var holder = document.createElement('div');
+    holder.innerHTML = html;
+    var newNodes = Array.prototype.slice.call(holder.childNodes);
+    var oldNodes = Array.prototype.slice.call(container.childNodes);
+    var pairs = reconcile(oldNodes, newNodes);
+
+    // 第一遍：删掉在新片段里找不到对应身份的旧节点
+    for (var i = 0; i < oldNodes.length; i++) {
+      if (pairs[i] === null && oldNodes[i].parentNode === container) {
+        container.removeChild(oldNodes[i]);
+      }
+    }
+
+    // 第二遍：按新片段的顺序走一遍，缺的插进去、错位的挪位置、其余就地打补丁。
+    // 锚点用「下一个已经挂在容器里的新节点」，这样插入位置一定正确
+    // （之前用旧节点数组当锚点，插入会和删除互相干扰，把兄弟节点吞掉）。
+    for (var k = 0; k < newNodes.length; k++) {
+      var node = newNodes[k];
+      if (node.parentNode === container) continue;
+
+      var anchor = null;
+      for (var t = k + 1; t < newNodes.length; t++) {
+        if (newNodes[t].parentNode === container) { anchor = newNodes[t]; break; }
+      }
+
+      // 找到与它配对的旧节点
+      var matched = null;
+      for (var o = 0; o < oldNodes.length; o++) {
+        if (pairs[o] === k && oldNodes[o].parentNode === container) { matched = oldNodes[o]; break; }
+      }
+
+      if (matched && sigOf(matched) === sigOf(node)) {
+        if (matched.nextSibling !== anchor && matched !== anchor) {
+          container.insertBefore(matched, anchor);
+        }
+        patchNode(container, matched, node, inst);
+      } else {
+        if (matched) container.removeChild(matched);
+        container.insertBefore(node, anchor);
+        bindEvents(node.nodeType === 1 ? node : container, inst);
+      }
+    }
+  }
+
+  function patchNode(parent, oldNode, newNode, inst) {
+    if (oldNode.nodeType !== newNode.nodeType || oldNode.nodeName !== newNode.nodeName) {
+      var fresh = newNode;
+      parent.replaceChild(fresh, oldNode);
+      bindEvents(fresh.nodeType === 1 ? fresh : parent, inst);
+      return;
+    }
+    if (oldNode.nodeType === 3) {                 // 文本节点
+      if (oldNode.nodeValue !== newNode.nodeValue) oldNode.nodeValue = newNode.nodeValue;
+      return;
+    }
+
+    var el = oldNode;
+    var isField = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
+    var want = {};
+    for (var i = 0; i < newNode.attributes.length; i++) {
+      var a = newNode.attributes[i];
+      want[a.name] = a.value;
+    }
+    var focused = el === document.activeElement;
+    if (focused && want.class && want.class.indexOf(' focus') === -1) {
+      want.class = want.class + ' focus';        // 聚焦态是运行时加的，比较时忽略
+    }
+    applyAttrs(el, want, isField);
+    if (isField) return;                          // 输入框没有子节点
+
+    var oldKids = Array.prototype.slice.call(el.childNodes);
+    var newKids = Array.prototype.slice.call(newNode.childNodes);
+    for (var j = 0; j < Math.max(oldKids.length, newKids.length); j++) {
+      var ok = oldKids[j];
+      var nk = newKids[j];
+      if (ok && nk) {
+        patchNode(el, ok, nk, inst);
+      } else if (nk) {
+        el.appendChild(nk);
+        bindEvents(nk.nodeType === 1 ? nk : el, inst);
+      } else if (ok) {
+        el.removeChild(ok);
+      }
+    }
+  }
+
+  function render(inst) {
+    var src = pageSources()[inst.__key];
+    if (!src) return;
+    if (!inst.__tree) inst.__tree = parseWxml(src);
+    var scope = Object.create(null);
+    for (var k in inst.data) scope[k] = inst.data[k];
+    inst.__scope = scope;
+
+    var host = document.getElementById('mp-view');
+    patchChildren(host, renderList(inst.__tree.children, scope), inst);
+    bindEvents(host, inst);
+  }
+
   /* ---------------- 页面注册与挂载 ---------------- */
   // 注意：页面源与路由表由生成脚本在其后的 <script> 里挂到 window 上，
   // 因此这里**不能在启动时缓存**，必须在每次使用时现读，
@@ -415,76 +653,40 @@
     if (el) el.textContent = t || '科普闯关';
   }
 
-  function render(inst) {
-    var src = pageSources()[inst.__key];
-    if (!src) return;
-    if (!inst.__tree) inst.__tree = parseWxml(src);
-    var scope = Object.create(null);
-    for (var k in inst.data) scope[k] = inst.data[k];
-
-    var host = document.getElementById('mp-view');
-    var active = document.activeElement;
-    var focusId = (active && active.id) ? active.id : null;
-    var caret = null;
-    if (focusId && active.setSelectionRange) { try { caret = active.selectionStart; } catch (e) {} }
-
-    // 用普通对象承载作用域（而不是 Object.create 出来的原型链对象），
-    // 便于排查问题，也避免原型链上的键干扰 for-in 遍历。
-    inst.__scope = scope;
-    host.innerHTML = renderList(inst.__tree.children, scope);
-    bindEvents(host, inst);
-
-    if (focusId) {
-      var again = document.getElementById(focusId);
-      if (again) {
-        again.focus();
-        if (caret !== null && again.setSelectionRange) {
-          try { again.setSelectionRange(caret, caret); } catch (e) {}
-        }
-      }
-    }
-  }
-
-  var EVENTS = ['tap', 'input', 'change', 'confirm', 'blur', 'focus', 'longpress', 'submit'];
-  var DOM_EVENT = {
-    tap: 'click', input: 'input', change: 'change', confirm: 'keydown',
-    blur: 'blur', focus: 'focus', longpress: 'contextmenu', submit: 'submit'
-  };
-
-  function bindEvents(host, inst) {
-    EVENTS.forEach(function (evt) {
-      var nodes = host.querySelectorAll('[data-ev-' + evt + ']');
-      Array.prototype.forEach.call(nodes, function (node) {
-        node.addEventListener(DOM_EVENT[evt], function (e) {
-          if (evt === 'confirm' && e.key !== 'Enter') return;
-          var handler = node.getAttribute('data-handler');
-          var fn = inst.__options[handler];
-          if (typeof fn !== 'function') return;
-          var dataset = {};
-          Array.prototype.forEach.call(node.attributes, function (at) {
-            if (at.name.indexOf('data-') === 0 && at.name.indexOf('data-ev-') !== 0
-                && at.name !== 'data-handler') {
-              dataset[at.name.slice(5)] = at.value;
-            }
-          });
-          fn.call(inst, {
-            type: evt,
-            detail: { value: node.value },
-            currentTarget: { dataset: dataset, id: node.id },
-            target: { dataset: dataset, id: node.id }
-          });
-        });
-      });
-    });
-  }
-
   function instantiate(key, options) {
     var inst = {};
     inst.__key = key;
     inst.__options = options;
     inst.data = JSON.parse(JSON.stringify(options.data || {}));
+
+    /**
+     * 支持小程序 setData 的「路径写法」。
+     *
+     * 页面里会用 this.setData({ 'questions[0].expanded': true }) 这种写法，
+     * 如果不解析路径、直接当普通键名塞进去，界面就永远不会更新
+     * （错题本展开讲解点了没反应，就是这么来的）。
+     */
+    function setByPath(path, value) {
+      var keys = String(path).replace(/\[(\d+)\]/g, '.$1').split('.');
+      var target = inst.data;
+      for (var i = 0; i < keys.length - 1; i++) {
+        var k = keys[i];
+        if (target[k] === undefined || target[k] === null || typeof target[k] !== 'object') {
+          target[k] = /^\d+$/.test(keys[i + 1]) ? [] : {};
+        }
+        target = target[k];
+      }
+      target[keys[keys.length - 1]] = value;
+    }
+
     inst.setData = function (patch, cb) {
-      for (var k in patch) inst.data[k] = patch[k];
+      for (var k in patch) {
+        if (k.indexOf('.') !== -1 || k.indexOf('[') !== -1) {
+          setByPath(k, patch[k]);
+        } else {
+          inst.data[k] = patch[k];
+        }
+      }
       render(inst);
       if (cb) cb();
     };
@@ -501,24 +703,14 @@
   }
 
   function show(key, query) {
-    Array.prototype.forEach.call(document.querySelectorAll('.mp-page'), function (p) {
-      p.style.display = 'none';
-    });
     var host = document.getElementById('mp-view');
     var tabKeys = ['pages/index', 'pages/wrong', 'pages/knowledge', 'pages/profile'];
-    if (tabKeys.indexOf(key) !== -1) {
-      var entry = document.querySelector('[data-page="' + key + '"]');
-      if (entry) entry.style.display = 'flex';
-    } else {
-      document.querySelector('[data-page="pages/index"]').style.display = 'flex';
-      document.getElementById('mp-title').textContent = ((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关';
-    }
     Array.prototype.forEach.call(document.querySelectorAll('.mp-tab'), function (t) {
       t.classList.toggle('on', t.getAttribute('data-page') === key);
     });
-    if (tabKeys.indexOf(key) !== -1) {
-      setTitle(((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关');
-    }
+    setTitle(((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关');
+    document.getElementById('mp-tabbar').style.visibility =
+      (tabKeys.indexOf(key) !== -1) ? 'visible' : 'hidden';
 
     var inst = instances[key];
     if (!inst) {
@@ -529,6 +721,7 @@
       }
       inst = instantiate(key, opts);
       instances[key] = inst;
+      host.innerHTML = '';                  // 换页时清空，避免残留上一页节点
       if (inst.onLoad) inst.onLoad(query || {});
       render(inst);
       if (inst.onShow) inst.onShow();
@@ -565,13 +758,15 @@
   window.Page = function (options) { window.__kepuCurrentPage = options; };
   window.Component = function (options) { window.__kepuCurrentComponent = options; };
 
-  /* ---------------- 启动 ---------------- */
-  /* 调试钩子：便于定位模板渲染问题（正常使用不影响） */
+  /* ---------------- 调试钩子（便于定位渲染问题，正常使用无影响） ---------------- */
   window.__kepuDebug = {
     parseWxml: parseWxml, renderList: renderList, evalExpr: evalExpr,
-    directives: directives, attrValue: attrValue, instances: instances
+    directives: directives, attrValue: attrValue, instances: instances,
+    patchChildren: patchChildren, router: router,
+    sigOf: sigOf, reconcile: reconcile
   };
 
+  /* ---------------- 启动 ---------------- */
   window.__kepuBoot = function () {
     if (window.__kepuApp && window.__kepuApp.onLaunch) window.__kepuApp.onLaunch();
     var tabbar = document.getElementById('mp-tabbar');

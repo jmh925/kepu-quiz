@@ -304,6 +304,16 @@ def clear_wrong(user_id):
     return wrongbook.clear(user_id)
 
 
+def delete_wrong_item(user_id, stem):
+    """删除错题本里的单条错题（错题本页面的「删」）。"""
+    return wrongbook.delete_wrong(user_id, stem)
+
+
+def update_wrong_item(user_id, stem, payload):
+    """修改错题本里的单条错题（错题本页面的「改」）。返回 (结果, 错误信息)。"""
+    return wrongbook.update_wrong(user_id, stem, payload)
+
+
 def check_topic(topic):
     """出题前的内容安全校验，返回 (是否通过, 错误码, 提示语)。"""
     passed, reason = safety.check_input(topic)

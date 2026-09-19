@@ -113,3 +113,84 @@
 .clear-btn {
   margin-bottom: 40rpx;
 }
+
+/* ---------- 改 / 删（错题本也要能维护） ---------- */
+.actions-row {
+  margin-top: 20rpx;
+  gap: 16rpx;
+}
+
+.act-btn {
+  min-height: 88rpx;
+  padding: 0 32rpx;
+}
+
+.act-del {
+  border-color: var(--c-orange);
+  color: #C24A22;
+}
+
+.edit-box {
+  margin-top: 20rpx;
+  padding: 24rpx;
+  background: #F7FBFF;
+  border-radius: 20rpx;
+}
+
+.edit-title {
+  margin-bottom: 16rpx;
+}
+
+.edit-field {
+  margin-bottom: 20rpx;
+}
+
+.edit-label {
+  display: block;
+  font-size: 28rpx;
+  color: var(--c-sub);
+  margin-bottom: 10rpx;
+}
+
+.edit-input {
+  width: 100%;
+  min-height: 88rpx;
+}
+
+.edit-textarea {
+  width: 100%;
+  min-height: 140rpx;
+}
+
+/* 选项胶囊：点一下就把它设为正确答案 */
+.chip-opt {
+  display: flex;
+  align-items: center;
+  min-height: 88rpx;
+  padding: 0 24rpx;
+  margin: 0 16rpx 16rpx 0;
+  background: #FFFFFF;
+  border: 3rpx solid var(--c-line);
+  border-radius: var(--r-pill);
+}
+
+.chip-opt-on {
+  border-color: var(--c-green);
+  background: #EEF9EF;
+}
+
+.chip-opt-key {
+  font-weight: 700;
+  color: var(--c-primary-deep);
+  margin-right: 12rpx;
+  font-size: 30rpx;
+}
+
+.chip-opt-on .chip-opt-key {
+  color: #2E7D32;
+}
+
+.chip-opt-text {
+  font-size: 30rpx;
+  color: var(--c-text);
+}
