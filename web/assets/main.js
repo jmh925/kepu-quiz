@@ -59,7 +59,35 @@
   }
 
   /* ================= 启动 ================= */
+  /** 打开方式不对时给出明确提示，而不是静默无反应。
+   *
+   * 最常见的错误用法是双击 web/index.html（file:// 协议）打开：
+   * 这种页面去请求 http://127.0.0.1:8000 会被浏览器跨域拦截，
+   * 表现就是「按钮点了没反应、也不报错」，非常难自行诊断。
+   */
+  function checkOrigin() {
+    if (location.protocol === 'file:') {
+      view.innerHTML = '<div class="card" style="max-width:640px;margin:60px auto">'
+        + '<h2 class="h2">这个页面要用服务端地址打开</h2>'
+        + '<div class="body" style="margin-top:12px">你现在是直接双击文件打开的（<code>file://</code> 协议），'
+        + '浏览器不允许这样的页面调用接口，所以按钮点了会没有反应。</div>'
+        + '<div class="card" style="background:#F7FBFF;margin-top:16px">'
+        + '<div class="h3">正确的打开方式</div>'
+        + '<div class="body" style="margin-top:8px">1. 在 <code>backend</code> 目录执行：<br>'
+        + '<code>python -m uvicorn app.main:app --port 8000</code><br>'
+        + '（或者双击 <code>scripts\\run_web.cmd</code>）</div>'
+        + '<div class="body" style="margin-top:8px">2. 然后浏览器打开：'
+        + '<b>http://127.0.0.1:8000/app/</b></div>'
+        + '</div></div>';
+      return false;
+    }
+    return true;
+  }
+
   function boot() {
+    if (!checkOrigin()) {
+      return;
+    }
     api.get('/grades', { silent: true })
       .then(function (data) {
         state.grades = (data && data.grades) || [];
@@ -925,5 +953,7 @@
       });
   }
 
+  // 启动：只能放在文件末尾——boot() 会立刻读取 state，
+  // 而 state 是用 const 声明的，提前调用会撞上暂时性死区（TDZ）报错。
   boot();
 })();
