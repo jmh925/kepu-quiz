@@ -108,6 +108,11 @@ Page({
 
   onHide: function () {
     this.clearAskTimers();
+    // 页面被切到后台：本次出题的等待状态作废。
+    // 说明：wx.request 无法在这一层真正中断，因此不写 abort，
+    // 而是让出题结果在回来时"静默落库不跳页"——避免从后台切回来时
+    // 莫名其妙被弹到答题页。见 startAsk 里的 seq 判断。
+    this.askSeq = (this.askSeq || 0) + 1;
     if (this.data.asking) {
       this.setData({
         asking: false,
@@ -184,6 +189,10 @@ Page({
 
     this.startAskTimers(0);
 
+    // 出题令牌：取消出题或页面切后台后，晚到的响应不再驱动界面跳转
+    this.askSeq = (this.askSeq || 0) + 1;
+    const seq = this.askSeq;
+
     const payload = {
       topic: topic,
       grade: app.globalData.grade
@@ -195,6 +204,12 @@ Page({
     // 大模型出题可能较慢，给足 3 分钟；失败提示由 request.js 统一弹出
     api.post('/quiz/generate', payload, { timeout: 180000 })
       .then((data) => {
+        if (seq !== this.askSeq) {
+          // 用户已经取消，或页面已切后台：题目仍然留存，交给「再来一局」式的
+          // 后续入口使用，但不打断用户当前正在做的事
+          this.askPendingQuiz = data;
+          return;
+        }
         this.clearAskTimers();
         app.globalData.lastQuiz = data;
         this.setData({
@@ -205,6 +220,9 @@ Page({
         wx.navigateTo({ url: '/pages/quiz/index' });
       })
       .catch(() => {
+        if (seq !== this.askSeq) {
+          return;
+        }
         // 回到表单态，主题保留在输入框里，方便孩子改一改再来
         this.clearAskTimers();
         this.setData({
@@ -262,6 +280,8 @@ Page({
       confirmColor: '#FF8A65',
       success: function (res) {
         if (res.confirm) {
+          // 作废本次出题：晚到的响应不再驱动跳转（见 startAsk 的 seq 判断）
+          self.askSeq = (self.askSeq || 0) + 1;
           self.clearAskTimers();
           self.setData({
             asking: false,
