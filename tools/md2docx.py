@@ -140,6 +140,41 @@ def _set_cell_border(cell, edges):
     tc_pr.append(borders)
 
 
+def _text_units(text):
+    """按显示宽度估算字符数：中日韩字符记 2，其余记 1。"""
+    units = 0
+    for ch in text:
+        units += 2 if ("\u4e00" <= ch <= "\u9fff" or "\u3000" <= ch <= "\u303f"
+                       or "\uff00" <= ch <= "\uffef") else 1
+    return units
+
+
+def _set_col_widths(table, rows, total_cm=16.0):
+    """按各列最长内容的宽度占比分配列宽。
+
+    为什么要手动算：Word 的自动列宽遇到「路径 / 判题明细」这类长英文串，
+    会把该列压得很窄、把短列撑得很宽，读起来很难受。
+    这里按内容宽度比例分配，并给每列设下限，保证表格整齐且不超页宽。
+    """
+    cols = max(len(r) for r in rows)
+    weights = []
+    for j in range(cols):
+        longest = 0
+        for r in rows:
+            if j < len(r):
+                longest = max(longest, _text_units(r[j]))
+        weights.append(max(4, min(longest, 60)))
+    total = float(sum(weights)) or 1.0
+    widths = [max(1.1, total_cm * w / total) for w in weights]
+    # 归一化到页宽（可排版宽度 16cm）
+    scale = total_cm / sum(widths)
+    widths = [w * scale for w in widths]
+    for row in table.rows:
+        for j, cell in enumerate(row.cells):
+            if j < len(widths):
+                cell.width = Cm(widths[j])
+
+
 def add_table(doc, rows):
     """三线表：顶线 1.5 磅、表头下线 0.75 磅、底线 1.5 磅，无竖线。"""
     if not rows:
@@ -172,6 +207,7 @@ def add_table(doc, rows):
             if i == len(rows) - 1:
                 edges["bottom"] = 12
             _set_cell_border(cell, edges)
+    _set_col_widths(table, rows)
     doc.add_paragraph()
 
 
