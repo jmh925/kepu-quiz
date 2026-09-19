@@ -95,7 +95,56 @@
     getUser: getUser,
     saveSession: saveSession,
     clearSession: clearSession,
-    base: API_BASE
+    base: API_BASE,
+    /** 学生注册 */
+    register: function (username, password, nickname, grade) {
+      return request('POST', '/user/register',
+                     { username: username, password: password, nickname: nickname, grade: grade });
+    },
+    /** 学生登录（账号 + 口令） */
+    loginWithPassword: function (username, password) {
+      return request('POST', '/user/login', { username: username, password: password });
+    },
+    /** 游客体验：不注册先玩，数据暂存在临时账号上 */
+    loginAsGuest: function (grade) {
+      return request('POST', '/user/guest', { grade: grade }, { silent: true });
+    },
+    /** 把游客期间的数据并到当前登录账号，避免「先试后注册」白玩 */
+    mergeGuest: function (guestToken) {
+      return request('POST', '/user/merge-guest', { guest_token: guestToken },
+                     { silent: true });
+    },
+    /**
+     * 管理员登录：入口页上直接放了一个管理员页签，不必先手敲 /admin/ 地址。
+     * 管理端登录接口在 /admin/login，用的是 X-Admin-Token，与学生 JWT 互不影响；
+     * 拿到 token 后按管理端的约定存进 sessionStorage，然后跳 /admin/ 即可直接进。
+     */
+    adminLogin: function (username, password) {
+      return fetch(API_BASE + '/admin/login', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ username: username, password: password })
+      }).then(function (resp) {
+        return resp.text().then(function (t) {
+          var data;
+          try { data = JSON.parse(t); } catch (e) { data = { code: -1, message: '返回内容看不懂' }; }
+          if (resp.ok && data.code === 0) {
+            var d = data.data || {};
+            try {
+              if (d.token) sessionStorage.setItem('kepu_admin_token', d.token);
+              if (d.admin && d.admin.username) {
+                sessionStorage.setItem('kepu_admin_name', d.admin.username);
+              }
+            } catch (e) {}
+            return d;
+          }
+          throw new Error(data.message || '管理员账号或口令不对');
+        });
+      }).catch(function (e) {
+        if (e instanceof Error && e.message && e.message !== 'Failed to fetch') throw e;
+        throw new Error('连不上服务器，确认后端已经启动');
+      });
+    }
   };
 
   /* ================= 2. 界面反馈 ================= */

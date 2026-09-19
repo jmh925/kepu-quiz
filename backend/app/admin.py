@@ -65,6 +65,15 @@ async def admin_users(keyword: Optional[str] = None, page: int = 1, size: int = 
     return ok(admin_db.list_users(keyword, page, size))
 
 
+@router.get("/users/{user_id}")
+async def admin_user_detail(user_id: int, admin=Depends(require_admin)):
+    """单个学生的答题信息分类汇总（闯关记录 / 薄弱知识点 / 错题 / 资料）。"""
+    data = admin_db.user_detail(user_id)
+    if not data:
+        return fail(4000, "用户不存在", 404)
+    return ok(data)
+
+
 @router.post("/users/{user_id}/status")
 async def admin_user_status(user_id: int, status: int = 1, admin=Depends(require_admin)):
     if not admin_db.set_user_status(user_id, status, admin["username"]):

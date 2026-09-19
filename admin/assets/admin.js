@@ -246,20 +246,105 @@ var Admin = (function () {
       .then(function (d) {
         var rows = (d.items || []).map(function (u) {
           return '<tr><td>' + u.id + '</td><td>' + esc(u.nickname) + '</td>' +
-            '<td class="muted">' + esc(u.openid) + '</td>' +
+            '<td>' + (u.username ? esc(u.username) : '<span class="muted">游客</span>') + '</td>' +
             '<td>' + gradeLabel(u.grade) + '</td>' +
             '<td>' + u.total_xp + '</td><td>' + u.quiz_count + '</td><td>' + u.wrong_count + '</td>' +
             '<td>' + esc(u.created_at) + '</td>' +
             '<td>' + (u.status ? '<span class="tag tag-ok">正常</span>' : '<span class="tag tag-off">已停用</span>') +
+            ' <button class="btn btn-primary btn-sm" onclick="Admin.openUserDetail(' + u.id + ')">答题详情</button>' +
             ' <button class="btn btn-ghost btn-sm" onclick="Admin.toggleUser(' + u.id + ',' +
             (u.status ? 0 : 1) + ')">' + (u.status ? '停用' : '启用') + '</button></td></tr>';
         }).join('');
-        $('u-table').innerHTML = '<tr><th>ID</th><th>昵称</th><th>openid</th><th>学段</th>' +
-          '<th>经验值</th><th>闯关数</th><th>错题数</th><th>注册时间</th><th>状态</th></tr>' +
+        $('u-table').innerHTML = '<tr><th>ID</th><th>昵称</th><th>登录名</th><th>学段</th>' +
+          '<th>经验值</th><th>闯关数</th><th>错题数</th><th>注册时间</th><th>状态与操作</th></tr>' +
           (rows || '<tr><td colspan="9" class="muted">还没有用户</td></tr>');
         renderPager('u-pager', d.total, d.page, d.size, loadUsers);
       }).catch(function (e) { alert(e.message); });
   }
+
+  /** 单个学生的答题信息分类汇总（这页是老师最常用的） */
+  function openUserDetail(userId) {
+    var modal = $('user-modal');
+    var body = $('user-detail');
+    modal.classList.remove('hidden');
+    body.innerHTML = '<p class="muted">正在读取该学生的答题记录…</p>';
+    get('/users/' + userId).then(function (d) {
+      var p = d.profile || {};
+      var s = d.stats || {};
+      var head = '<div class="detail-head">'
+        + '<div><span class="h3">' + esc(p.nickname) + '</span>'
+        + (p.username ? ' <span class="tag">' + esc(p.username) + '</span>'
+                      : ' <span class="tag tag-off">游客</span>')
+        + '<div class="muted">' + gradeLabel(p.grade) + ' · 注册于 ' + esc(p.created_at)
+        + (p.last_login_at ? ' · 最近登录 ' + esc(p.last_login_at) : '') + '</div></div>'
+        + '</div>';
+
+      var cards = '<div class="cards detail-cards">'
+        + card('经验值', p.total_xp, 'Lv.' + (Math.floor((p.total_xp || 0) / 50) + 1))
+        + card('闯关次数', s.quiz_count, '已判分 ' + (s.answered_count || 0) + ' 次')
+        + card('平均正确率', (s.avg_accuracy || 0) + '%', '按已判分的闯关计算')
+        + card('错题数', s.wrong_count || 0, '待复习')
+        + '</div>';
+
+      // 1) 逐次闯关记录
+      var sessions = (d.sessions || []).map(function (x) {
+        var src = x.source === 'ai' ? 'AI 出题' : x.source === 'wrongbook' ? '错题重练' : '题库出题';
+        return '<tr><td>' + esc(x.created_at) + '</td><td>' + esc(x.title) + '</td>'
+          + '<td>' + gradeLabel(x.grade) + '</td><td><span class="tag">' + src + '</span></td>'
+          + '<td>' + (x.total ? (x.correct + ' / ' + x.total) : '未提交') + '</td>'
+          + '<td>' + (x.total ? (x.accuracy + '%') : '—') + '</td>'
+          + '<td>' + (x.wrong_count || 0) + '</td>'
+          + '<td>' + (x.duration_ms ? Math.round(x.duration_ms / 1000) + ' 秒' : '—') + '</td></tr>';
+      }).join('');
+      var sec1 = '<div class="panel"><div class="panel-head"><h3>一、逐次闯关记录</h3></div>'
+        + '<table class="table"><tr><th>时间</th><th>主题</th><th>学段</th><th>来源</th>'
+        + '<th>答对/总题</th><th>正确率</th><th>本次错题</th><th>用时</th></tr>'
+        + (sessions || '<tr><td colspan="8" class="muted">还没有闯关记录</td></tr>')
+        + '</table></div>';
+
+      // 2) 薄弱知识点
+      var points = (d.wrong_points || []).map(function (w) {
+        return '<span class="chip">' + esc(w.kp || '科普知识') + ' · ' + w.questions + ' 题 / 错 '
+          + (w.times || 0) + ' 次</span>';
+      }).join('');
+      var sec2 = '<div class="panel"><div class="panel-head"><h3>二、薄弱知识点排行</h3></div>'
+        + '<div class="chips">' + (points || '<span class="muted">暂无错题</span>') + '</div></div>';
+
+      // 3) 错题明细
+      var items = (d.wrong_items || []).map(function (w) {
+        return '<tr><td class="stem">' + esc(w.stem) + '</td>'
+          + '<td><span class="tag">' + esc(w.knowledge_point || '科普知识') + '</span></td>'
+          + '<td>' + (w.wrong_count || 1) + '</td><td>' + esc(w.last_wrong_at) + '</td>'
+          + '<td class="stem muted">' + esc((w.analysis || '').slice(0, 60)) + '</td></tr>';
+      }).join('');
+      var sec3 = '<div class="panel"><div class="panel-head"><h3>三、错题明细</h3></div>'
+        + '<table class="table"><tr><th>题干</th><th>知识点</th><th>错次</th><th>最近答错</th><th>解析</th></tr>'
+        + (items || '<tr><td colspan="5" class="muted">还没有错题，说明这一轮掌握得不错</td></tr>')
+        + '</table></div>';
+
+      // 4) 上传的资料
+      var docs = (d.knowledge || []).map(function (x) {
+        return '<tr><td>' + esc(x.filename) + '</td><td>' + esc(x.file_type || 'txt') + '</td>'
+          + '<td>' + Math.round((x.size_bytes || 0) / 1024) + ' KB</td>'
+          + '<td>' + esc(x.created_at) + '</td></tr>';
+      }).join('');
+      var sec4 = '<div class="panel"><div class="panel-head"><h3>四、知识库资料</h3></div>'
+        + '<table class="table"><tr><th>文件名</th><th>类型</th><th>大小</th><th>上传时间</th></tr>'
+        + (docs || '<tr><td colspan="4" class="muted">没有上传过资料</td></tr>')
+        + '</table></div>';
+
+      body.innerHTML = head + cards + sec1 + sec2 + sec3 + sec4;
+    }).catch(function (e) {
+      body.innerHTML = '<p class="msg">读取失败：' + esc(e.message) + '</p>';
+    });
+  }
+
+  function card(k, v, sub) {
+    return '<div class="card"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v)
+      + '</div><div class="s">' + esc(sub || '') + '</div></div>';
+  }
+
+  function closeUserDetail() { $('user-modal').classList.add('hidden'); }
 
   function toggleUser(id, status) {
     post('/users/' + id + '/status?status=' + status).then(function () { loadUsers(state.uPage); })
@@ -329,6 +414,7 @@ var Admin = (function () {
     loadDashboard: loadDashboard, loadUsers: loadUsers, loadSessions: loadSessions,
     loadLogs: loadLogs, openQuestion: openQuestion, closeModal: closeModal,
     saveQuestion: saveQuestion, removeQuestion: removeQuestion, toggleUser: toggleUser,
-    reloadQuestions: function () { loadQuestions(1); }
+    reloadQuestions: function () { loadQuestions(1); },
+    openUserDetail: openUserDetail, closeUserDetail: closeUserDetail
   };
 })();

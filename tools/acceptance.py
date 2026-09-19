@@ -126,7 +126,15 @@ def main():
 
     section("6. 网页版端到端（真实浏览器点一遍）")
     ok = run([PY, os.path.join("tools", "verify_web.py")])
-    results.append(("网页版端到端（27 项 + 截图）", ok))
+    results.append(("网页版端到端（真实浏览器 + 截图）", ok))
+
+    section("7. 学生账号与错题收录（注册 → 登录 → 答题 → 错题本）")
+    ok = run([PY, os.path.join("tools", "verify_auth.py")])
+    results.append(("学生注册登录 + 错题收录", ok))
+
+    section("8. 管理端单个学生的答题信息分类")
+    ok = run([PY, os.path.join("tools", "verify_admin_detail.py")])
+    results.append(("管理端答题详情分类面板", ok))
 
     section("验收汇总")
     failed = 0

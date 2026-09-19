@@ -136,6 +136,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--c-primary); }
 /* ---------- 弹层 ---------- */
 .modal { position: fixed; inset: 0; background: rgba(16, 32, 50, .48); display: flex; align-items: center; justify-content: center; padding: 20px; }
 .modal-card { width: 620px; max-height: 90vh; overflow: auto; background: #fff; border-radius: 14px; padding: 20px 22px; }
+/* 学生答题详情的弹层要更宽：里面有两张表格 */
+.modal-card.wide { width: min(1080px, 94vw); }
+.detail-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin-bottom: 16px; }
+.detail-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
 .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .modal-head h3 { margin: 0; font-size: 16px; }
 .form-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }

@@ -36,7 +36,9 @@ class Settings:
     deepseek_timeout: int = int(os.getenv("DEEPSEEK_TIMEOUT", "120"))
 
     # ---------- JWT ----------
-    jwt_secret: str = os.getenv("JWT_SECRET", "kepu-quiz-dev-secret-change-me")
+    # 默认值刻意给足 32 字节以上：HMAC-SHA256 的密钥短于 32 字节时，
+    # PyJWT 每次都会打印 InsecureKeyLengthWarning，噪音很大也确实是隐患。
+    jwt_secret: str = os.getenv("JWT_SECRET", "kepu-quiz-dev-secret-please-change-2026")
     jwt_expire_days: int = int(os.getenv("JWT_EXPIRE_DAYS", "7"))
 
     # ---------- 管理端 ----------

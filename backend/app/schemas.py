@@ -45,9 +45,23 @@ class ReportGenerateRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    code: Optional[str] = Field(None, description="微信登录 code（未接入时按本地游客处理）")
-    nickname: Optional[str] = Field("小科学家", description="昵称")
+    """登录：网页版用「账号 + 口令」，小程序端用微信 code。两者都允许。"""
+    username: Optional[str] = Field(None, description="登录名（网页版）")
+    password: Optional[str] = Field(None, description="口令（网页版）")
+    code: Optional[str] = Field(None, description="微信登录 code（小程序端，未接入时为本地账号）")
+    nickname: Optional[str] = Field("小科学家", description="昵称（仅注册/首次登录用）")
     grade: Optional[str] = Field(None, description="常用学段")
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(..., description="登录名：3~20 位字母、数字或下划线")
+    password: str = Field(..., description="口令：6~32 位")
+    nickname: Optional[str] = Field(None, description="昵称，留空则用登录名")
+    grade: Optional[str] = Field(None, description="学段")
+
+
+class MergeGuestRequest(BaseModel):
+    guest_token: Optional[str] = Field(None, description="游客期间的 Token，用于把那段数据并过来")
 
 
 class WrongPracticeRequest(BaseModel):

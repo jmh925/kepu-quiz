@@ -46,7 +46,32 @@
     var info = util.levelInfo(state.totalXp);
     document.getElementById('lv-chip').textContent = 'Lv.' + info.level + ' ' + util.levelTitle(info.level);
     var user = api.getUser();
-    document.getElementById('who').textContent = user ? (user.nickname || '小科学家') : '游客模式';
+    var btn = document.getElementById('auth-switch');
+    if (!api.getToken()) {
+      document.getElementById('who').textContent = '未登录';
+      btn.hidden = false;
+      btn.textContent = '登录 / 注册';
+      btn.onclick = function () { location.hash = '#/login'; renderLogin(); };
+      return;
+    }
+    var name = (user && user.nickname) || '小科学家';
+    document.getElementById('who').textContent = name + (state.isGuest ? '（游客）' : '');
+    btn.hidden = false;
+    btn.textContent = state.isGuest ? '注册以保存记录' : '退出';
+    btn.onclick = function () {
+      if (state.isGuest) { location.hash = '#/login'; renderLogin('register'); return; }
+      UI.confirm({ title: '要退出吗？', content: '退出后错题本和经验值需要重新登录才能看到。',
+                   confirmText: '退出', cancelText: '再看看' })
+        .then(function (yes) {
+          if (!yes) return;
+          api.clearSession();
+          state.totalXp = 0;
+          state.isGuest = false;
+          renderTop();
+          location.hash = '#/login';
+          renderLogin();
+        });
+    };
   }
 
   function flash(text) {
@@ -88,6 +113,9 @@
     if (!checkOrigin()) {
       return;
     }
+    // 先把游客 Token 记下来：注册/登录后要把这段时间的数据并过去，否则孩子会觉得白玩。
+    var guestToken = api.getToken();
+
     api.get('/grades', { silent: true })
       .then(function (data) {
         state.grades = (data && data.grades) || [];
@@ -101,33 +129,199 @@
           { value: 'primary_high', short: '小学高年级' },
           { value: 'junior', short: '初中' }
         ];
-      })
-      .then(function () {
-        if (api.getToken()) {
-          api.get('/user/profile', { silent: true })
-            .then(function (d) { state.totalXp = (d.user && d.user.total_xp) || 0; renderTop(); })
-            .catch(function () {});
-        }
-        renderTop();
       });
 
+    // 路由与登录态：没登录先去登录页（但「去闯关」允许以游客身份试玩）
+    window.addEventListener('hashchange', route);
+
     if (!api.getToken()) {
-      // 静默建一个本地账号，这样错题本、经验值这些持久化功能开箱就能用
-      api.post('/user/login', { nickname: '小科学家', grade: state.grade }, { silent: true })
+      renderLogin();
+      return;
+    }
+    state.guestToken = guestToken;
+    reloadProfile().then(function () {
+      route();
+    });
+  }
+
+  /** 拉一次个人资料，把等级、身份显示刷新 */
+  function reloadProfile() {
+    return api.get('/user/profile', { silent: true })
+      .then(function (d) {
+        state.totalXp = (d.user && d.user.total_xp) || 0;
+        state.isGuest = !!d.is_guest;
+        renderTop();
+      })
+      .catch(function () {
+        // Token 失效：退回登录页
+        api.clearSession();
+        renderTop();
+        if ((location.hash || '').indexOf('#/login') === -1) {
+          renderLogin();
+        }
+      });
+  }
+
+  /* ================= 登录 / 注册 =================
+   * 之前是启动时静默建一个游客账号，结果是：
+   *   1) 用户根本不知道有「账号」这回事，答错题进了哪个账号也无从判断；
+   *   2) 直接打开错题本时静默登录还没完成 → 接口 401 → 页面提示「要登录才能用」，
+   *      而且不会自动重试，看起来就是「答错了但错题本一直空着」。
+   * 现在改成显式的注册 / 登录页，游客也能先试玩，注册后数据自动并过来。
+   */
+  function renderLogin(mode) {
+    var isRegister = mode === 'register';
+    var isAdmin = mode === 'admin';
+
+    var tabs = '<div class="row" style="gap:10px;margin-bottom:18px">'
+      + '  <button id="tab-login" class="btn ' + (!isRegister && !isAdmin ? 'btn-primary' : 'btn-ghost') + ' grow">学生登录</button>'
+      + '  <button id="tab-register" class="btn ' + (isRegister ? 'btn-primary' : 'btn-ghost') + ' grow">学生注册</button>'
+      + '  <button id="tab-admin" class="btn ' + (isAdmin ? 'btn-primary' : 'btn-ghost') + ' grow">管理员</button>'
+      + '</div>';
+
+    if (isAdmin) {
+      view.innerHTML = '<div style="max-width:460px;margin:28px auto 0">'
+        + '<div class="card" style="text-align:center">'
+        + util.mascot('idle', 'lg', '小科把管理端的门也搬到这儿啦')
+        + '</div>'
+        + '<div class="card">'
+        + tabs
+        + '  <div class="field"><label>管理员账号</label>'
+        + '    <input id="auth-user" class="input" placeholder="默认 admin" value="' + util.esc(state.lastAdmin || '') + '"></div>'
+        + '  <div class="field"><label>管理员口令</label>'
+        + '    <input id="auth-pass" class="input" type="password" placeholder="默认 kepu@2026"></div>'
+        + '  <button id="auth-submit" class="btn btn-primary btn-block" style="margin-top:6px">进入管理端</button>'
+        + '  <div class="muted" style="margin-top:12px;text-align:center">'
+        + '    这里看的是每个学生的闯关记录与错题分类，也能维护题库；'
+        + '    登录后直接进 <a href="/admin/">/admin/</a>。</div>'
+        + '</div>'
+        + '</div>';
+
+      document.getElementById('tab-login').onclick = function () { renderLogin('login'); };
+      document.getElementById('tab-register').onclick = function () { renderLogin('register'); };
+      document.getElementById('tab-admin').onclick = function () { renderLogin('admin'); };
+      document.getElementById('auth-submit').onclick = function () {
+        var username = (document.getElementById('auth-user').value || '').trim();
+        var password = document.getElementById('auth-pass').value || '';
+        if (!username) { UI.toast('填一下管理员账号'); return; }
+        if (!password) { UI.toast('填一下管理员口令'); return; }
+        state.lastAdmin = username;
+        UI.loading(true, '小科正在核对管理员身份…');
+        api.adminLogin(username, password)
+          .then(function () {
+            UI.loading(false, '');
+            UI.toast('身份核对通过，正在打开管理端…');
+            setTimeout(function () { location.href = '/admin/'; }, 600);
+          })
+          .catch(function (err) {
+            UI.loading(false);
+            UI.toast((err && err.message) || '没进去，检查一下账号口令');
+          });
+      };
+      return;
+    }
+
+    view.innerHTML = '<div style="max-width:460px;margin:28px auto 0">'
+      + '<div class="card" style="text-align:center">'
+      + util.mascot('idle', 'lg', '我是小科，先报个到吧')
+      + '</div>'
+      + '<div class="card">'
+      + tabs
+      + '  <div class="field"><label>登录名</label>'
+      + '    <input id="auth-user" class="input" placeholder="3~20 位字母、数字或下划线，例如 xiaoming" value="' + util.esc(state.lastUsername || '') + '"></div>'
+      + '  <div class="field"><label>口令</label>'
+      + '    <input id="auth-pass" class="input" type="password" placeholder="6~32 位"></div>'
+      + (isRegister
+        ? '  <div class="field"><label>昵称（可选）</label>'
+          + '    <input id="auth-nick" class="input" placeholder="小科怎么称呼你"></div>'
+        : '')
+      + '  <div class="field"><label>学段</label>'
+      + '    <select id="auth-grade" class="input">'
+      + ['primary_low|小学低年级', 'primary_high|小学高年级', 'junior|初中'].map(function (g) {
+          var parts = g.split('|');
+          return '<option value="' + parts[0] + '"'
+            + (parts[0] === state.grade ? ' selected' : '') + '>' + parts[1] + '</option>';
+        }).join('')
+      + '    </select></div>'
+      + '  <button id="auth-submit" class="btn btn-primary btn-block" style="margin-top:6px">'
+      + (isRegister ? '注册并开始闯关' : '登录') + '</button>'
+      + '  <button id="auth-guest" class="btn btn-ghost btn-block" style="margin-top:10px">先逛逛（游客体验）</button>'
+      + '  <div class="muted" style="margin-top:12px;text-align:center">'
+      + '    游客也能答题，但错题本和经验值不会保存；注册后会把游客期间的记录并过来。</div>'
+      + '</div>'
+      + '<div class="card" style="text-align:left">'
+      + '  <div class="h3" style="margin-bottom:8px">老师 / 管理员</div>'
+      + '  <div class="muted">在上面点「管理员」页签就能直接登录，进去可以看每个学生的答题记录、维护题库。</div>'
+      + '</div>'
+      + '</div>';
+
+    document.getElementById('tab-login').onclick = function () { renderLogin('login'); };
+    document.getElementById('tab-register').onclick = function () { renderLogin('register'); };
+    document.getElementById('tab-admin').onclick = function () { renderLogin('admin'); };
+    document.getElementById('auth-guest').onclick = function () {
+      UI.loading(true, '小科正在准备…');
+      api.loginAsGuest(state.grade)
+        .then(function (data) {
+          UI.loading(false);
+          api.saveSession(data.token, data.user);
+          state.guestToken = data.token;
+          state.totalXp = 0;
+          return reloadProfile();
+        })
+        .then(function () {
+          location.hash = '#/home';
+          route();
+        })
+        .catch(function () { UI.loading(false); });
+    };
+    document.getElementById('auth-submit').onclick = function () {
+      var username = (document.getElementById('auth-user').value || '').trim();
+      var password = document.getElementById('auth-pass').value || '';
+      var nickEl = document.getElementById('auth-nick');
+      var nickname = nickEl ? (nickEl.value || '').trim() : '';
+      var grade = document.getElementById('auth-grade').value;
+      state.lastUsername = username;
+      state.grade = grade;
+      try { localStorage.setItem('kepu_grade', grade); } catch (e) {}
+
+      if (!username) { UI.toast('先想一个登录名吧'); return; }
+      if (!password) { UI.toast('再设一个口令'); return; }
+
+      var guest = state.guestToken;
+      UI.loading(true, isRegister ? '小科正在给你建账号…' : '小科正在核对…');
+      var call = isRegister
+        ? api.register(username, password, nickname, grade)
+        : api.loginWithPassword(username, password);
+      call
         .then(function (data) {
           api.saveSession(data.token, data.user);
           state.totalXp = (data.user && data.user.total_xp) || 0;
-          renderTop();
+          // 把游客期间的数据并过来（只在有游客 Token 时做）
+          var merge = guest ? api.mergeGuest(guest) : Promise.resolve(null);
+          return merge.then(function (res) {
+            if (res && res.moved) {
+              UI.toast('已把刚才的 ' + res.moved + ' 条记录并到账号里');
+            } else {
+              UI.toast(isRegister ? '账号建好啦，开始闯关！' : '欢迎回来！');
+            }
+            return reloadProfile();
+          });
         })
-        .catch(function () { renderTop(); });
-    }
-
-    window.addEventListener('hashchange', route);
-    route();
+        .then(function () {
+          UI.loading(false);
+          location.hash = '#/home';
+          route();
+        })
+        .catch(function (err) {
+          UI.loading(false);
+          UI.toast((err && err.message) || '没成功，再试一次吧');
+        });
+    };
   }
 
   /* ================= 路由 ================= */
   var routes = {
+    login: function () { renderLogin(); },
     home: renderHome,
     quiz: renderQuiz,
     report: renderReport,
@@ -148,6 +342,14 @@
       });
     }
     if (!routes[name]) { name = 'home'; }
+    // 需要登录才能用的页面：没登录就直接去登录页。
+    // 这样做是为了避免「页面先发请求 → 401 → 显示一句要登录」这种半截状态：
+    // 之前错题本就是这样，用户看到的是「答错了但错题本一直是空的」。
+    var needLogin = ['wrong', 'profile', 'knowledge'];
+    if (needLogin.indexOf(name) !== -1 && !api.getToken()) {
+      renderLogin();
+      return;
+    }
     document.querySelectorAll('[data-nav]').forEach(function (a) {
       var on = a.getAttribute('data-nav') === name ||
                (name === 'quiz' || name === 'report') && a.getAttribute('data-nav') === 'home';
@@ -503,10 +705,17 @@
       .then(function (data) {
         UI.loading(false);
         state.lastResult = data;
-        state.totalXp = state.totalXp + (data.xp_gained || 0);
-        renderTop();
         sound.win();
-        location.hash = '#/report';
+        // 用服务端的累计经验值刷新等级（比本地累加准）；拉不到就本地累加兜底
+        var fallback = function () {
+          state.totalXp = state.totalXp + (data.xp_gained || 0);
+          renderTop();
+        };
+        reloadProfile().then(function () {
+          if (!state.totalXp) { fallback(); }
+          location.hash = '#/report';
+          route();
+        });
       })
       .catch(function () { UI.loading(false); });
   }
@@ -922,11 +1131,24 @@
           + '<button class="btn btn-ghost btn-sm" id="sound-toggle">' + (sound.enabled() ? '已开启' : '已关闭') + '</button>'
           + '</div></div>'
 
+          + (state.isGuest
+            ? '<div class="card" style="background:#FFF9E8">'
+              + '<div class="h3">你正在用游客身份</div>'
+              + '<div class="muted" style="margin:6px 0 12px">游客答题不会保存错题与经验值。'
+              + '注册一个账号（口令随便设，6 位以上），小科会把这段时间的记录并过去，不会白玩。</div>'
+              + '<button class="btn btn-primary" id="go-register">注册账号，保存记录</button>'
+              + '</div>'
+            : '')
+
           + '<div class="acts" style="margin-bottom:40px">'
           + '<button class="btn btn-ghost" id="clear-wrong2">清空错题本</button>'
           + '<button class="btn btn-ghost" id="logout">退出登录</button>'
           + '</div>';
 
+        var regBtn = view.querySelector('#go-register');
+        if (regBtn) {
+          regBtn.onclick = function () { location.hash = '#/login'; renderLogin('register'); };
+        }
         view.querySelector('#sound-toggle').onclick = function () {
           var on = !sound.enabled();
           sound.setEnabled(on);

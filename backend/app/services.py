@@ -43,12 +43,93 @@ def decode_token(token: str):
 
 
 # ---------------- 用户 ----------------
-def login(code=None, nickname="小科学家", grade=None):
-    """登录：当前以本地方式建立账号（微信 jscode2session 为预留扩展点）。
+# 登录名规则：字母 / 数字 / 下划线，3~20 位；口令 6~32 位。
+# 放宽成「字母数字下划线」而不是绑手机号，是为了让小朋友也能用昵称式账号。
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{3,20}$")
+PASSWORD_MIN, PASSWORD_MAX = 6, 32
 
-    设计取舍：本系统采用「可选登录」——游客可以完整体验出题与答题，
-    只有错题本、经验值等需要持久化归属的功能才要求登录，
-    这样既降低了使用门槛，也让演示不依赖微信开发者工具。
+
+def _hash_password(password, salt=None):
+    """与管理员账号同一套：PBKDF2-HMAC-SHA256 + 每账号独立随机盐。"""
+    import hashlib
+    import secrets
+    salt = salt or secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"),
+                             bytes.fromhex(salt), 120000)
+    return dk.hex(), salt
+
+
+def _verify_password(password, hash_hex, salt_hex):
+    import hmac
+    if not hash_hex or not salt_hex:
+        return False
+    calc, _ = _hash_password(password, salt_hex)
+    return hmac.compare_digest(calc, hash_hex)
+
+
+def register(username, password, nickname=None, grade=None):
+    """注册新账号。返回 (结果, 错误信息)。"""
+    name = (username or "").strip()
+    pwd = password or ""
+    if not USERNAME_RE.match(name):
+        return None, "登录名用 3~20 位字母、数字或下划线"
+    if len(pwd) < PASSWORD_MIN or len(pwd) > PASSWORD_MAX:
+        return None, "口令请设 %d~%d 位" % (PASSWORD_MIN, PASSWORD_MAX)
+    if db.query_one("SELECT id FROM users WHERE username=?", (name,)):
+        return None, "这个登录名已经有人用了，换一个试试"
+
+    hash_hex, salt = _hash_password(pwd)
+    g = grades.normalize_grade(grade)
+    openid = "local_" + uuid.uuid4().hex[:12]
+    uid = db.execute(
+        "INSERT INTO users(openid, username, password_hash, salt, nickname, grade, last_login_at) "
+        "VALUES(?,?,?,?,?,?,datetime('now','localtime'))",
+        (openid, name, hash_hex, salt, (nickname or name).strip() or name, g))
+    user = db.query_one("SELECT * FROM users WHERE id=?", (uid,))
+    return {"token": issue_token(user["id"], user["openid"]), "user": _user_vo(user)}, None
+
+
+def login(code=None, nickname="小科学家", grade=None, username=None, password=None):
+    """登录。支持两种方式：
+
+    1. 账号 + 口令（网页版学生端使用）；
+    2. 微信 code（小程序端使用，当前以本地账号实现，见 login_by_code）。
+
+    返回 (结果, 错误信息)，便于路由层区分「参数错」与「账号口令错」。
+    """
+    if username:
+        return login_with_password(username, password)
+    return login_by_code(code, nickname, grade), None
+
+
+def login_with_password(username, password):
+    """账号 + 口令登录。返回 (结果, 错误信息)——**必须是二元组**。
+
+    踩过的坑：这里一度在成功时只返回结果字典，而路由里写的是
+    `result, err = services.login(...)`，于是字典被按 key 解包，
+    err 变成了字符串 "user"，正确口令也会登录失败。
+    凡是「可能失败」的函数，统一返回二元组，别让调用方去猜。
+    """
+    name = (username or "").strip()
+    row = db.query_one("SELECT * FROM users WHERE username=?", (name,))
+    if not row:
+        return None, "没有找到这个登录名，先注册一个吧"
+    if not row.get("password_hash"):
+        return None, "这个账号还没有设置口令"
+    if not _verify_password(password or "", row["password_hash"], row["salt"]):
+        return None, "口令不对，再想想？"
+    if row.get("status") == 0:
+        return None, "这个账号已被停用，请联系老师"
+    db.execute("UPDATE users SET last_login_at=datetime('now','localtime') WHERE id=?",
+               (row["id"],))
+    return {"token": issue_token(row["id"], row["openid"]), "user": _user_vo(row)}, None
+
+
+def login_by_code(code=None, nickname="小科学家", grade=None):
+    """以微信 code 建立/复用账号（小程序端路径，也是游客体验用的入口）。
+
+    预留接入点：接入 jscode2session 后把 code 换成真实 openid 即可，
+    其余逻辑不用改。当前以本地账号实现，便于不依赖微信后台也能演示。
     """
     openid = "local_" + uuid.uuid4().hex[:12] if not code else "wx_" + str(code)[:32]
     user = db.query_one("SELECT * FROM users WHERE openid=?", (openid,))
@@ -60,8 +141,69 @@ def login(code=None, nickname="小科学家", grade=None):
     else:
         db.execute("UPDATE users SET last_login_at=datetime('now','localtime') WHERE id=?",
                    (user["id"],))
-    token = issue_token(user["id"], user["openid"])
-    return {"token": token, "user": _user_vo(user)}
+    return {"token": issue_token(user["id"], user["openid"]), "user": _user_vo(user)}
+
+
+def guest_login(grade=None):
+    """游客体验：建一个不带口令的临时账号，让游客也能攒经验、存错题。
+
+    「先试再注册」不该白玩——注册时会把这些数据并过去（见 merge_guest_data）。
+    """
+    return login_by_code(None, "小科学家", grade)
+
+
+def merge_guest_data(guest_user_id, target_user_id):
+    """把游客期间产生的数据并到正式账号上。
+
+    为什么需要：孩子注册前往往已经答过几轮、攒了错题。如果注册后一切归零，
+    他会觉得「白答了」——这是很糟的体验。这里把闯关记录、答题记录、
+    复盘报告、知识库文档、错题、经验值全部改归属。
+    """
+    if not guest_user_id or not target_user_id or guest_user_id == target_user_id:
+        return {"moved": 0}
+    guest = db.query_one("SELECT * FROM users WHERE id=?", (guest_user_id,))
+    target = db.query_one("SELECT * FROM users WHERE id=?", (target_user_id,))
+    if not guest or not target:
+        return {"moved": 0}
+
+    moved = 0
+    for table in ("quiz_sessions", "answer_records", "reports", "knowledge_docs"):
+        row = db.query_one("SELECT COUNT(*) AS c FROM %s WHERE user_id=?" % table,
+                           (guest_user_id,))
+        if row and row["c"]:
+            db.execute("UPDATE %s SET user_id=? WHERE user_id=?" % table,
+                       (target_user_id, guest_user_id))
+            moved += int(row["c"])
+
+    # 错题要特别小心：同一个人可能有「同题干」两条记录，
+    # 直接改 user_id 会撞上 (user_id, stem) 唯一索引，所以要先合并再删。
+    for w in db.query("SELECT * FROM wrong_questions WHERE user_id=?", (guest_user_id,)):
+        exist = db.query_one(
+            "SELECT id FROM wrong_questions WHERE user_id=? AND stem=?",
+            (target_user_id, w["stem"]))
+        if exist:
+            db.execute("UPDATE wrong_questions SET wrong_count=wrong_count+? WHERE id=?",
+                       (w["wrong_count"], exist["id"]))
+            db.execute("DELETE FROM wrong_questions WHERE id=?", (w["id"],))
+        else:
+            db.execute("UPDATE wrong_questions SET user_id=? WHERE id=?",
+                       (target_user_id, w["id"]))
+        moved += 1
+
+    db.execute("UPDATE users SET total_xp=total_xp+?, "
+               "updated_at=datetime('now','localtime') WHERE id=?",
+               (guest["total_xp"] or 0, target_user_id))
+    # 游客账号停用，避免它继续被当成有效账号
+    db.execute("UPDATE users SET status=0 WHERE id=?", (guest_user_id,))
+    return {"moved": moved}
+
+
+def is_guest(user_id):
+    """判断某账号是不是游客（没有设置口令的就是游客/托管账号）。"""
+    if not user_id:
+        return True
+    row = db.query_one("SELECT username, password_hash FROM users WHERE id=?", (user_id,))
+    return not (row and row.get("username") and row.get("password_hash"))
 
 
 def get_profile(user_id):

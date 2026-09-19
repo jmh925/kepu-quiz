@@ -5,18 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>科普知识闯关小程序 · 管理端</title>
 <link rel="stylesheet" href="assets/admin.css">
+<script>window.APP_BASE = '/app/';</script>
 </head>
 <body>
 <!-- 登录层 -->
 <div id="login-layer" class="login-layer">
   <form id="login-form" class="login-card" autocomplete="off">
     <div class="login-logo">科</div>
-    <h1>科普知识闯关小程序 · 管理端</h1>
-    <p class="muted">面向家长 / 教师 / 教务的运营后台</p>
+    <h1>科普闯关系统 · 管理端</h1>
+    <p class="muted">面向老师 / 教务的运营后台</p>
     <label>账号<input id="username" type="text" value="admin" required></label>
     <label>口令<input id="password" type="password" placeholder="默认口令见 README" required></label>
     <button class="btn btn-primary" type="submit">登录</button>
     <p id="login-msg" class="msg"></p>
+    <p class="muted" style="margin-top:14px;font-size:13px">
+      学生端入口：<a href="/app/">/app/</a>（学生用自己的账号登录或注册）
+    </p>
   </form>
 </div>
 
@@ -81,7 +85,7 @@
     <section id="view-users" class="view hidden">
       <header class="view-head">
         <h2>用户管理</h2>
-        <div class="tools"><input id="u-keyword" class="input" placeholder="按昵称 / openid 搜索">
+        <div class="tools"><input id="u-keyword" class="input" placeholder="按登录名 / 昵称搜索">
           <button class="btn btn-ghost btn-sm" onclick="Admin.loadUsers(1)">搜索</button></div>
       </header>
       <div class="panel"><table id="u-table" class="table"></table></div>
@@ -135,6 +139,15 @@
     <label class="block">解析<textarea id="f-analysis" rows="2" placeholder="用一句话讲清楚为什么"></textarea></label>
     <p id="modal-msg" class="msg"></p>
     <div class="modal-foot"><button class="btn btn-primary" onclick="Admin.saveQuestion()">保存</button></div>
+  </div>
+</div>
+
+<!-- 学生答题详情弹层 -->
+<div id="user-modal" class="modal hidden">
+  <div class="modal-card wide">
+    <div class="modal-head"><h3>学生答题信息</h3>
+      <button class="btn btn-ghost btn-sm" onclick="Admin.closeUserDetail()">关闭</button></div>
+    <div id="user-detail"></div>
   </div>
 </div>
 

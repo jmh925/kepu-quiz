@@ -14,6 +14,10 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = os.path.join(ROOT, "web", "shots")
 BASE = os.getenv("KEPU_WEB_URL", "http://127.0.0.1:8000/app/")
+# 入口页现在是注册 / 登录页，所以这一轮验收先用一个全新账号注册进去；
+# 每个账号名带时间戳，脚本才能反复运行而不会撞「已经有人用了」。
+USER = "web" + str(int(time.time()))[-8:]
+PWD = "kepu123456"
 
 from playwright.sync_api import sync_playwright      # noqa: E402
 
@@ -65,6 +69,23 @@ def main():
 
         def shot(name):
             pg.screenshot(path=os.path.join(SHOTS, name + ".png"), full_page=True)
+
+        # ---------- 0.5 入口页：注册一个新账号 ----------
+        # 未登录时不会直接看到首页，而是先落在注册 / 登录页（这是刻意的设计：
+        # 以前静默建游客账号，用户答错的题进了哪个账号无从判断，错题本看起来一直是空的）。
+        entry = pg.locator("#view").inner_text()
+        check("学生注册" in entry and "管理员" in entry,
+              "未登录时落在入口页（含学生登录 / 注册 / 管理员三个页签）")
+        pg.locator("#tab-register").click()
+        pg.wait_for_timeout(300)
+        pg.locator("#auth-user").fill(USER)
+        pg.locator("#auth-pass").fill(PWD)
+        pg.locator("#auth-nick").fill("网页验收")
+        pg.locator("#auth-grade").select_option("primary_high")
+        pg.locator("#auth-submit").click()
+        pg.wait_for_timeout(2500)
+        check("去闯关" in pg.locator("#view").inner_text(),
+              "注册后进入首页（账号 %s）" % USER)
 
         # ---------- 1. 首页 ----------
         text = pg.locator("#view").inner_text()

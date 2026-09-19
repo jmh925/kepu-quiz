@@ -23,6 +23,9 @@ _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     openid TEXT NOT NULL UNIQUE,
+    username TEXT,                                  -- 学生自设的登录名（可空：老账号/游客没有）
+    password_hash TEXT,                             -- PBKDF2-HMAC-SHA256 哈希
+    salt TEXT,                                      -- 每账号独立随机盐
     nickname TEXT NOT NULL DEFAULT '学习者',
     avatar_url TEXT NOT NULL DEFAULT '',
     total_xp INTEGER NOT NULL DEFAULT 0,
@@ -32,6 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- 表 4-2 闯关会话表
 CREATE TABLE IF NOT EXISTS quiz_sessions (
@@ -150,6 +154,10 @@ _MIGRATIONS = [
     ("users", "status", "INTEGER NOT NULL DEFAULT 1"),
     ("users", "grade", "TEXT NOT NULL DEFAULT 'primary_high'"),
     ("users", "last_login_at", "TEXT"),
+    # 学生端从「只有游客」升级为「可注册登录」时新增的三列
+    ("users", "username", "TEXT"),
+    ("users", "password_hash", "TEXT"),
+    ("users", "salt", "TEXT"),
     ("quiz_sessions", "grade", "TEXT NOT NULL DEFAULT 'primary_high'"),
     ("quiz_sessions", "source", "TEXT NOT NULL DEFAULT 'bank'"),
     ("answer_records", "duration_ms", "INTEGER NOT NULL DEFAULT 0"),

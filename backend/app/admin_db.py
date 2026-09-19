@@ -247,20 +247,98 @@ def trend(days=7):
     return [{"date": r["d"], "count": r["c"]} for r in rows]
 
 
+def user_detail(user_id):
+    """单个学生的答题信息汇总（管理端「用户管理」点人进来看到的那些）。
+
+    按用途分成几块，而不是把原始记录一股脑丢出去：
+    - profile：账号基本情况
+    - stats：闯关次数、平均正确率、错题数、掌握情况
+    - sessions：逐次闯关记录（标题 / 学段 / 来源 / 正确率）
+    - wrong_points：薄弱知识点排行（错得最多的排前面）
+    - wrong_items：最近错的题（供老师看孩子到底卡在哪）
+    - knowledge：这个孩子传过什么资料
+    """
+    user = db.query_one(
+        "SELECT id, nickname, username, openid, total_xp, status, grade, "
+        "created_at, last_login_at FROM users WHERE id=?", (user_id,))
+    if not user:
+        return None
+
+    sessions = db.query(
+        "SELECT s.quiz_id, s.title, s.grade, s.source, s.created_at, "
+        "COALESCE(a.total_questions, 0) AS total, COALESCE(a.correct_count, 0) AS correct, "
+        "COALESCE(a.accuracy, 0) AS accuracy, COALESCE(a.duration_ms, 0) AS duration_ms, "
+        "(SELECT COUNT(*) FROM wrong_questions w WHERE w.quiz_id = s.quiz_id) AS wrong_count "
+        "FROM quiz_sessions s LEFT JOIN answer_records a ON a.quiz_id = s.quiz_id "
+        "WHERE s.user_id = ? ORDER BY s.id DESC LIMIT 50", (user_id,))
+
+    answered = [s for s in sessions if s["total"]]
+    avg_accuracy = round(sum(s["accuracy"] for s in answered) / len(answered), 1) if answered else 0
+
+    wrong_points = db.query(
+        "SELECT knowledge_point AS kp, COUNT(*) AS questions, SUM(wrong_count) AS times "
+        "FROM wrong_questions WHERE user_id=? GROUP BY knowledge_point "
+        "ORDER BY times DESC LIMIT 10", (user_id,))
+
+    wrong_items = db.query(
+        "SELECT stem, knowledge_point, wrong_count, last_wrong_at, analysis "
+        "FROM wrong_questions WHERE user_id=? ORDER BY wrong_count DESC, last_wrong_at DESC "
+        "LIMIT 20", (user_id,))
+
+    docs = db.query(
+        "SELECT filename, file_type, size_bytes, created_at FROM knowledge_docs "
+        "WHERE user_id=? ORDER BY id DESC LIMIT 20", (user_id,))
+
+    grade_stats = db.query(
+        "SELECT grade, COUNT(*) AS c FROM quiz_sessions WHERE user_id=? GROUP BY grade",
+        (user_id,))
+    source_stats = db.query(
+        "SELECT source, COUNT(*) AS c FROM quiz_sessions WHERE user_id=? GROUP BY source",
+        (user_id,))
+
+    return {
+        "profile": user,
+        "is_guest": not (user.get("username") and _has_password(user_id)),
+        "stats": {
+            "quiz_count": len(sessions),
+            "answered_count": len(answered),
+            "avg_accuracy": avg_accuracy,
+            "wrong_count": int(db.scalar(
+                "SELECT COUNT(*) FROM wrong_questions WHERE user_id=?", (user_id,))),
+            "by_grade": {r["grade"]: r["c"] for r in grade_stats},
+            "by_source": {r["source"]: r["c"] for r in source_stats},
+        },
+        "sessions": sessions,
+        "wrong_points": wrong_points,
+        "wrong_items": wrong_items,
+        "knowledge": docs,
+    }
+
+
+def _has_password(user_id):
+    row = db.query_one("SELECT password_hash FROM users WHERE id=?", (user_id,))
+    return bool(row and row.get("password_hash"))
+
+
 def list_users(keyword=None, page=1, size=20):
     where, params = ["1=1"], []
     if keyword:
-        where.append("(nickname LIKE ? OR openid LIKE ?)")
-        params += ["%" + keyword + "%", "%" + keyword + "%"]
+        # 老师找学生通常直接报登录名（比如 xiaoming），所以登录名也要能搜
+        where.append("(nickname LIKE ? OR openid LIKE ? OR username LIKE ?)")
+        params += ["%" + keyword + "%", "%" + keyword + "%", "%" + keyword + "%"]
     clause = " AND ".join(where)
     total = int(db.scalar("SELECT COUNT(*) FROM users WHERE " + clause, tuple(params)))
     offset = max(0, (int(page) - 1) * int(size))
     rows = db.query(
-        "SELECT u.id, u.nickname, u.openid, u.total_xp, u.status, u.grade, u.created_at, "
+        "SELECT u.id, u.nickname, u.username, u.openid, u.total_xp, u.status, u.grade, "
+        "u.created_at, u.last_login_at, "
         "(SELECT COUNT(*) FROM quiz_sessions s WHERE s.user_id=u.id) AS quiz_count, "
         "(SELECT COUNT(*) FROM wrong_questions w WHERE w.user_id=u.id) AS wrong_count "
         "FROM users u WHERE " + clause + " ORDER BY u.id DESC LIMIT ? OFFSET ?",
         tuple(params) + (int(size), offset))
+    for r in rows:
+        # 没有登录名的就是游客账号（先试玩再注册的那批）
+        r["is_guest"] = 0 if r.get("username") else 1
     return {"items": rows, "total": total, "page": int(page), "size": int(size)}
 
 

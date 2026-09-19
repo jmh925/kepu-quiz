@@ -16,8 +16,8 @@ from . import grades
 from . import services
 from .config import settings
 from .schemas import (
-    AnswerSubmitRequest, LoginRequest, QuizGenerateRequest,
-    ReportGenerateRequest, WrongItemRequest, WrongPracticeRequest,
+    AnswerSubmitRequest, LoginRequest, MergeGuestRequest, QuizGenerateRequest,
+    RegisterRequest, ReportGenerateRequest, WrongItemRequest, WrongPracticeRequest,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -88,13 +88,46 @@ async def report_generate(req: ReportGenerateRequest,
     return ok(result)
 
 
-# 6. 登录
+# 6. 注册
+@router.post("/user/register")
+async def user_register(req: RegisterRequest):
+    result, err = services.register(req.username, req.password, req.nickname, req.grade)
+    if err:
+        return fail(4002 if "已经有人用" in err else 4000, err)
+    return ok(result)
+
+
+# 7. 登录（账号口令 / 微信 code 两种）
 @router.post("/user/login")
 async def user_login(req: LoginRequest):
-    return ok(services.login(req.code, req.nickname, req.grade))
+    result, err = services.login(req.code, req.nickname, req.grade,
+                                 req.username, req.password)
+    if err:
+        return fail(4010, err, 401)
+    return ok(result)
 
 
-# 7. 个人中心
+# 8. 游客体验：不注册也能先玩，数据会暂存在这个临时账号上
+@router.post("/user/guest")
+async def user_guest(req: Optional[LoginRequest] = None):
+    grade = req.grade if req else None
+    return ok(services.guest_login(grade))
+
+
+# 9. 把游客期间的数据并到正式账号（注册/登录后调用，避免「白玩」）
+@router.post("/user/merge-guest")
+async def user_merge_guest(req: MergeGuestRequest,
+                           user_id: Optional[int] = Depends(get_optional_user)):
+    if user_id is None:
+        return fail(4010, "请先登录", 401)
+    guest_id = None
+    if req.guest_token:
+        payload = services.decode_token(req.guest_token)
+        guest_id = payload.get("uid") if payload else None
+    return ok(services.merge_guest_data(guest_id, user_id))
+
+
+# 10. 个人中心
 @router.get("/user/profile")
 async def user_profile(user_id: Optional[int] = Depends(get_optional_user)):
     if user_id is None:
@@ -102,6 +135,7 @@ async def user_profile(user_id: Optional[int] = Depends(get_optional_user)):
     result = services.get_profile(user_id)
     if result is None:
         return fail(4010, "账号不存在", 401)
+    result["is_guest"] = services.is_guest(user_id)
     return ok(result)
 
 
