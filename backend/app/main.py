@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """应用入口：装配路由、统一异常处理、CORS、静态管理端。
 
 启动方式（两种都行）：
@@ -8,6 +8,7 @@
 接口文档：http://127.0.0.1:8000/docs
 管理端：  http://127.0.0.1:8000/admin/
 """
+import mimetypes
 import os
 
 from fastapi import FastAPI, Request
@@ -21,6 +22,46 @@ from . import admin_db
 from . import database as db
 from . import routers
 from .config import BASE_DIR, settings
+
+# ------------------------------------------------------------------
+# 静态资源的 MIME 类型必须显式注册。
+#
+# 为什么：Python 3.13 起 mimetypes 收紧了内置映射表，不再认识 .css / .js，
+# StaticFiles 会把它们猜成 application/x-css、application/x-js；
+# 而浏览器对样式表与脚本是**严格检查 MIME** 的，类型不对就整段丢弃——
+# 表现是「页面没有样式、脚本不执行、按钮点了没反应」，
+# 从外观上极容易被误判成「前端没渲染」，实际是响应头的问题。
+# 这个坑踩过一次（网页版上线后打不开），务必保留这段。
+# ------------------------------------------------------------------
+for _ext, _type in (
+    (".css", "text/css"),
+    (".js", "text/javascript"),
+    (".mjs", "text/javascript"),
+    (".json", "application/json"),
+    (".svg", "image/svg+xml"),
+    (".woff2", "font/woff2"),
+    (".map", "application/json"),
+):
+    mimetypes.add_type(_type, _ext)
+
+
+class TypedStaticFiles(StaticFiles):
+    """静态文件：显式给出常见前端资源的 MIME，避免运行环境差异导致整页失效。"""
+
+    _EXTRA = {
+        ".css": "text/css",
+        ".js": "text/javascript",
+        ".mjs": "text/javascript",
+        ".json": "application/json",
+        ".svg": "image/svg+xml",
+        ".html": "text/html",
+    }
+
+    def guess_type(self, path):
+        ext = os.path.splitext(str(path))[1].lower()
+        if ext in self._EXTRA:
+            return self._EXTRA[ext]
+        return super().guess_type(path)
 
 app = FastAPI(
     title="科普知识闯关小程序 · 服务端",
@@ -101,9 +142,9 @@ def index():
 # 不需要小程序开发者工具，也不依赖任何构建步骤。
 _web_dir = os.path.join(os.path.dirname(BASE_DIR), "web")
 if os.path.isdir(_web_dir):
-    app.mount("/app", StaticFiles(directory=_web_dir, html=True), name="web")
+    app.mount("/app", TypedStaticFiles(directory=_web_dir, html=True), name="web")
 
 # ---------------- 管理端静态页面 ----------------
 _admin_dir = os.path.join(os.path.dirname(BASE_DIR), "admin")
 if os.path.isdir(_admin_dir):
-    app.mount("/admin", StaticFiles(directory=_admin_dir, html=True), name="admin")
+    app.mount("/admin", TypedStaticFiles(directory=_admin_dir, html=True), name="admin")

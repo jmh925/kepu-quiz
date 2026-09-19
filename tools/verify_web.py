@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """网页版科普闯关系统 · 端到端验收。
 
 用系统 Chrome 无头模式把六个页面与增删改查真正点一遍，并截图。
@@ -28,13 +28,40 @@ def check(ok, msg):
 
 def main():
     os.makedirs(SHOTS, exist_ok=True)
+
+    # ---------- 0. 静态资源的 MIME 类型（必须在浏览器之前先查） ----------
+    # 背景：Python 3.13 起 mimetypes 不再认识 .css/.js，StaticFiles 会返回
+    # application/x-css 之类；浏览器对样式表与脚本严格检查 MIME，会整段丢弃，
+    # 页面看起来就像「没渲染、按钮点了没反应」。这一项专门守住它。
+    import urllib.request
+    origin = BASE.split("/app/")[0]
+    for path, want in (("/app/assets/app.css", "text/css"),
+                       ("/app/assets/app.js", "text/javascript"),
+                       ("/app/assets/main.js", "text/javascript"),
+                       ("/admin/assets/admin.css", "text/css"),
+                       ("/admin/assets/admin.js", "text/javascript")):
+        try:
+            with urllib.request.urlopen(origin + path, timeout=10) as resp:
+                ctype = resp.headers.get("Content-Type", "")
+        except Exception as exc:
+            check(False, "%s 取不到：%s" % (path, exc))
+            continue
+        check(ctype.startswith(want), "%s 的 MIME 正确（%s）" % (path, ctype))
+
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome")
-        pg = b.new_page(viewport={"width": 1180, "height": 900})
+        # 用全新上下文，等同用户第一次访问（无缓存、无 localStorage）
+        ctx = b.new_context(viewport={"width": 1180, "height": 900})
+        pg = ctx.new_page()
         errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
         pg.goto(BASE)
         pg.wait_for_timeout(2000)
+
+        # CSS 是否真的生效：没生效的话页面看着就是「没渲染」
+        radius = pg.evaluate(
+            "getComputedStyle(document.querySelector('.card') || document.body).borderRadius")
+        check(radius not in ("0px", ""), "样式表已生效（卡片圆角 = %s）" % radius)
 
         def shot(name):
             pg.screenshot(path=os.path.join(SHOTS, name + ".png"), full_page=True)
