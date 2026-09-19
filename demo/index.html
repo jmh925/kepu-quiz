@@ -1,0 +1,3403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>科普知识闯关小程序 · 浏览器演示</title>
+<style>
+/* ==== 来自 app.wxss（全局视觉基调） ==== */
+
+/* ============================================================
+   全局视觉基调（面向中小学生）
+   原则：圆润、明亮、大字、大按钮；答错用暖橙而不是纯红，
+        避免"红色叉号"带来的挫败感与畏难情绪。
+   ============================================================ */
+.phone, .page-root, #mp-view {
+  /* 色彩 */
+  --c-primary: #4FC3F7;
+  --c-primary-deep: #0288D1;
+  --c-yellow: #FFCA28;
+  --c-green: #66BB6A;
+  --c-orange: #FF8A65;
+  --c-purple: #9575CD;
+  --c-text: #2F3E4E;
+  --c-sub: #7B8A99;
+  --c-line: #E3EEF7;
+  --c-bg: #F7FBFF;
+  --c-card: #FFFFFF;
+
+  /* 形状 */
+  --r-card: 12px;
+  --r-pill: 499.5px;
+  --shadow: 0 4px 12px rgba(79, 195, 247, 0.16);
+
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: 16px;
+  line-height: 1.7;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* ---------- 布局 ---------- */
+.page {
+  min-height: 100vh;
+  padding: 12px 14px 20px;
+  box-sizing: border-box;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.grow {
+  flex: 1;
+}
+
+/* ---------- 文字层级（字号比成人产品大约 2-4pt） ---------- */
+.h1 {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.h2 {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.body {
+  font-size: 16px;
+}
+
+.muted {
+  font-size: 14px;
+  color: var(--c-sub);
+}
+
+.mono-num {
+  font-family: "DIN Alternate", "Times New Roman", serif;
+  font-weight: 700;
+}
+
+/* ---------- 卡片 ---------- */
+.card {
+  background: var(--c-card);
+  border-radius: var(--r-card);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* ---------- 按钮（点按区域 ≥ 48px，儿童手指友好） ---------- */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: var(--r-pill);
+  font-size: 17px;
+  font-weight: 600;
+  border: none;
+  line-height: 1.2;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn-primary {
+  background: var(--c-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 10px rgba(79, 195, 247, 0.35);
+}
+
+.btn-primary.disabled,
+.btn-primary[disabled] {
+  background: #C9E6F5;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: #FFFFFF;
+  color: var(--c-primary-deep);
+  border: 1px solid var(--c-primary);
+}
+
+.btn-warm {
+  background: var(--c-orange);
+  color: #FFFFFF;
+  box-shadow: 0 4px 10px rgba(255, 138, 101, 0.32);
+}
+
+.btn-sm {
+  min-height: 36px;
+  font-size: 15px;
+  padding: 0 14px;
+}
+
+/* ---------- 标签 / 胶囊 ---------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  background: #EAF7FE;
+  color: var(--c-primary-deep);
+}
+
+.pill-yellow {
+  background: #FFF6DC;
+  color: #9A6B00;
+}
+
+.pill-green {
+  background: #E8F6E9;
+  color: #2E7D32;
+}
+
+.pill-orange {
+  background: #FFEDE6;
+  color: #C24A22;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #F1F7FC;
+  color: var(--c-sub);
+}
+
+/* ---------- 空状态 ---------- */
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--c-sub);
+  font-size: 15px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--c-line);
+  margin: 10px 0;
+}
+
+/* ---------- 文本输入 ---------- */
+.input {
+  background: #FFFFFF;
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 17px;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+/* ---------- 选项（答题页用） ---------- */
+.option {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--c-line);
+  border-radius: 11px;
+  font-size: 17px;
+  box-sizing: border-box;
+}
+
+.option-key {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #EAF7FE;
+  color: var(--c-primary-deep);
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+/* 选中但未判分 */
+.option.selected {
+  border-color: var(--c-primary);
+  background: #F2FBFF;
+}
+
+/* 判分后：正确用绿色，错误用暖橙（不用纯红） */
+.option.correct {
+  border-color: var(--c-green);
+  background: #EEF9EF;
+}
+
+.option.correct .option-key {
+  background: var(--c-green);
+  color: #FFFFFF;
+}
+
+.option.wrong {
+  border-color: var(--c-orange);
+  background: #FFF3EE;
+}
+
+.option.wrong .option-key {
+  background: var(--c-orange);
+  color: #FFFFFF;
+}
+
+.option.disabled {
+  opacity: 0.92;
+}
+
+/* ---------- 进度条 ---------- */
+.progress {
+  height: 10px;
+  background: #E7F3FA;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.progress-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #4FC3F7, #66BB6A);
+  border-radius: var(--r-pill);
+  transition: width 0.3s ease;
+}
+
+
+/* ==== 来自 components/mascot/mascot.wxss ==== */
+
+/* ============================================================
+   小科吉祥物 —— 纯 CSS 绘制，零图片、零第三方。
+   眼睛、嘴、腮红都随 state 变形换色；颜色优先取 app.wxss 的
+   CSS 变量，取不到时用回退值，保证组件单独预览也不掉色。
+   ============================================================ */
+
+.mascot {
+  --mascot-ink: var(--c-text, #2F3E4E);
+  --mascot-primary: var(--c-primary, #4FC3F7);
+  --mascot-deep: var(--c-primary-deep, #0288D1);
+  --mascot-green: var(--c-green, #66BB6A);
+  --mascot-orange: var(--c-orange, #FF8A65);
+  /* 脑袋直径：sm 30px / md 50px / lg 70px */
+  --head: 50px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.mascot-sm { --head: 30px; }
+.mascot-md { --head: 50px; }
+.mascot-lg { --head: 70px; }
+
+.mascot-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(var(--head) * 0.2);
+}
+
+.mascot-body {
+  position: relative;
+  width: var(--head);
+  height: var(--head);
+}
+
+/* ---------- 大圆脑袋 ---------- */
+.mascot-head {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--head);
+  height: var(--head);
+  border-radius: 50%;
+  background: var(--mascot-primary);
+  border: calc(var(--head) * 0.05) solid var(--mascot-deep);
+  box-sizing: border-box;
+  box-shadow: 0 calc(var(--head) * 0.06) calc(var(--head) * 0.14) rgba(2, 136, 209, 0.16);
+}
+
+/* 两侧小耳朵，让轮廓更亲和 */
+.ear {
+  position: absolute;
+  top: calc(var(--head) * 0.08);
+  width: calc(var(--head) * 0.2);
+  height: calc(var(--head) * 0.2);
+  border-radius: 50%;
+  background: var(--mascot-deep);
+  opacity: 0.75;
+}
+
+.ear-left { left: calc(var(--head) * -0.08); }
+.ear-right { right: calc(var(--head) * -0.08); }
+
+.mascot-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- 眼睛 ---------- */
+.mascot-eyes {
+  position: absolute;
+  left: 0;
+  top: calc(var(--head) * 0.3);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.eye {
+  width: calc(var(--head) * 0.14);
+  height: calc(var(--head) * 0.14);
+  border-radius: 50%;
+  background: var(--mascot-ink);
+  box-sizing: border-box;
+}
+
+.eye-left { margin-right: calc(var(--head) * 0.2); }
+
+/* ---------- 嘴 ---------- */
+.mouth {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--head) * 0.2);
+  margin: 0 auto;
+  width: calc(var(--head) * 0.3);
+  height: calc(var(--head) * 0.12);
+  border-radius: 0 0 calc(var(--head) * 0.16) calc(var(--head) * 0.16);
+  background: var(--mascot-ink);
+  box-sizing: border-box;
+}
+
+/* ---------- 腮红 ---------- */
+.cheek {
+  position: absolute;
+  top: calc(var(--head) * 0.48);
+  width: calc(var(--head) * 0.18);
+  height: calc(var(--head) * 0.1);
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.cheek-left { left: calc(var(--head) * 0.06); }
+.cheek-right { right: calc(var(--head) * 0.06); }
+
+/* ---------- 顶部三个思考小圆点 ---------- */
+.mascot-dots {
+  position: absolute;
+  top: 0;
+  right: calc(var(--head) * -0.1);
+  display: flex;
+  align-items: flex-end;
+  height: calc(var(--head) * 0.3);
+}
+
+.dot {
+  width: calc(var(--head) * 0.11);
+  height: calc(var(--head) * 0.11);
+  border-radius: 50%;
+  background: var(--mascot-primary);
+  margin-left: calc(var(--head) * 0.06);
+  animation: mascot-dot 1.5s infinite ease-in-out;
+}
+
+.dot:nth-child(1) { opacity: 0.45; animation-delay: 0s; }
+.dot:nth-child(2) { opacity: 0.7; animation-delay: 0.18s; }
+.dot:nth-child(3) { opacity: 1; animation-delay: 0.36s; }
+
+@keyframes mascot-dot {
+  0% { transform: translateY(0) scale(0.75); }
+  50% { transform: translateY(calc(var(--head) * -0.14)) scale(1); }
+  100% { transform: translateY(0) scale(0.75); }
+}
+
+/* ============================================================
+   各状态的五官造型
+   ============================================================ */
+
+/* idle：待机，安静微笑 + 淡黄腮红 */
+.mascot-idle .eye {
+  animation: mascot-blink 4.5s infinite;
+}
+.mascot-idle .cheek { background: var(--c-yellow, #FFCA28); opacity: 0.7; }
+
+@keyframes mascot-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.14); }
+}
+
+/* thinking：一只眼睛半闭，嘴变成一条思索的小横线 */
+.mascot-thinking .eye-left { height: calc(var(--head) * 0.06); border-radius: 499.5px; }
+.mascot-thinking .mouth {
+  width: calc(var(--head) * 0.24);
+  height: calc(var(--head) * 0.05);
+  border-radius: 499.5px;
+}
+.mascot-thinking .cheek { background: var(--c-yellow, #FFCA28); opacity: 0.6; }
+
+/* correct：弯弯笑眼 + 张开笑嘴 + 绿色腮红 */
+.mascot-correct .eye {
+  background: transparent;
+  height: calc(var(--head) * 0.18);
+  border-top: calc(var(--head) * 0.06) solid var(--mascot-ink);
+  border-radius: calc(var(--head) * 0.18) calc(var(--head) * 0.18) 0 0;
+  animation: mascot-hop 0.6s ease;
+}
+.mascot-correct .mouth {
+  width: calc(var(--head) * 0.36);
+  height: calc(var(--head) * 0.22);
+  border-radius: 0 0 calc(var(--head) * 0.3) calc(var(--head) * 0.3);
+  background: var(--mascot-green);
+}
+.mascot-correct .cheek { background: var(--mascot-green); opacity: 0.5; }
+
+/* wrong：暖橙腮红 + 小小的嘟嘟嘴，不用纯红也不做哭脸 */
+.mascot-wrong .cheek { background: var(--mascot-orange); opacity: 0.55; }
+.mascot-wrong .mouth {
+  width: calc(var(--head) * 0.18);
+  height: calc(var(--head) * 0.16);
+  border-radius: 50%;
+  background: transparent;
+  border: calc(var(--head) * 0.05) solid var(--mascot-orange);
+}
+
+/* encourage：眼睛微微下垂，嘴巴小小的，温和地说"别着急" */
+.mascot-encourage .eye {
+  height: calc(var(--head) * 0.12);
+  border-radius: 499.5px;
+  background: var(--mascot-deep);
+}
+.mascot-encourage .cheek { background: var(--mascot-orange); opacity: 0.4; }
+.mascot-encourage .mouth {
+  width: calc(var(--head) * 0.24);
+  height: calc(var(--head) * 0.09);
+  border-radius: 499.5px;
+  background: var(--mascot-deep);
+}
+
+/* win：闭眼大笑 + 绿色腮红 + 轻轻跳一下 */
+.mascot-win .eye {
+  background: transparent;
+  height: calc(var(--head) * 0.18);
+  border-top: calc(var(--head) * 0.06) solid var(--mascot-ink);
+  border-radius: calc(var(--head) * 0.18) calc(var(--head) * 0.18) 0 0;
+  animation: mascot-hop 0.8s ease;
+}
+.mascot-win .mouth {
+  width: calc(var(--head) * 0.4);
+  height: calc(var(--head) * 0.26);
+  border-radius: 0 0 calc(var(--head) * 0.32) calc(var(--head) * 0.32);
+  background: var(--mascot-green);
+}
+.mascot-win .cheek { background: var(--mascot-green); opacity: 0.55; }
+
+@keyframes mascot-hop {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(calc(var(--head) * -0.1)); }
+  70% { transform: translateY(0); }
+  85% { transform: translateY(calc(var(--head) * -0.04)); }
+  100% { transform: translateY(0); }
+}
+
+/* ---------- 台词（字号跟随 size 分档） ---------- */
+.mascot-caption {
+  margin-top: 9px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--c-sub, #7B8A99);
+}
+
+.mascot-sm .mascot-caption { margin-top: 6px; font-size: 14px; }
+.mascot-lg .mascot-caption { margin-top: 12px; font-size: 16px; font-weight: 600; }
+
+.mascot-correct .mascot-caption { color: var(--c-green, #66BB6A); font-weight: 600; }
+.mascot-win .mascot-caption { color: var(--c-green, #66BB6A); font-weight: 600; }
+.mascot-wrong .mascot-caption { color: var(--c-orange, #FF8A65); font-weight: 600; }
+.mascot-thinking .mascot-caption { color: var(--c-primary-deep, #0288D1); font-weight: 600; }
+.mascot-encourage .mascot-caption { color: var(--c-primary-deep, #0288D1); font-weight: 600; }
+
+.mascot-lg .mascot-stage {
+  padding-top: calc(var(--head) * 0.24);
+}
+
+
+/* ==== 来自各页面 index.wxss（按页限定作用域） ==== */
+
+/* ---- pages/index ---- */
+.mp-page[data-page="pages/index"] .greet-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #EAF7FE;
+  border-radius: var(--r-card);
+  padding: 16px 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.mp-page[data-page="pages/index"] .greet-left {
+  flex: 1;
+  padding-right: 10px;
+}
+.mp-page[data-page="pages/index"] .greet-line {
+  margin-top: 4px;
+  color: var(--c-primary-deep);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.mp-page[data-page="pages/index"] .asking-card {
+  padding: 20px 14px 16px;
+  text-align: center;
+}
+.mp-page[data-page="pages/index"] .fact-box {
+  margin-top: 16px;
+  text-align: left;
+  background: #FFF9E8;
+  border-radius: 10px;
+  padding: 12px;
+}
+.mp-page[data-page="pages/index"] .fact-head {
+  margin-bottom: 5px;
+}
+.mp-page[data-page="pages/index"] .fact-emoji {
+  font-size: 17px;
+  margin-right: 5px;
+}
+.mp-page[data-page="pages/index"] .fact-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #9A6B00;
+}
+.mp-page[data-page="pages/index"] .fact-text {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--c-text);
+  min-height: 55px;
+}
+.mp-page[data-page="pages/index"] .fact-index {
+  margin-top: 4px;
+  text-align: right;
+}
+.mp-page[data-page="pages/index"] .ask-hint {
+  margin: 12px 0 10px;
+}
+.mp-page[data-page="pages/index"] .ask-cancel {
+  width: 100%;
+}
+.mp-page[data-page="pages/index"] .grade-list {
+  display: flex;
+  justify-content: space-between;
+}
+.mp-page[data-page="pages/index"] .grade-btn {
+  flex: 1;
+  min-height: 64px;
+  margin-right: 8px;
+  padding: 9px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #F1F7FC;
+  border: 1.5px solid var(--c-line);
+  border-radius: 11px;
+  box-sizing: border-box;
+}
+.mp-page[data-page="pages/index"] .grade-btn:last-child {
+  margin-right: 0;
+}
+.mp-page[data-page="pages/index"] .grade-emoji {
+  font-size: 20px;
+  line-height: 1.2;
+}
+.mp-page[data-page="pages/index"] .grade-name {
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-sub);
+  text-align: center;
+}
+.mp-page[data-page="pages/index"] .grade-on {
+  background: #E3F5FF;
+  border-color: var(--c-primary);
+}
+.mp-page[data-page="pages/index"] .grade-on .grade-name {
+  color: var(--c-primary-deep);
+  font-weight: 700;
+}
+.mp-page[data-page="pages/index"] .grade-tip {
+  margin-top: 9px;
+}
+.mp-page[data-page="pages/index"] .doc-card {
+  background: #F2FBFF;
+  border: 1.5px solid var(--c-primary);
+  border-radius: 10px;
+  padding: 11px 12px;
+  margin-bottom: 11px;
+}
+.mp-page[data-page="pages/index"] .doc-emoji {
+  font-size: 20px;
+  margin-right: 8px;
+}
+.mp-page[data-page="pages/index"] .doc-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-primary-deep);
+  line-height: 1.5;
+}
+.mp-page[data-page="pages/index"] .input-ph {
+  color: var(--c-sub);
+  font-size: 16px;
+}
+.mp-page[data-page="pages/index"] .chip-wrap {
+  margin-top: 11px;
+}
+.mp-page[data-page="pages/index"] .chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 13px;
+  margin: 0 8px 8px 0;
+  background: #EAF7FE;
+  color: var(--c-primary-deep);
+  border: 1px solid #CDEAF9;
+  border-radius: var(--r-pill);
+  font-size: 15px;
+  font-weight: 600;
+}
+.mp-page[data-page="pages/index"] .chip-emoji {
+  margin-right: 4px;
+  font-size: 15px;
+}
+.mp-page[data-page="pages/index"] .btn-block {
+  width: 100%;
+  margin-top: 6px;
+}
+.mp-page[data-page="pages/index"] .ask-warn {
+  margin: 3px 0 8px;
+  color: var(--c-orange);
+}
+.mp-page[data-page="pages/index"] .hover-soft {
+  transform: scale(0.97);
+  opacity: 0.92;
+}
+
+/* ---- pages/quiz ---- */
+.mp-page[data-page="pages/quiz"] .head {
+  margin-bottom: 10px;
+}
+.mp-page[data-page="pages/quiz"] .head-top {
+  margin-bottom: 7px;
+}
+.mp-page[data-page="pages/quiz"] .head-title {
+  flex: 1;
+  padding-right: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.mp-page[data-page="pages/quiz"] .head-bar {
+  margin-bottom: 6px;
+}
+.mp-page[data-page="pages/quiz"] .head-bottom {
+  margin-bottom: 2px;
+}
+.mp-page[data-page="pages/quiz"] .stem {
+  margin-bottom: 5px;
+}
+.mp-page[data-page="pages/quiz"] .stem-tip {
+  margin-top: 2px;
+}
+.mp-page[data-page="pages/quiz"] .option-list {
+  margin-bottom: 4px;
+}
+.mp-page[data-page="pages/quiz"] .option-text {
+  font-size: 17px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+.mp-page[data-page="pages/quiz"] .opt-mark {
+  margin-left: 8px;
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.mp-page[data-page="pages/quiz"] .mark-correct {
+  color: var(--c-green);
+  font-size: 20px;
+}
+.mp-page[data-page="pages/quiz"] .mark-wrong {
+  color: var(--c-orange);
+  font-size: 14px;
+}
+.mp-page[data-page="pages/quiz"] .feedback-card {
+  background: #FBFDFF;
+}
+.mp-page[data-page="pages/quiz"] .feedback-head {
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.mp-page[data-page="pages/quiz"] .encourage-box {
+  display: flex;
+  align-items: center;
+  background: #FFF3EE;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.mp-page[data-page="pages/quiz"] .encourage-emoji {
+  font-size: 19px;
+  margin-right: 7px;
+}
+.mp-page[data-page="pages/quiz"] .encourage-text {
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #C24A22;
+}
+.mp-page[data-page="pages/quiz"] .point-pill {
+  margin-bottom: 7px;
+}
+.mp-page[data-page="pages/quiz"] .analysis-title {
+  margin-bottom: 4px;
+}
+.mp-page[data-page="pages/quiz"] .analysis-text {
+  line-height: 1.75;
+}
+.mp-page[data-page="pages/quiz"] .footer {
+  padding: 6px 0 12px;
+}
+.mp-page[data-page="pages/quiz"] .btn-block {
+  width: 100%;
+}
+.mp-page[data-page="pages/quiz"] .footer-tip {
+  margin-top: 7px;
+  text-align: center;
+}
+.mp-page[data-page="pages/quiz"] .hover-soft {
+  transform: scale(0.97);
+  opacity: 0.92;
+}
+
+/* ---- pages/report ---- */
+.mp-page[data-page="pages/report"] .score-card {
+  text-align: center;
+}
+.mp-page[data-page="pages/report"] .score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0 14px;
+}
+.mp-page[data-page="pages/report"] .score-num {
+  font-size: 54px;
+  line-height: 1.1;
+  color: var(--c-primary-deep);
+  margin-right: 12px;
+}
+.mp-page[data-page="pages/report"] .score-unit {
+  font-size: 22px;
+  margin-left: 2px;
+}
+.mp-page[data-page="pages/report"] .score-meta {
+  text-align: left;
+}
+.mp-page[data-page="pages/report"] .mastery-bar {
+  height: 12px;
+}
+.mp-page[data-page="pages/report"] .mastery-label {
+  margin-top: 6px;
+}
+.mp-page[data-page="pages/report"] .level-row {
+  margin-bottom: 6px;
+}
+.mp-page[data-page="pages/report"] .mastery-text {
+  margin-left: 10px;
+}
+.mp-page[data-page="pages/report"] .suggest-box {
+  background: var(--c-bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.mp-page[data-page="pages/report"] .wp-box {
+  margin-top: 12px;
+}
+.mp-page[data-page="pages/report"] .pills {
+  margin-top: 8px;
+}
+.mp-page[data-page="pages/report"] .pill-gap {
+  margin: 0 6px 6px 0;
+}
+.mp-page[data-page="pages/report"] .retry-btn {
+  margin-top: 12px;
+}
+.mp-page[data-page="pages/report"] .settle-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.mp-page[data-page="pages/report"] .settle-item {
+  width: 50%;
+  text-align: center;
+  padding: 9px 0;
+  box-sizing: border-box;
+}
+.mp-page[data-page="pages/report"] .settle-num {
+  font-size: 26px;
+  color: var(--c-primary-deep);
+}
+.mp-page[data-page="pages/report"] .review-head {
+  min-height: 44px;
+}
+.mp-page[data-page="pages/report"] .review-tip {
+  margin-top: 4px;
+}
+.mp-page[data-page="pages/report"] .review-item {
+  border-top: 1px solid var(--c-line);
+  padding: 12px 0 6px;
+}
+.mp-page[data-page="pages/report"] .review-line {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 7px;
+}
+.mp-page[data-page="pages/report"] .line-key {
+  flex-shrink: 0;
+  width: 75px;
+  font-size: 14px;
+  color: var(--c-sub);
+}
+.mp-page[data-page="pages/report"] .line-val {
+  flex: 1;
+  font-size: 16px;
+}
+.mp-page[data-page="pages/report"] .your-val {
+  color: var(--c-orange);
+}
+.mp-page[data-page="pages/report"] .right-val {
+  color: var(--c-green);
+}
+.mp-page[data-page="pages/report"] .analysis {
+  background: var(--c-bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.mp-page[data-page="pages/report"] .foot-btn {
+  margin-bottom: 10px;
+}
+.mp-page[data-page="pages/report"] .no-data-text {
+  margin: 10px 0 14px;
+}
+
+/* ---- pages/wrong ---- */
+.mp-page[data-page="pages/wrong"] .center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.mp-page[data-page="pages/wrong"] .guest-text {
+  margin: 10px 0 16px;
+}
+.mp-page[data-page="pages/wrong"] .guest-btn {
+  width: 100%;
+}
+.mp-page[data-page="pages/wrong"] .stat-card {
+  text-align: center;
+}
+.mp-page[data-page="pages/wrong"] .total-num {
+  font-size: 48px;
+  line-height: 1.1;
+  color: var(--c-primary-deep);
+}
+.mp-page[data-page="pages/wrong"] .wp-box {
+  margin-top: 12px;
+  border-top: 1px solid var(--c-line);
+  padding-top: 12px;
+}
+.mp-page[data-page="pages/wrong"] .pill-gap {
+  margin: 6px 6px 0 0;
+}
+.mp-page[data-page="pages/wrong"] .practice-btn {
+  width: 100%;
+}
+.mp-page[data-page="pages/wrong"] .tip-text {
+  margin-top: 8px;
+  text-align: center;
+}
+.mp-page[data-page="pages/wrong"] .item-head {
+  min-height: 44px;
+}
+.mp-page[data-page="pages/wrong"] .stem-text {
+  margin-bottom: 6px;
+}
+.mp-page[data-page="pages/wrong"] .meta-row {
+  align-items: center;
+}
+.mp-page[data-page="pages/wrong"] .meta-item {
+  margin: 0 6px 6px 0;
+}
+.mp-page[data-page="pages/wrong"] .detail {
+  border-top: 1px solid var(--c-line);
+  padding-top: 10px;
+}
+.mp-page[data-page="pages/wrong"] .review-line {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 7px;
+}
+.mp-page[data-page="pages/wrong"] .line-key {
+  flex-shrink: 0;
+  width: 75px;
+  font-size: 14px;
+  color: var(--c-sub);
+}
+.mp-page[data-page="pages/wrong"] .line-val {
+  flex: 1;
+  font-size: 16px;
+}
+.mp-page[data-page="pages/wrong"] .your-val {
+  color: var(--c-orange);
+}
+.mp-page[data-page="pages/wrong"] .right-val {
+  color: var(--c-green);
+}
+.mp-page[data-page="pages/wrong"] .analysis {
+  background: var(--c-bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.mp-page[data-page="pages/wrong"] .last-at {
+  margin-top: 8px;
+}
+.mp-page[data-page="pages/wrong"] .empty-text {
+  margin: 8px 0 14px;
+}
+.mp-page[data-page="pages/wrong"] .clear-btn {
+  margin-bottom: 20px;
+}
+
+/* ---- pages/knowledge ---- */
+.mp-page[data-page="pages/knowledge"] .center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.mp-page[data-page="pages/knowledge"] .intro-text {
+  margin: 6px 0 14px;
+}
+.mp-page[data-page="pages/knowledge"] .upload-btn {
+  width: 100%;
+}
+.mp-page[data-page="pages/knowledge"] .retry-btn {
+  margin-top: 12px;
+}
+.mp-page[data-page="pages/knowledge"] .doc-name {
+  word-break: break-all;
+}
+.mp-page[data-page="pages/knowledge"] .meta-row {
+  margin-top: 8px;
+  align-items: center;
+}
+.mp-page[data-page="pages/knowledge"] .meta-item {
+  margin: 0 6px 6px 0;
+}
+.mp-page[data-page="pages/knowledge"] .time-text {
+  margin-bottom: 6px;
+}
+.mp-page[data-page="pages/knowledge"] .doc-actions {
+  margin-top: 6px;
+}
+.mp-page[data-page="pages/knowledge"] .action-btn {
+  flex: 1;
+}
+.mp-page[data-page="pages/knowledge"] .action-btn-last {
+  margin-left: 10px;
+}
+.mp-page[data-page="pages/knowledge"] .empty-text {
+  margin: 8px 0 4px;
+}
+.mp-page[data-page="pages/knowledge"] .note-card {
+  background: var(--c-bg);
+}
+
+/* ---- pages/profile ---- */
+.mp-page[data-page="pages/profile"] .center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.mp-page[data-page="pages/profile"] .guest-text {
+  margin: 10px 0 16px;
+}
+.mp-page[data-page="pages/profile"] .guest-btn {
+  width: 100%;
+}
+.mp-page[data-page="pages/profile"] .hero {
+  text-align: center;
+}
+.mp-page[data-page="pages/profile"] .xp-box {
+  margin: 10px 0 4px;
+}
+.mp-page[data-page="pages/profile"] .xp-num {
+  font-size: 48px;
+  line-height: 1.1;
+  color: var(--c-primary-deep);
+}
+.mp-page[data-page="pages/profile"] .stat-wrap {
+  margin-top: 12px;
+  border-top: 1px solid var(--c-line);
+  padding-top: 12px;
+}
+.mp-page[data-page="pages/profile"] .stat-item {
+  width: 50%;
+  text-align: center;
+}
+.mp-page[data-page="pages/profile"] .stat-num {
+  font-size: 22px;
+  color: var(--c-primary-deep);
+}
+.mp-page[data-page="pages/profile"] .stat-text {
+  font-size: 18px;
+  font-weight: 600;
+}
+.mp-page[data-page="pages/profile"] .pill-gap {
+  margin: 6px 6px 0 0;
+}
+.mp-page[data-page="pages/profile"] .session-item {
+  border-top: 1px solid var(--c-line);
+  padding: 12px 0 6px;
+  min-height: 44px;
+}
+.mp-page[data-page="pages/profile"] .session-title {
+  flex: 1;
+  margin-right: 8px;
+}
+.mp-page[data-page="pages/profile"] .session-tags {
+  margin-top: 6px;
+  align-items: center;
+}
+.mp-page[data-page="pages/profile"] .session-tag {
+  margin-right: 6px;
+}
+.mp-page[data-page="pages/profile"] .go-text {
+  margin-left: auto;
+}
+.mp-page[data-page="pages/profile"] .clear-btn {
+  margin-bottom: 20px;
+}
+
+.hover-soft:active, .hover-soft:hover { opacity: .78; }
+
+.btn-primary.disabled, .btn-primary[disabled] { background: #C9E6F5; }
+/* ================= 演示外壳（不属于小程序本身） ================= */
+/* 说明：所有 rpx 已在生成阶段换算为固定 px（1rpx = 0.5px），
+   因此这里不需要任何根字号 hack。 */
+html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 14px; }
+.stage { display: flex; gap: 28px; align-items: flex-start; justify-content: center; padding: 28px 20px 40px; min-height: 100%; box-sizing: border-box; }
+.side { width: 300px; color: #35506e; font-size: 13px; line-height: 1.85; }
+.side h1 { font-size: 17px; margin: 0 0 6px; color: #1f3d5c; }
+.side .tip { background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 6px 18px rgba(31,61,92,.08); margin-bottom: 12px; }
+.side code { background: #eaf1f8; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.side ol { margin: 6px 0 0 18px; padding: 0; }
+.side li { margin-bottom: 4px; }
+.badge { display: inline-block; background: #4FC3F7; color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 12px; margin-bottom: 8px; }
+.phone { width: 375px; height: 748px; background: #fff; border-radius: 38px; box-shadow: 0 18px 50px rgba(20,50,80,.28); overflow: hidden; display: flex; flex-direction: column; position: relative; flex: 0 0 auto; }
+.mp-statusbar { height: 24px; background: #4FC3F7; flex: 0 0 24px; }
+.mp-titlebar { height: 44px; background: #4FC3F7; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex: 0 0 44px; }
+.mp-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
+.mp-page { display: flex; flex-direction: column; min-height: 100%; }
+.mp-tabbar { height: 54px; border-top: 1px solid #E3EEF7; display: flex; background: #fff; flex: 0 0 54px; }
+.mp-tab { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #9AA7B4; cursor: pointer; }
+.mp-tab.on { color: #0288D1; font-weight: 600; }
+#mp-toast { position: absolute; left: 50%; top: 55%; transform: translate(-50%,-50%) scale(.9); background: rgba(30,40,50,.86); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 14px; opacity: 0; pointer-events: none; transition: .2s; max-width: 70%; text-align: center; }
+#mp-toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+#mp-loading { position: absolute; inset: 0; background: rgba(255,255,255,.62); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
+#mp-loading.show { display: flex; }
+#mp-loading .ring { width: 34px; height: 34px; border: 3px solid #CBE7F7; border-top-color: #4FC3F7; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#mp-loading-text { font-size: 14px; color: #35506e; }
+#mp-modal { position: absolute; inset: 0; background: rgba(20,40,60,.42); display: none; align-items: center; justify-content: center; }
+#mp-modal.show { display: flex; }
+#mp-modal .box { width: 76%; background: #fff; border-radius: 14px; overflow: hidden; text-align: center; }
+#mp-modal .box h3 { margin: 0; padding: 18px 16px 6px; font-size: 16px; color: #2F3E4E; }
+#mp-modal .box p { margin: 0; padding: 0 18px 16px; font-size: 14px; color: #7B8A99; line-height: 1.6; }
+#mp-modal .btns { display: flex; border-top: 1px solid #E3EEF7; }
+#mp-modal button { flex: 1; border: 0; background: #fff; padding: 13px 0; font-size: 15px; cursor: pointer; color: #7B8A99; font-family: inherit; }
+#mp-modal button + button { border-left: 1px solid #E3EEF7; }
+.mp-page[data-page="pages/index"] #mp-view, .mp-page #mp-view { }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="side">
+    <span class="badge">浏览器演示</span>
+    <h1>科普知识闯关小程序</h1>
+    <div class="tip">
+      这个页面加载的是 <code>frontend/</code> 里<strong>真实的 WXML / WXSS / 页面 JS</strong>，
+      数据打的是真实后端接口，用来在没有微信开发者工具时先把流程点通。
+      最终交付的仍是<strong>标准微信小程序工程</strong>（<code>frontend/</code> 目录），
+      用微信开发者工具导入即可。
+    </div>
+    <div class="tip">
+      <strong>可以这样试</strong>
+      <ol>
+        <li>首页选学段 → 输入「太阳系」→ 开始出题</li>
+        <li>答题页故意答错两题，看「小科」的鼓励提示</li>
+        <li>答完看复盘报告（来源会据实标注）</li>
+        <li>错题本 → 只练错题（不调用大模型，很快）</li>
+        <li>底部切换：去闯关 / 错题本 / 知识库 / 我的</li>
+      </ol>
+    </div>
+    <div class="tip">
+      后端需在运行中：<code>scripts\run_server.cmd</code><br>
+      接口地址：<code id="api-base-label"></code>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="mp-statusbar"></div>
+    <div class="mp-titlebar" id="mp-title">科普闯关</div>
+    <div class="mp-body">
+      <div id="mp-view"></div>
+      <div id="mp-toast"></div>
+      <div id="mp-loading"><div class="ring"></div><div id="mp-loading-text">小科正在准备…</div></div>
+      <div id="mp-modal">
+        <div class="box">
+          <h3 id="mp-modal-title"></h3>
+          <p id="mp-modal-content"></p>
+          <div class="btns">
+            <button id="mp-modal-cancel">取消</button>
+            <button id="mp-modal-ok">确定</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mp-tabbar" id="mp-tabbar"></div>
+  </div>
+</div>
+
+
+<script>
+/* eslint-disable */
+/**
+ * 演示页运行时（浏览器端迷你「小程序」实现）。
+ *
+ * 为什么单独放一个文件而不是在生成脚本里拼字符串：这段代码里有正则与模板字符串，
+ * 用脚本拼装容易被转义规则吃掉反斜杠（本文件就是这么踩过一次坑）。独立成文件后
+ * 由 tools/make_demo.js 原样内联进 demo/index.html，所见即所得。
+ *
+ * 它提供的能力，足以让 frontend/ 里真实的页面 JS 不改一行就跑起来：
+ *   wx.request / wx.showToast / wx.showLoading / wx.showModal / wx.setStorageSync
+ *   wx.navigateTo / wx.switchTab / wx.reLaunch / wx.navigateBack
+ *   App / Page / Component 注册、setData、WXML 模板渲染（{{}}、wx:if/elif/else、wx:for）
+ *   hover-class、data-* 数据集、bindtap/bindinput/bindconfirm 事件
+ */
+(function () {
+  /* ---------------- 请求地址与存储 ---------------- */
+  var API_BASE = localStorage.getItem('kepu_api_base') || 'http://127.0.0.1:8000/api/v1';
+
+  var storage = {
+    get: function (k) { try { return JSON.parse(localStorage.getItem('kepu_st_' + k)); } catch (e) { return ''; } },
+    set: function (k, v) { try { localStorage.setItem('kepu_st_' + k, JSON.stringify(v)); } catch (e) {} },
+    remove: function (k) { try { localStorage.removeItem('kepu_st_' + k); } catch (e) {} }
+  };
+
+  /* ---------------- UI 反馈 ---------------- */
+  function toast(title) {
+    var el = document.getElementById('mp-toast');
+    el.textContent = title || '';
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.classList.remove('show'); }, 2000);
+  }
+  function showLoading(title) {
+    document.getElementById('mp-loading-text').textContent = title || '小科正在准备…';
+    document.getElementById('mp-loading').classList.add('show');
+  }
+  function hideLoading() { document.getElementById('mp-loading').classList.remove('show'); }
+  function showModal(opt) {
+    var el = document.getElementById('mp-modal');
+    document.getElementById('mp-modal-title').textContent = opt.title || '';
+    document.getElementById('mp-modal-content').textContent = opt.content || '';
+    var okBtn = document.getElementById('mp-modal-ok');
+    var cancelBtn = document.getElementById('mp-modal-cancel');
+    okBtn.textContent = opt.confirmText || '确定';
+    cancelBtn.textContent = opt.cancelText || '取消';
+    okBtn.style.color = opt.confirmColor || '#0288D1';
+    el.classList.add('show');
+    okBtn.onclick = function () { el.classList.remove('show'); opt.success && opt.success({ confirm: true, cancel: false }); };
+    cancelBtn.onclick = function () { el.classList.remove('show'); opt.success && opt.success({ confirm: false, cancel: true }); };
+  }
+
+  /* ---------------- wx.* ---------------- */
+  window.wx = {
+    request: function (opt) {
+      // 关键：config.js 里的 BASE_URL 已经是完整地址（含 /api/v1），
+      // 因此这里不能再拼一次 API_BASE，否则会出现
+      // "…/api/v1http://127.0.0.1:8000/api/v1/grades" 这种双前缀 404。
+      var url = String(opt.url || '');
+      if (url.indexOf('http://') !== 0 && url.indexOf('https://') !== 0) url = API_BASE + url;
+      var init = { method: opt.method || 'GET', headers: Object.assign({}, opt.header || {}) };
+      if (opt.data && String(opt.method).toUpperCase() !== 'GET') init.body = JSON.stringify(opt.data);
+      fetch(url, init).then(function (r) {
+        return r.text().then(function (t) {
+          var body;
+          try { body = JSON.parse(t); } catch (e) { body = { code: -1, message: '响应解析失败' }; }
+          opt.success && opt.success({ statusCode: r.status, data: body });
+        });
+      }).catch(function () { opt.fail && opt.fail({ errMsg: 'request:fail' }); });
+      return { abort: function () {} };
+    },
+    uploadFile: function (opt) {
+      toast('浏览器演示不支持选择文件，上传请用微信开发者工具或真机');
+      opt.fail && opt.fail({});
+    },
+    login: function (opt) { setTimeout(function () { opt.success && opt.success({ code: 'demo_' + Date.now() }); }, 60); },
+    showToast: function (o) { toast(o && o.title); },
+    hideToast: function () { document.getElementById('mp-toast').classList.remove('show'); },
+    showLoading: function (o) { showLoading(o && o.title); },
+    hideLoading: hideLoading,
+    showModal: showModal,
+    getStorageSync: storage.get,
+    setStorageSync: storage.set,
+    removeStorageSync: storage.remove,
+    stopPullDownRefresh: function () {},
+    setNavigationBarTitle: function (o) { setTitle(o && o.title); },
+    navigateTo: function (o) { router.push(o.url); },
+    redirectTo: function (o) { router.replace(o.url); },
+    switchTab: function (o) { router.replace(o.url); },
+    reLaunch: function (o) { router.reset(o.url); },
+    navigateBack: function () { router.back(); }
+  };
+  window.qq = window.wx;
+
+  /* ---------------- 模块系统（供 utils/request.js 这类文件使用） ---------------- */
+  window.__kepuModules = {};
+  window.require = function (p) {
+    var mods = window.__kepuModules;
+    if (mods[p]) return mods[p];
+    // 按后缀匹配：页面里写的是 '../../utils/request' 这类相对路径，
+    // 而注册用的是 'utils/request'，不做归一化会拿到空对象
+    // （这会导致 api.post is not a function 这种难查的错误）。
+    var normalized = String(p).replace(/\\/g, '/').replace(/^\.+\//, '');
+    var keys = Object.keys(mods);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i] === normalized
+          || normalized.indexOf(keys[i]) !== -1
+          || keys[i].indexOf(normalized) !== -1) {
+        return mods[keys[i]];
+      }
+    }
+    return {};
+  };
+
+  /* ---------------- 模板引擎 ---------------- */
+  var exprCache = {};
+  var KEYWORDS = {
+    'true': 1, 'false': 1, 'null': 1, 'undefined': 1, 'typeof': 1, 'in': 1, 'of': 1, 'new': 1,
+    'Math': 1, 'Date': 1, 'JSON': 1, 'String': 1, 'Number': 1, 'Boolean': 1, 'Array': 1, 'Object': 1
+  };
+
+  function compile(expr) {
+    // 只在「合法标识符起点」上做作用域前缀替换：前面不能是点、引号、$ 或标识符字符。
+    // 否则 !canAsk 会被切错、字符串内容也会被改写（这两个坑都踩过）。
+    var t = expr.replace(/(^|[^.\w$'"])([A-Za-z_$][A-Za-z0-9_$]*)/g, function (m, pre, name) {
+      if (KEYWORDS[name]) return m;
+      return pre + 'scope["' + name + '"]';
+    });
+    try {
+      return new Function('scope', 'try { return (' + t + '); } catch (e) { return undefined; }');
+    } catch (e) {
+      return function () { return undefined; };
+    }
+  }
+  function evalExpr(expr, scope) {
+    if (!exprCache[expr]) exprCache[expr] = compile(expr);
+    return exprCache[expr](scope);
+  }
+  function esc(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function attrValue(raw) {
+    if (raw === undefined) return true;
+    var m = /^\{\{([\s\S]*)\}\}$/.exec(String(raw).trim());
+    if (m) return { dynamic: m[1].trim() };
+    return String(raw).replace(/^["']|["']$/g, '');
+  }
+  /** 找到标签真正的结束位置：引号内的 > 不算（例如 wx:if="{{total > 0}}"）。 */
+  function findTagEnd(src, from) {
+    var quote = null;
+    for (var i = from; i < src.length; i++) {
+      var ch = src.charAt(i);
+      if (quote) {
+        if (ch === quote) quote = null;
+        continue;
+      }
+      if (ch === '"' || ch === "'") { quote = ch; continue; }
+      if (ch === '>') return i;
+    }
+    return -1;
+  }
+
+  function parseAttrs(text) {
+    var out = [];
+    var re = /([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*("([^"]*)"|'([^']*)')|([A-Za-z_:][-A-Za-z0-9_:.]*)/g;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      if (m[1]) out.push({ name: m[1], raw: m[3] !== undefined ? m[3] : m[4] });
+      else if (m[5]) out.push({ name: m[5], raw: undefined });
+    }
+    return out;
+  }
+  function parseWxml(src) {
+    var root = { tag: '#root', attrs: [], children: [] };
+    var stack = [root];
+    var i = 0;
+    function pushText(t) {
+      if (t.trim() === '') {
+        if (t.indexOf('{{') !== -1) stack[stack.length - 1].children.push({ tag: '#text', text: ' ' });
+        return;
+      }
+      stack[stack.length - 1].children.push({ tag: '#text', text: t });
+    }
+    while (i < src.length) {
+      var lt = src.indexOf('<', i);
+      if (lt === -1) { pushText(src.slice(i)); break; }
+      pushText(src.slice(i, lt));
+      if (src.startsWith('<!--', lt)) {
+        var ce = src.indexOf('-->', lt);
+        i = ce === -1 ? src.length : ce + 3;
+        continue;
+      }
+      var gt = findTagEnd(src, lt + 1);
+      if (gt === -1) { pushText(src.slice(lt)); break; }
+      var inner = src.slice(lt + 1, gt);
+      i = gt + 1;
+      if (inner.charAt(0) === '/') { if (stack.length > 1) stack.pop(); continue; }
+      var trimmed = inner.trim();
+      var isVoid = trimmed.indexOf('input') === 0 || trimmed.indexOf('image') === 0 || trimmed.indexOf('br') === 0;
+      var selfClose = inner.charAt(inner.length - 1) === '/' || isVoid;
+      var body = selfClose ? inner.replace(/\/$/, '') : inner;
+      var spaceAt = -1;
+      for (var k = 0; k < body.length; k++) {
+        var code = body.charCodeAt(k);
+        if (code === 32 || code === 9 || code === 10 || code === 13) { spaceAt = k; break; }
+      }
+      var tag = (spaceAt === -1 ? body : body.slice(0, spaceAt)).trim();
+      var node = { tag: tag, attrs: parseAttrs(spaceAt === -1 ? '' : body.slice(spaceAt)), children: [] };
+      stack[stack.length - 1].children.push(node);
+      if (!selfClose) stack.push(node);
+    }
+    return root;
+  }
+
+  var TAG_MAP = {
+    view: 'div', text: 'span', image: 'img', block: 'div', 'scroll-view': 'div',
+    button: 'button', input: 'input', textarea: 'textarea', navigator: 'a', form: 'form',
+    label: 'label', picker: 'div', 'rich-text': 'div', progress: 'div'
+  };
+  var CAPTIONS = {
+    idle: '我是小科，陪你一起探索科学', thinking: '小科正在思考…',
+    correct: '答对啦，你真棒！', wrong: '差一点点，再看看解析？',
+    encourage: '别着急，慢慢来～', win: '这一关通过啦！'
+  };
+
+  function directives(node, scope) {
+    var forAttr = null, ifAttr = null;
+    for (var i = 0; i < node.attrs.length; i++) {
+      if (node.attrs[i].name === 'wx:for') forAttr = node.attrs[i];
+      if (node.attrs[i].name === 'wx:if') ifAttr = node.attrs[i];
+    }
+    if (forAttr) {
+      var av = attrValue(forAttr.raw);
+      var list = (av && av.dynamic) ? evalExpr(av.dynamic, scope) : [];
+      var itemName = 'item', indexName = 'index';
+      node.attrs.forEach(function (a) {
+        if (a.name === 'wx:for-item') itemName = a.raw;
+        if (a.name === 'wx:for-index') indexName = a.raw;
+      });
+      var out = [];
+      (Array.isArray(list) ? list : []).forEach(function (item, index) {
+        var child = Object.create(scope);
+        child[itemName] = item;
+        child[indexName] = index;
+        out.push({ scope: child });
+      });
+      return { repeat: out };
+    }
+    if (ifAttr) {
+      var iv = attrValue(ifAttr.raw);
+      return { visible: (iv && iv.dynamic) ? !!evalExpr(iv.dynamic, scope) : !!iv };
+    }
+    return {};
+  }
+
+  function renderText(text, scope) {
+    if (text.indexOf('{{') === -1) return esc(text);
+    var out = '';
+    var rest = text;
+    while (true) {
+      var s = rest.indexOf('{{');
+      if (s === -1) { out += esc(rest); break; }
+      out += esc(rest.slice(0, s));
+      var e = rest.indexOf('}}', s);
+      if (e === -1) { out += esc(rest.slice(s)); break; }
+      var v = evalExpr(rest.slice(s + 2, e), scope);
+      out += esc(v === undefined || v === null ? '' : v);
+      rest = rest.slice(e + 2);
+    }
+    return out;
+  }
+
+  function renderMascot(node, scope) {
+    var state = 'idle', size = 'md', caption = '';
+    node.attrs.forEach(function (a) {
+      var v = attrValue(a.raw);
+      var val = (v && v.dynamic) ? evalExpr(v.dynamic, scope) : v;
+      if (a.name === 'state') state = val;
+      if (a.name === 'size') size = val;
+      if (a.name === 'caption') caption = val;
+    });
+    var shown = (caption && String(caption).length) ? caption : (CAPTIONS[state] || CAPTIONS.idle);
+    return '<div class="mascot mascot-' + esc(size) + ' mascot-' + esc(state) + '">'
+      + '<div class="mascot-stage">'
+      + (state === 'thinking'
+        ? '<div class="mascot-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>'
+        : '')
+      + '<div class="mascot-body"><div class="ear ear-left"></div><div class="ear ear-right"></div>'
+      + '<div class="mascot-head"><div class="mascot-face"><div class="mascot-eyes">'
+      + '<div class="eye eye-left"></div><div class="eye eye-right"></div></div>'
+      + '<div class="mouth"></div><div class="cheek cheek-left"></div><div class="cheek cheek-right"></div>'
+      + '</div></div></div></div>'
+      + '<div class="mascot-caption">' + esc(shown) + '</div></div>';
+  }
+
+  function renderNode(node, scope) {
+    if (node.tag === 'mascot') return renderMascot(node, scope);
+
+    var tag = TAG_MAP[node.tag] || 'div';
+    var cls = '', style = '', dataAttrs = '', events = '', attrsOut = '';
+
+    node.attrs.forEach(function (a) {
+      var name = a.name;
+      if (name.indexOf('wx:') === 0) return;
+      var av = attrValue(a.raw);
+
+      if (name === 'class') {
+        if (av && av.dynamic) {
+          cls = String(evalExpr(av.dynamic, scope) || '');
+        } else {
+          cls = String(a.raw || '').replace(/\{\{([\s\S]*?)\}\}/g, function (m, ex) {
+            var v = evalExpr(ex, scope);
+            return v === undefined || v === null ? '' : String(v);
+          });
+        }
+        cls = cls.replace(/\s+/g, ' ').trim();
+        return;
+      }
+      if (name === 'style') { style = a.raw || ''; return; }
+      if (name === 'hover-class' || name === 'placeholder-class') return;
+      if (name.indexOf('data-') === 0) {
+        var dv = (av && av.dynamic) ? evalExpr(av.dynamic, scope) : av;
+        dataAttrs += ' data-' + name.slice(5) + '="' + esc(dv) + '"';
+        return;
+      }
+      if (name.indexOf('bind') === 0 || name.indexOf('catch') === 0) {
+        var handler = a.raw === undefined ? name.replace(/^(bind|catch)/, '') : a.raw;
+        events += ' data-ev-' + name.replace(/^(bind|catch)/, '') + '="1" data-handler="' + esc(handler) + '"';
+        return;
+      }
+      if (name === 'value') {
+        var vv = (av && av.dynamic) ? evalExpr(av.dynamic, scope) : av;
+        attrsOut += ' value="' + esc(vv === undefined ? '' : vv) + '"';
+        return;
+      }
+      if (name === 'disabled') {
+        var dvv = (av && av.dynamic) ? evalExpr(av.dynamic, scope) : av;
+        if (dvv) attrsOut += ' disabled';
+        return;
+      }
+      var plain = (av && av.dynamic) ? evalExpr(av.dynamic, scope) : (a.raw === undefined ? '' : a.raw);
+      attrsOut += ' ' + name + '="' + esc(plain) + '"';
+    });
+
+    if (tag === 'input' || tag === 'img') {
+      return '<' + tag + (cls ? ' class="' + esc(cls) + '"' : '')
+        + (style ? ' style="' + esc(style) + '"' : '') + dataAttrs + events + attrsOut + '>';
+    }
+    return '<' + tag + (cls ? ' class="' + esc(cls) + '"' : '')
+      + (style ? ' style="' + esc(style) + '"' : '') + dataAttrs + events + attrsOut + '>'
+      + renderList(node.children, scope) + '</' + tag + '>';
+  }
+
+  function renderList(nodes, scope) {
+    var html = '';
+    var lastIf = null;
+    for (var n = 0; n < nodes.length; n++) {
+      var node = nodes[n];
+      if (node.tag === '#text') { html += renderText(node.text, scope); continue; }
+
+      var names = node.attrs.map(function (a) { return a.name; });
+      if (names.indexOf('wx:elif') !== -1) {
+        if (lastIf) continue;
+        var eAttr = null;
+        node.attrs.forEach(function (a) { if (a.name === 'wx:elif') eAttr = a; });
+        var ev = attrValue(eAttr.raw);
+        var ok = (ev && ev.dynamic) ? !!evalExpr(ev.dynamic, scope) : !!ev;
+        lastIf = ok;
+        if (!ok) continue;
+      } else if (names.indexOf('wx:else') !== -1) {
+        if (lastIf) continue;
+        lastIf = true;
+      } else if (names.indexOf('wx:if') !== -1 || names.indexOf('wx:for') !== -1) {
+        var dir = directives(node, scope);
+        if (dir.repeat) {
+          for (var r = 0; r < dir.repeat.length; r++) html += renderNode(node, dir.repeat[r].scope);
+          lastIf = null;
+          continue;
+        }
+        if (dir.visible === false) { lastIf = false; continue; }
+        lastIf = dir.visible === undefined ? null : true;
+      } else {
+        lastIf = null;
+      }
+      html += renderNode(node, scope);
+    }
+    return html;
+  }
+
+  /* ---------------- 页面注册与挂载 ---------------- */
+  // 注意：页面源与路由表由生成脚本在其后的 <script> 里挂到 window 上，
+  // 因此这里**不能在启动时缓存**，必须在每次使用时现读，
+  // 否则会拿到空对象（这个坑踩过一次了）。
+  function pageSources() { return window.__kepuPageSources || {}; }
+  var instances = {};
+  var stack = ['pages/index'];
+
+  function keyOf(url) {
+    var p = String(url || '').split('?')[0].replace(/^\//, '');
+    return p.replace(/\/index$/, '');
+  }
+  function queryOf(url) {
+    var q = {};
+    var i = String(url || '').indexOf('?');
+    if (i === -1) return q;
+    String(url).slice(i + 1).split('&').forEach(function (kv) {
+      if (!kv) return;
+      var pair = kv.split('=');
+      q[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+    });
+    return q;
+  }
+  function setTitle(t) {
+    var el = document.getElementById('mp-title');
+    if (el) el.textContent = t || '科普闯关';
+  }
+
+  function render(inst) {
+    var src = pageSources()[inst.__key];
+    if (!src) return;
+    if (!inst.__tree) inst.__tree = parseWxml(src);
+    var scope = Object.create(null);
+    for (var k in inst.data) scope[k] = inst.data[k];
+
+    var host = document.getElementById('mp-view');
+    var active = document.activeElement;
+    var focusId = (active && active.id) ? active.id : null;
+    var caret = null;
+    if (focusId && active.setSelectionRange) { try { caret = active.selectionStart; } catch (e) {} }
+
+    // 用普通对象承载作用域（而不是 Object.create 出来的原型链对象），
+    // 便于排查问题，也避免原型链上的键干扰 for-in 遍历。
+    inst.__scope = scope;
+    host.innerHTML = renderList(inst.__tree.children, scope);
+    bindEvents(host, inst);
+
+    if (focusId) {
+      var again = document.getElementById(focusId);
+      if (again) {
+        again.focus();
+        if (caret !== null && again.setSelectionRange) {
+          try { again.setSelectionRange(caret, caret); } catch (e) {}
+        }
+      }
+    }
+  }
+
+  var EVENTS = ['tap', 'input', 'change', 'confirm', 'blur', 'focus', 'longpress', 'submit'];
+  var DOM_EVENT = {
+    tap: 'click', input: 'input', change: 'change', confirm: 'keydown',
+    blur: 'blur', focus: 'focus', longpress: 'contextmenu', submit: 'submit'
+  };
+
+  function bindEvents(host, inst) {
+    EVENTS.forEach(function (evt) {
+      var nodes = host.querySelectorAll('[data-ev-' + evt + ']');
+      Array.prototype.forEach.call(nodes, function (node) {
+        node.addEventListener(DOM_EVENT[evt], function (e) {
+          if (evt === 'confirm' && e.key !== 'Enter') return;
+          var handler = node.getAttribute('data-handler');
+          var fn = inst.__options[handler];
+          if (typeof fn !== 'function') return;
+          var dataset = {};
+          Array.prototype.forEach.call(node.attributes, function (at) {
+            if (at.name.indexOf('data-') === 0 && at.name.indexOf('data-ev-') !== 0
+                && at.name !== 'data-handler') {
+              dataset[at.name.slice(5)] = at.value;
+            }
+          });
+          fn.call(inst, {
+            type: evt,
+            detail: { value: node.value },
+            currentTarget: { dataset: dataset, id: node.id },
+            target: { dataset: dataset, id: node.id }
+          });
+        });
+      });
+    });
+  }
+
+  function instantiate(key, options) {
+    var inst = {};
+    inst.__key = key;
+    inst.__options = options;
+    inst.data = JSON.parse(JSON.stringify(options.data || {}));
+    inst.setData = function (patch, cb) {
+      for (var k in patch) inst.data[k] = patch[k];
+      render(inst);
+      if (cb) cb();
+    };
+    // 函数绑到实例上；其余非 data 字段（如 askTimers / questionStates 这类
+    // 页面自定义状态）也要原样带上，否则 this.askTimers.push 会报
+    // "Cannot read properties of undefined"。
+    Object.keys(options).forEach(function (name) {
+      if (name === 'data' || name === 'properties') return;
+      if (typeof options[name] === 'function') inst[name] = options[name].bind(inst);
+      else inst[name] = JSON.parse(JSON.stringify(options[name]));
+    });
+    if (!inst.data) inst.data = {};
+    return inst;
+  }
+
+  function show(key, query) {
+    Array.prototype.forEach.call(document.querySelectorAll('.mp-page'), function (p) {
+      p.style.display = 'none';
+    });
+    var host = document.getElementById('mp-view');
+    var tabKeys = ['pages/index', 'pages/wrong', 'pages/knowledge', 'pages/profile'];
+    if (tabKeys.indexOf(key) !== -1) {
+      var entry = document.querySelector('[data-page="' + key + '"]');
+      if (entry) entry.style.display = 'flex';
+    } else {
+      document.querySelector('[data-page="pages/index"]').style.display = 'flex';
+      document.getElementById('mp-title').textContent = ((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关';
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.mp-tab'), function (t) {
+      t.classList.toggle('on', t.getAttribute('data-page') === key);
+    });
+    if (tabKeys.indexOf(key) !== -1) {
+      setTitle(((window.__kepuPageMeta || {})[key] || {}).title || '科普闯关');
+    }
+
+    var inst = instances[key];
+    if (!inst) {
+      var opts = window.__kepuPages[key];   // 注册时由 Page() 收集的真实页面配置
+      if (!opts) {
+        host.innerHTML = '<div class="page-root"><div class="empty">这个页面还没接进来</div></div>';
+        return;
+      }
+      inst = instantiate(key, opts);
+      instances[key] = inst;
+      if (inst.onLoad) inst.onLoad(query || {});
+      render(inst);
+      if (inst.onShow) inst.onShow();
+      if (inst.onReady) inst.onReady();
+    } else {
+      if (query && Object.keys(query).length && inst.onLoad) inst.onLoad(query);
+      render(inst);
+      if (inst.onShow) inst.onShow();
+    }
+  }
+
+  var router = {
+    push: function (url) { stack.push(keyOf(url)); show(keyOf(url), queryOf(url)); },
+    replace: function (url) { show(keyOf(url), queryOf(url)); },
+    reset: function (url) {
+      Object.keys(instances).forEach(function (k) { delete instances[k]; });
+      stack = [keyOf(url)];
+      show(keyOf(url), queryOf(url));
+    },
+    back: function () {
+      stack.pop();
+      show(stack[stack.length - 1] || 'pages/index', {});
+    }
+  };
+
+  /* ---------------- App / Page / Component ---------------- */
+  window.__kepuPages = window.__kepuPages || {};
+  window.App = function (options) {
+    var app = options || {};
+    app.globalData = app.globalData || {};
+    window.__kepuApp = app;
+  };
+  window.getApp = function () { return window.__kepuApp; };
+  window.Page = function (options) { window.__kepuCurrentPage = options; };
+  window.Component = function (options) { window.__kepuCurrentComponent = options; };
+
+  /* ---------------- 启动 ---------------- */
+  /* 调试钩子：便于定位模板渲染问题（正常使用不影响） */
+  window.__kepuDebug = {
+    parseWxml: parseWxml, renderList: renderList, evalExpr: evalExpr,
+    directives: directives, attrValue: attrValue, instances: instances
+  };
+
+  window.__kepuBoot = function () {
+    if (window.__kepuApp && window.__kepuApp.onLaunch) window.__kepuApp.onLaunch();
+    var tabbar = document.getElementById('mp-tabbar');
+    var list = window.__kepuTabBar || [];
+    list.forEach(function (item) {
+      var btn = document.createElement('div');
+      btn.className = 'mp-tab';
+      btn.setAttribute('data-page', item.pagePath.replace(/\/index$/, ''));
+      btn.textContent = item.text;
+      btn.onclick = function () { router.replace('/' + item.pagePath); };
+      tabbar.appendChild(btn);
+    });
+    show('pages/index', {});
+  };
+})();
+
+</script>
+<script>
+/* ---------- 页面源与路由表（供运行时渲染使用） ---------- */
+window.__kepuPageSources = {"pages/index":"<!-- 首页 —— 去闯关：选学段、写主题、出题等待 -->\n<view class=\"page\">\n\n  <!-- 顶部问候 -->\n  <view class=\"greet-card\">\n    <view class=\"greet-left\">\n      <view class=\"h1\">去闯关</view>\n      <view class=\"greet-line body\">今天想探索什么？你是{{gradeLabel}}哦</view>\n      <view class=\"muted\">小科负责出题，你只管大胆猜。</view>\n    </view>\n    <mascot state=\"idle\" size=\"md\" caption=\"\"></mascot>\n  </view>\n\n  <!-- 出题中：分档台词 + 科普轮播 + 取消入口 -->\n  <block wx:if=\"{{asking}}\">\n    <view class=\"card asking-card\">\n      <mascot state=\"thinking\" size=\"lg\" caption=\"{{askCaption}}\"></mascot>\n\n      <view class=\"fact-box\">\n        <view class=\"fact-head row\">\n          <text class=\"fact-emoji\">💡</text>\n          <text class=\"fact-title\">等一会儿，先看条小知识</text>\n        </view>\n        <view class=\"fact-text\">{{currentFact}}</view>\n        <view class=\"muted fact-index\">第 {{factIndex + 1}} / {{facts.length}} 条</view>\n      </view>\n\n      <view class=\"ask-hint muted\">已经等了 {{askElapsed}} 秒，出题一般需要 20—40 秒</view>\n      <view class=\"btn btn-ghost ask-cancel\" hover-class=\"hover-soft\" bindtap=\"onCancelAsk\">先不出了</view>\n    </view>\n  </block>\n\n  <!-- 表单态 -->\n  <block wx:else>\n\n    <!-- 学段选择 -->\n    <view class=\"card\">\n      <view class=\"card-title\">先选一个学段</view>\n      <view class=\"grade-list\">\n        <view\n          wx:for=\"{{grades}}\"\n          wx:key=\"value\"\n          class=\"grade-btn {{gradeValue === item.value ? 'grade-on' : ''}}\"\n          data-value=\"{{item.value}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onPickGrade\"\n        >\n          <text class=\"grade-emoji\">{{item.emoji}}</text>\n          <text class=\"grade-name\">{{item.short}}</text>\n        </view>\n      </view>\n      <view class=\"muted grade-tip\">换学段会让题目变难或变简单，随时可以换回来。</view>\n    </view>\n\n    <!-- 主题输入 -->\n    <view class=\"card\">\n      <view class=\"card-title\">想探索什么主题？</view>\n\n      <!-- 来自知识库的资料 -->\n      <view class=\"doc-card\" wx:if=\"{{docId}}\">\n        <view class=\"row\">\n          <text class=\"doc-emoji\">📘</text>\n          <view class=\"grow\">\n            <view class=\"doc-title\">本次将基于《{{docName}}》出题</view>\n            <view class=\"muted\">小科会照着这份资料来出题</view>\n          </view>\n        </view>\n      </view>\n\n      <input\n        class=\"input\"\n        type=\"text\"\n        value=\"{{topic}}\"\n        maxlength=\"30\"\n        placeholder=\"比如：太阳系、恐龙、彩虹是怎么来的\"\n        placeholder-class=\"input-ph\"\n        confirm-type=\"done\"\n        bindinput=\"onTopicInput\"\n        bindconfirm=\"onStartAsk\"\n      />\n\n      <view class=\"chip-wrap wrap\">\n        <view\n          wx:for=\"{{chips}}\"\n          wx:key=\"label\"\n          class=\"chip\"\n          data-topic=\"{{item.topic}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onTapChip\"\n        >\n          <text class=\"chip-emoji\">{{item.emoji}}</text>\n          <text>{{item.label}}</text>\n        </view>\n      </view>\n\n      <view class=\"ask-warn muted\" wx:if=\"{{!canAsk}}\">先告诉小科你想学什么吧</view>\n\n      <view\n        class=\"btn btn-primary btn-block {{canAsk ? '' : 'disabled'}}\"\n        hover-class=\"{{canAsk ? 'hover-soft' : ''}}\"\n        bindtap=\"onStartAsk\"\n      >开始出题</view>\n    </view>\n\n  </block>\n\n</view>\n","pages/quiz":"<!-- 答题闯关页：本地即时判分 + 随堂讲解 -->\n<view class=\"page\" wx:if=\"{{hasQuiz}}\">\n\n  <!-- 进度区 -->\n  <view class=\"head\">\n    <view class=\"between head-top\">\n      <text class=\"h3 head-title\">{{title}}</text>\n      <text class=\"pill\">{{gradeLabel}}</text>\n    </view>\n\n    <view class=\"progress head-bar\">\n      <view class=\"progress-inner\" style=\"width: {{progress}}%;\"></view>\n    </view>\n\n    <view class=\"between head-bottom\">\n      <text class=\"h3\">第 {{current + 1}} / {{total}} 题</text>\n      <text class=\"tag\">{{sourceLabel}}</text>\n    </view>\n  </view>\n\n  <!-- 题干 -->\n  <view class=\"card\" wx:if=\"{{currentQuestion}}\">\n    <view class=\"h2 stem\">{{currentQuestion.stem}}</view>\n    <view class=\"muted stem-tip\">选出你觉得对的那一个</view>\n  </view>\n\n  <!-- 选项 -->\n  <view class=\"option-list\">\n    <view\n      wx:for=\"{{options}}\"\n      wx:key=\"no\"\n      class=\"option {{item.state}} {{judged ? 'disabled' : ''}}\"\n      data-index=\"{{item.no}}\"\n      hover-class=\"{{judged ? '' : 'hover-soft'}}\"\n      bindtap=\"onSelectOption\"\n    >\n      <view class=\"option-key\">{{item.key}}</view>\n      <view class=\"grow option-text\">{{item.text}}</view>\n      <text class=\"opt-mark mark-correct\" wx:if=\"{{item.state === 'correct'}}\">✓</text>\n      <text class=\"opt-mark mark-wrong\" wx:if=\"{{item.state === 'wrong'}}\">再想想</text>\n    </view>\n  </view>\n\n  <!-- 讲解卡：判完分马上给，不对也不错得不明不白 -->\n  <view class=\"card feedback-card\" wx:if=\"{{judged}}\">\n    <view class=\"row feedback-head\">\n      <mascot state=\"{{mascotState}}\" size=\"sm\" caption=\"{{mascotCaption}}\"></mascot>\n    </view>\n\n    <view class=\"encourage-box\" wx:if=\"{{encourage}}\">\n      <text class=\"encourage-emoji\">🤝</text>\n      <text class=\"encourage-text\">要不要先看看解析？看懂了再往下走，一点也不急。</text>\n    </view>\n\n    <view class=\"pill pill-orange point-pill\" wx:if=\"{{currentQuestion.knowledge_point}}\">{{currentQuestion.knowledge_point}}</view>\n\n    <view class=\"analysis-title h3\">小科讲讲这道题</view>\n    <view class=\"analysis-text body\">{{currentQuestion.analysis}}</view>\n  </view>\n\n  <!-- 底部按钮 -->\n  <view class=\"footer\">\n    <view\n      class=\"btn btn-primary btn-block {{(selected < 0 && !judged) ? 'disabled' : ''}}\"\n      hover-class=\"{{submitting ? '' : 'hover-soft'}}\"\n      bindtap=\"onJudge\"\n    >\n      <block wx:if=\"{{!judged}}\">就选这个</block>\n      <block wx:elif=\"{{current + 1 < total}}\">下一题</block>\n      <block wx:else>看看我的报告</block>\n    </view>\n    <view class=\"muted footer-tip\" wx:if=\"{{submitting}}\">{{submitTip}}</view>\n    <view class=\"muted footer-tip\" wx:elif=\"{{judged && current + 1 < total}}\">想清楚了就继续，小科在这儿等你。</view>\n  </view>\n\n</view>\n","pages/report":"<!-- 复盘报告：先看得分，再看小科的复盘，最后是这一局的收获与回顾 -->\n<view class=\"page\">\n\n  <!-- 一、得分区 -->\n  <view class=\"card score-card\" wx:if=\"{{hasResult || reportReady}}\">\n    <mascot state=\"{{mascotState}}\" size=\"lg\"></mascot>\n\n    <view class=\"score-row\">\n      <view class=\"score-num mono-num\">{{accuracy}}<text class=\"score-unit\">%</text></view>\n      <view class=\"score-meta\">\n        <view class=\"h3\">这一局的正确率</view>\n        <view class=\"muted\">答对 {{correct}} / {{total}} 题</view>\n      </view>\n    </view>\n\n    <view class=\"progress mastery-bar\">\n      <view class=\"progress-inner\" style=\"width: {{mastery}}%;\"></view>\n    </view>\n    <view class=\"between mastery-label\">\n      <text class=\"muted\">掌握度</text>\n      <text class=\"muted\">{{mastery}} 分</text>\n    </view>\n  </view>\n\n  <!-- 二、小科正在写报告 -->\n  <view class=\"card\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"md\" caption=\"小科在写复盘报告…\"></mascot>\n  </view>\n\n  <!-- 三、报告没拿到时的重试入口 -->\n  <view class=\"card\" wx:if=\"{{!loading && !reportReady && (hasResult || fromHistory)}}\">\n    <view class=\"body\">小科这份复盘还没写好，要不要再写一次？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetryReport\">再写一次</button>\n  </view>\n\n  <!-- 四、复盘报告正文 -->\n  <view class=\"card\" wx:if=\"{{reportReady}}\">\n    <view class=\"between\">\n      <text class=\"card-title\">小科的复盘</text>\n      <text class=\"tag\" wx:if=\"{{reportSourceLabel}}\">{{reportSourceLabel}}</text>\n    </view>\n\n    <view class=\"row level-row\" wx:if=\"{{level}}\">\n      <text class=\"pill pill-yellow\">{{level}}</text>\n      <text class=\"muted mastery-text\">掌握度 {{mastery}} 分</text>\n    </view>\n\n    <view class=\"divider\"></view>\n    <view class=\"body\">{{summary}}</view>\n\n    <view class=\"suggest-box\" wx:if=\"{{suggestion}}\">\n      <view class=\"h3\">下一步可以这样</view>\n      <view class=\"body\">{{suggestion}}</view>\n    </view>\n\n    <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n      <view class=\"h3\">值得再看看的知识点</view>\n      <view class=\"wrap pills\">\n        <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"*this\">{{item}}</text>\n      </view>\n    </view>\n  </view>\n\n  <!-- 五、结算区：只在手上有本次判题结果时出现 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"card-title\">这一局的收获</view>\n    <view class=\"settle-grid\">\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">+{{xpGained}}</view>\n        <view class=\"muted\">经验值</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongAdded}}</view>\n        <view class=\"muted\">新收的错题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{mastered}}</view>\n        <view class=\"muted\">已经掌握的题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongTotal}}</view>\n        <view class=\"muted\">错题本共</view>\n      </view>\n    </view>\n  </view>\n\n  <!-- 六、本次答题回顾：只列答错的题，可以折叠 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"between review-head\" bindtap=\"onToggleReview\">\n      <text class=\"card-title\">本次答题回顾</text>\n      <text class=\"muted\">{{reviewOpen ? '收起' : '展开'}}</text>\n    </view>\n\n    <view class=\"body\" wx:if=\"{{!wrongList.length}}\">这一局全都答对啦，真厉害！</view>\n\n    <view class=\"muted review-tip\" wx:if=\"{{!reviewOpen && wrongList.length}}\">\n      有 {{wrongList.length}} 道题想和你再聊聊，点上面展开看看～\n    </view>\n\n    <block wx:if=\"{{reviewOpen}}\">\n      <view class=\"review-item\" wx:for=\"{{wrongList}}\" wx:key=\"key\">\n        <view class=\"h3\">{{item.index}}. {{item.stem}}</view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">你的答案</text>\n          <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n        </view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">正确答案</text>\n          <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n        </view>\n        <view class=\"analysis\">\n          <text class=\"tag\">{{item.knowledgePoint}}</text>\n          <view class=\"body\">{{item.analysis}}</view>\n        </view>\n      </view>\n    </block>\n  </view>\n\n  <!-- 七、底部入口 -->\n  <view class=\"foot-btns\" wx:if=\"{{hasResult || reportReady}}\">\n    <button class=\"btn btn-primary foot-btn\" bindtap=\"onAgain\">再来一局</button>\n    <button class=\"btn btn-ghost foot-btn\" bindtap=\"onGoWrong\">去错题本</button>\n  </view>\n\n  <!-- 八、没有可看的报告时 -->\n  <view class=\"card\" wx:if=\"{{noData}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"center h3 no-data-text\">还没有报告可以看，先去闯一关吧</view>\n    <button class=\"btn btn-primary\" bindtap=\"onAgain\">去闯关</button>\n  </view>\n\n</view>\n","pages/wrong":"<!-- 错题本：统计 → 只练错题 → 错题清单 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">登录后才能把错题存下来哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 二、读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在翻错题本…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n      <!-- 三、统计卡 -->\n      <view class=\"card stat-card\">\n        <view class=\"total-num mono-num\">{{total}}</view>\n        <view class=\"muted\">错题本里一共有这么多题</view>\n        <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n          <view class=\"h3\">薄弱知识点</view>\n          <view class=\"wrap\">\n            <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n              {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n            </text>\n          </view>\n        </view>\n      </view>\n\n      <!-- 四、只练错题 -->\n      <view class=\"card\">\n        <button class=\"btn btn-primary practice-btn\" disabled=\"{{total === 0}}\"\n                loading=\"{{practicing}}\" bindtap=\"onPractice\">只练错题</button>\n        <view class=\"muted center tip-text\">不用等 AI 出题，马上就能开始</view>\n      </view>\n\n      <!-- 五、错题清单 -->\n      <block wx:if=\"{{questions.length}}\">\n        <view class=\"card\" wx:for=\"{{questions}}\" wx:key=\"stem\">\n          <view class=\"item-head\" data-index=\"{{index}}\" bindtap=\"onToggleItem\">\n            <view class=\"h3 stem-text\">{{index + 1}}. {{item.stem}}</view>\n            <view class=\"wrap meta-row\">\n              <text class=\"pill meta-item\">{{item.knowledgePoint}}</text>\n              <text class=\"pill pill-orange meta-item\">错过 {{item.wrongCount}} 次</text>\n              <text class=\"muted meta-item\">{{item.expanded ? '收起讲解' : '看看讲解'}}</text>\n            </view>\n          </view>\n\n          <view class=\"detail\" wx:if=\"{{item.expanded}}\">\n            <view class=\"review-line\" wx:if=\"{{item.yourAnswer}}\">\n              <text class=\"line-key\">你的答案</text>\n              <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n            </view>\n            <view class=\"review-line\" wx:if=\"{{item.rightAnswer}}\">\n              <text class=\"line-key\">正确答案</text>\n              <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n            </view>\n            <view class=\"analysis\">\n              <text class=\"tag\">{{item.knowledgePoint}}</text>\n              <view class=\"body\">{{item.analysis}}</view>\n            </view>\n            <view class=\"muted last-at\" wx:if=\"{{item.lastAt}}\">最近一次：{{item.lastAt}}</view>\n          </view>\n        </view>\n      </block>\n\n      <!-- 六、空态 -->\n      <view class=\"card center-col\" wx:if=\"{{!questions.length}}\">\n        <mascot state=\"idle\" size=\"sm\"></mascot>\n        <view class=\"h3 empty-text\">还没有错题，去闯一关吧！</view>\n        <button class=\"btn btn-primary guest-btn\" bindtap=\"onGoQuiz\">去闯关</button>\n      </view>\n\n      <!-- 七、清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" wx:if=\"{{total > 0}}\" bindtap=\"onClearWrong\">清空错题本</button>\n    </block>\n\n  </block>\n\n</view>\n","pages/knowledge":"<!-- 知识库：上传资料 → 照着资料出题 -->\n<view class=\"page\">\n\n  <!-- 一、说明卡 -->\n  <view class=\"card\">\n    <view class=\"h2\">知识库</view>\n    <view class=\"body intro-text\">把讲义或课外读本传上来，小科就能照着它出题。</view>\n    <button class=\"btn btn-primary upload-btn\" loading=\"{{uploading}}\" bindtap=\"onUpload\">上传资料</button>\n  </view>\n\n  <!-- 二、读取中 -->\n  <view class=\"card center-col\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理资料…\"></mascot>\n  </view>\n\n  <!-- 三、列表没拿到时的重试 -->\n  <view class=\"card\" wx:if=\"{{!loading && !loadOk}}\">\n    <view class=\"body\">小科这会儿没翻到资料架，要不要再看一眼？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetry\">再看一眼</button>\n  </view>\n\n  <!-- 四、资料列表 -->\n  <block wx:if=\"{{!loading && loadOk && documents.length}}\">\n    <view class=\"card\" wx:for=\"{{documents}}\" wx:key=\"docId\">\n      <view class=\"h3 doc-name\">{{item.filename}}</view>\n      <view class=\"wrap meta-row\">\n        <text class=\"tag meta-item\">{{item.typeText}}</text>\n        <text class=\"tag meta-item\">{{item.sizeText}}</text>\n        <text class=\"{{item.statusClass}} meta-item\">{{item.statusText}}</text>\n        <text class=\"muted time-text\">{{item.timeText}}</text>\n      </view>\n      <view class=\"row doc-actions\">\n        <button class=\"btn btn-primary btn-sm action-btn\" loading=\"{{usingId === item.docId}}\"\n                data-doc-id=\"{{item.docId}}\" data-doc-name=\"{{item.filename}}\"\n                bindtap=\"onUseDoc\">用它出题</button>\n        <button class=\"btn btn-ghost btn-sm action-btn action-btn-last\"\n                data-doc-id=\"{{item.docId}}\" bindtap=\"onDeleteDoc\">删除</button>\n      </view>\n    </view>\n  </block>\n\n  <!-- 五、空态 -->\n  <view class=\"card center-col\" wx:if=\"{{!loading && loadOk && !documents.length}}\">\n    <mascot state=\"idle\" size=\"sm\"></mascot>\n    <view class=\"h3 empty-text\">还没有资料，传一份上来试试吧</view>\n    <view class=\"muted\">讲义、读本、课堂笔记都可以，小科会照着它们出题。</view>\n  </view>\n\n  <!-- 六、诚实说明 -->\n  <view class=\"card note-card\">\n    <view class=\"h3\">小科的小说明</view>\n    <view class=\"body\">当前直接支持 txt / md 文本；pdf / docx 需要服务端安装 pypdf、docx2txt 依赖。</view>\n  </view>\n\n</view>\n","pages/profile":"<!-- 我的：游客态一句说明 + 登录；登录后是经验值、错题、薄弱知识点与历史闯关 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">你来啦！登录后才有经验值和错题本哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <!-- 二、已登录 -->\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n\n      <!-- 个人概览 -->\n      <view class=\"card hero\">\n        <view class=\"h2\">{{nickname}}</view>\n        <view class=\"xp-box\">\n          <view class=\"xp-num mono-num\">{{totalXp}}</view>\n          <view class=\"muted\">累计经验值</view>\n        </view>\n        <view class=\"wrap stat-wrap\">\n          <view class=\"stat-item\">\n            <view class=\"stat-num mono-num\">{{wrongCount}}</view>\n            <view class=\"muted\">错题本里的题</view>\n          </view>\n          <view class=\"stat-item\">\n            <view class=\"stat-text\">{{gradeLabel}}</view>\n            <view class=\"muted\">当前学段</view>\n          </view>\n        </view>\n      </view>\n\n      <!-- 薄弱知识点 -->\n      <view class=\"card\">\n        <view class=\"card-title\">要多看两眼的知识点</view>\n        <view class=\"wrap\" wx:if=\"{{weakPoints.length}}\">\n          <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n            {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n          </text>\n        </view>\n        <view class=\"body\" wx:if=\"{{!weakPoints.length}}\">还没有薄弱知识点，保持这个势头！</view>\n      </view>\n\n      <!-- 历史闯关 -->\n      <view class=\"card\">\n        <view class=\"card-title\">历史闯关</view>\n        <block wx:if=\"{{sessions.length}}\">\n          <view class=\"session-item\" wx:for=\"{{sessions}}\" wx:key=\"quizId\"\n                data-quiz-id=\"{{item.quizId}}\" bindtap=\"onOpenSession\">\n            <view class=\"between\">\n              <text class=\"h3 session-title\">{{item.title}}</text>\n              <text class=\"tag\">{{item.timeText}}</text>\n            </view>\n            <view class=\"wrap session-tags\">\n              <text class=\"pill session-tag\" wx:if=\"{{item.gradeLabel}}\">{{item.gradeLabel}}</text>\n              <text class=\"tag session-tag\" wx:if=\"{{item.sourceLabel}}\">{{item.sourceLabel}}</text>\n              <text class=\"muted go-text\">看看这一局的复盘 ›</text>\n            </view>\n          </view>\n        </block>\n        <view class=\"body\" wx:if=\"{{!sessions.length}}\">还没有闯关记录，去闯一关吧！</view>\n      </view>\n\n      <!-- 清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" bindtap=\"onClearWrong\">清空错题本</button>\n\n    </block>\n  </block>\n\n</view>\n"};
+window.__kepuPageMeta = {"pages/index":{"title":"去闯关"},"pages/quiz":{"title":"答题闯关"},"pages/report":{"title":"复盘报告"},"pages/wrong":{"title":"错题本"},"pages/knowledge":{"title":"知识库"},"pages/profile":{"title":"我的"}};
+window.__kepuTabBar = [{"pagePath":"pages/index/index","text":"去闯关"},{"pagePath":"pages/wrong/index","text":"错题本"},{"pagePath":"pages/knowledge/index","text":"知识库"},{"pagePath":"pages/profile/index","text":"我的"}];
+</script>
+<script>
+/* ---------- 依赖注入：把 utils/request.js 与 config.js 接进来 ---------- */
+(function () {
+  var CONFIG_SRC = "/**\n * 后端接口地址配置\n *\n * 本地联调：保持 127.0.0.1，并在「微信开发者工具 → 详情 → 本地设置」中\n *           勾选「不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书」。\n * 上线部署：改成已备案的 https 域名，并在小程序后台配置 request 合法域名。\n */\nconst IS_DEV = true;\n\nmodule.exports = {\n  IS_DEV: IS_DEV,\n  BASE_URL: IS_DEV\n    ? 'http://127.0.0.1:8000/api/v1'\n    : 'https://your-domain.com/api/v1'\n};\n";
+  var REQUEST_SRC = "/**\n * 统一请求封装：自动附带 JWT、统一拆包、统一错误提示。\n * 页面里不要直接调用 wx.request，一律走这里，便于集中处理鉴权与错误。\n */\nconst { BASE_URL } = require('../config');\n\nconst TOKEN_KEY = 'token';\nconst USER_KEY = 'user';\n\nfunction getToken() {\n  try {\n    return wx.getStorageSync(TOKEN_KEY) || '';\n  } catch (e) {\n    return '';\n  }\n}\n\nfunction saveSession(token, user) {\n  try {\n    if (token) wx.setStorageSync(TOKEN_KEY, token);\n    if (user) wx.setStorageSync(USER_KEY, user);\n  } catch (e) {}\n}\n\nfunction clearSession() {\n  try {\n    wx.removeStorageSync(TOKEN_KEY);\n    wx.removeStorageSync(USER_KEY);\n  } catch (e) {}\n}\n\nfunction toast(message, icon) {\n  wx.showToast({\n    title: message || '没成功，要不要再试一次？',\n    icon: icon || 'none',\n    duration: 2000\n  });\n}\n\nfunction loading(title) {\n  wx.showLoading({ title: title || '小科正在准备…', mask: true });\n}\n\nfunction hideLoading() {\n  wx.hideLoading();\n}\n\n/**\n * 发起请求\n * @param {string} method  GET/POST/PUT/DELETE\n * @param {string} url     以 / 开头，例如 /quiz/generate\n * @param {object} data    请求体\n * @param {object} options { silent: 不弹错误提示, timeout: 超时毫秒 }\n */\nfunction request(method, url, data, options) {\n  const opts = options || {};\n  return new Promise(function (resolve, reject) {\n    const header = { 'Content-Type': 'application/json' };\n    const token = getToken();\n    if (token) {\n      header.Authorization = 'Bearer ' + token;\n    }\n    wx.request({\n      url: BASE_URL + url,\n      method: method,\n      data: data || {},\n      header: header,\n      timeout: opts.timeout || 60000,\n      success: function (res) {\n        const body = res.data || {};\n        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {\n          resolve(body.data);\n          return;\n        }\n        const err = new Error(body.message || ('这一步没走通（' + res.statusCode + '），再试一次吧'));\n        err.code = body.code;\n        err.statusCode = res.statusCode;\n        if (res.statusCode === 401) {\n          clearSession();\n        }\n        if (!opts.silent) {\n          toast(err.message);\n        }\n        reject(err);\n      },\n      fail: function () {\n        const err = new Error('连不上服务器，检查一下后端是否已启动～');\n        err.code = -1;\n        if (!opts.silent) {\n          toast(err.message);\n        }\n        reject(err);\n      }\n    });\n  });\n}\n\n/** 上传文件（知识库用），返回 Promise */\nfunction upload(url, filePath, name, formData) {\n  return new Promise(function (resolve, reject) {\n    const header = {};\n    const token = getToken();\n    if (token) {\n      header.Authorization = 'Bearer ' + token;\n    }\n    wx.uploadFile({\n      url: BASE_URL + url,\n      filePath: filePath,\n      name: name || 'file',\n      formData: formData || {},\n      header: header,\n      timeout: 120000,\n      success: function (res) {\n        let body = {};\n        try {\n          body = JSON.parse(res.data);\n        } catch (e) {\n          body = {};\n        }\n        if (res.statusCode >= 200 && res.statusCode < 300 && body.code === 0) {\n          resolve(body.data);\n          return;\n        }\n        const err = new Error(body.message || '这份资料小科没读进去，换个小一点的文本文件试试');\n        err.code = body.code;\n        toast(err.message);\n        reject(err);\n      },\n      fail: function () {\n        const err = new Error('上传没成功，检查一下网络～');\n        toast(err.message);\n        reject(err);\n      }\n    });\n  });\n}\n\nmodule.exports = {\n  get: function (url, options) {\n    return request('GET', url, null, options);\n  },\n  post: function (url, data, options) {\n    return request('POST', url, data, options);\n  },\n  put: function (url, data, options) {\n    return request('PUT', url, data, options);\n  },\n  del: function (url, options) {\n    return request('DELETE', url, null, options);\n  },\n  upload: upload,\n  getToken: getToken,\n  saveSession: saveSession,\n  clearSession: clearSession,\n  toast: toast,\n  loading: loading,\n  hideLoading: hideLoading\n};\n";
+  function runModule(src, name) {
+    var mod = { exports: {} };
+    var fn = new Function('module', 'exports', 'require', 'wx', src);
+    fn(mod, mod.exports, function (p) {
+      if (p.indexOf('config') !== -1) return window.__kepuModules['config'];
+      return {};
+    }, window.wx);
+    window.__kepuModules[name] = mod.exports;
+    return mod.exports;
+  }
+  runModule(CONFIG_SRC, 'config');
+  runModule(REQUEST_SRC, 'utils/request');
+})();
+</script>
+<script>
+/* ---------- app.js ---------- */
+(function () {
+  var APP_SRC = "/**\n * 小程序入口：静默登录、学段偏好、跨页数据中转。\n * 设计原则：未登录也能完整体验（游客模式），登录后才有经验值与错题本。\n */\nconst api = require('./utils/request');\n\nApp({\n  globalData: {\n    user: null,            // 登录用户信息\n    grade: 'primary_high', // 当前学段：primary_low / primary_high / junior\n    grades: [],            // 学段选项（来自后端 /grades）\n    lastQuiz: null,        // 出题结果，供答题页读取\n    lastResult: null       // 判题结果，供报告页读取\n  },\n\n  onLaunch: function () {\n    this.restore();\n    this.silentLogin();\n    this.loadGrades();\n  },\n\n  /** 恢复本地缓存的会话与学段偏好 */\n  restore: function () {\n    try {\n      const user = wx.getStorageSync('user');\n      const grade = wx.getStorageSync('grade');\n      if (user) {\n        this.globalData.user = user;\n      }\n      if (grade) {\n        this.globalData.grade = grade;\n      }\n    } catch (e) {\n      // 缓存读取失败不影响启动\n    }\n  },\n\n  /**\n   * 静默登录：wx.login 拿 code 换 token。\n   * 失败（未配置微信登录 / 网络异常）时进入游客模式，核心功能照常可用。\n   */\n  silentLogin: function () {\n    const self = this;\n    wx.login({\n      success: function (res) {\n        if (!res.code) {\n          return;\n        }\n        api.post('/user/login', { code: res.code, nickname: '小科学家' }, { silent: true })\n          .then(function (data) {\n            api.saveSession(data.token, data.user);\n            self.globalData.user = data.user;\n          })\n          .catch(function () {\n            // 游客模式：不阻断任何页面\n          });\n      },\n      fail: function () {\n        // 游客模式\n      }\n    });\n  },\n\n  /** 拉取学段选项，供首页选择 */\n  loadGrades: function () {\n    const self = this;\n    api.get('/grades', { silent: true })\n      .then(function (data) {\n        self.globalData.grades = (data && data.grades) || [];\n        let saved = '';\n        try {\n          saved = wx.getStorageSync('grade');\n        } catch (e) {\n          saved = '';\n        }\n        if (saved) {\n          self.globalData.grade = saved;\n        } else if (data && data.default) {\n          self.globalData.grade = data.default;\n        }\n      })\n      .catch(function () {\n        // 拉不到就用默认学段，不影响使用\n      });\n  },\n\n  /** 设置并持久化学段 */\n  setGrade: function (grade) {\n    this.globalData.grade = grade;\n    try {\n      wx.setStorageSync('grade', grade);\n    } catch (e) {}\n  },\n\n  /** 学段的中文短名，用于界面展示 */\n  gradeLabel: function () {\n    const list = this.globalData.grades || [];\n    for (let i = 0; i < list.length; i++) {\n      if (list[i].value === this.globalData.grade) {\n        return list[i].short || list[i].label;\n      }\n    }\n    return '小学高年级';\n  },\n\n  /** 是否已登录（游客模式下为 false） */\n  isLogin: function () {\n    return !!api.getToken();\n  }\n});\n";
+  var mod = { exports: {} };
+  var fn = new Function('module', 'exports', 'require', 'wx', 'App', APP_SRC);
+  fn(mod, mod.exports, function (p) {
+    if (p.indexOf('request') !== -1) return window.__kepuModules['utils/request'];
+    return {};
+  }, window.wx, window.App);
+})();
+</script>
+<script>
+
+/* ===== pages/index ===== */
+(function () {
+  window.__kepuCurrentPage = null;
+  /**
+ * 首页 —— 去闯关
+ *
+ * 一条主线：选学段 → 写主题（或从快捷入口点一个）→ 开始出题
+ * → 出题过程中用小科的分档台词 + 科普小知识轮播把等待变成学习
+ * → 拿到题目后跳答题页。
+ *
+ * 大模型出题可能要 20—40 秒，所以「出题中」这一段必须有过程反馈，
+ * 并且随时可以取消，不让孩子对着一个转圈干等。
+ */
+const api = require('../../utils/request');
+
+const app = getApp();
+
+/** 学段兜底项：拿不到 /grades 时也能正常选 */
+const FALLBACK_GRADES = [
+  { value: 'primary_low', short: '小学低年级', label: '小学低年级（1—3 年级）', emoji: '🌱' },
+  { value: 'primary_high', short: '小学高年级', label: '小学高年级（4—6 年级）', emoji: '🚀' },
+  { value: 'junior', short: '初中', label: '初中', emoji: '🔭' }
+];
+
+/** 主题快捷入口 */
+const TOPIC_CHIPS = [
+  { label: '天文', emoji: '🪐', topic: '太阳系' },
+  { label: '地理', emoji: '🌏', topic: '地球的构造' },
+  { label: '生物', emoji: '🌿', topic: '植物的光合作用' },
+  { label: '物理', emoji: '🧲', topic: '力和运动' },
+  { label: '化学', emoji: '⚗️', topic: '水的三态变化' },
+  { label: '科技', emoji: '🤖', topic: '人工智能' }
+];
+
+/** 科普小知识：出题等待时轮播，把等待时间变成学习时间 */
+const SCIENCE_FACTS = [
+  '太阳的表面大约有 5500℃，而它核心的温度能超过 1500 万℃。',
+  '蜂蜜几乎不会变质，考古学家在古埃及墓里找到过还能吃的蜂蜜。',
+  '香蕉其实是有小种子的浆果，我们平时说的"籽"就是退化的种子。',
+  '彩虹是阳光在水滴里折射又反射形成的，所以它永远是圆的。',
+  '人类的鼻子能记住大约一万亿种不同的气味。',
+  '章鱼有三颗心脏，游泳的时候主心脏会停下来，所以它更喜欢爬着走。',
+  '竹子是世界上长得最快的植物之一，一天最多能长高将近一米。',
+  '月亮每年都在慢慢远离地球，大约一年 3.8 厘米。',
+  '闪电的温度能到 3 万℃，比太阳表面还要热好几倍。',
+  '水熊虫小到看不见，却能在太空里活下来，是出了名的"生存高手"。'
+];
+
+/** 出题等待的三档台词（按等待时长切换，让孩子知道"在动、快好了"） */
+const ASK_STAGES = [
+  { seconds: 0, caption: '小科正在翻书找答案…' },
+  { seconds: 8, caption: '正在认真出题，马上就好…' },
+  { seconds: 20, caption: '快好啦，再等一下下～' }
+];
+
+/** 每 4 秒换一条科普小知识 */
+const FACT_INTERVAL_MS = 4000;
+
+Page({
+  data: {
+    // 学段
+    grades: FALLBACK_GRADES,
+    gradeValue: 'primary_high',
+    gradeLabel: '小学高年级',
+
+    // 主题输入
+    topic: '',
+    canAsk: false,
+
+    // 来自知识库页：本次基于某份资料出题
+    docId: '',
+    docName: '',
+
+    // 快捷入口
+    chips: TOPIC_CHIPS,
+
+    // 出题中
+    asking: false,
+    askElapsed: 0,
+    askCaption: ASK_STAGES[0].caption,
+    facts: SCIENCE_FACTS,
+    factIndex: 0,
+    currentFact: SCIENCE_FACTS[0]
+  },
+
+  // 计时器句柄不放进 data，避免无谓的 setData
+  askTimers: [],
+  askTicks: 0,
+
+  onLoad: function (options) {
+    const opts = options || {};
+    const docId = opts.doc_id ? String(opts.doc_id) : '';
+    const topic = opts.topic ? String(opts.topic) : '';
+    this.setData({
+      docId: docId,
+      docName: topic,
+      topic: topic,
+      canAsk: topic.length > 0
+    });
+    this.syncGrade();
+  },
+
+  onShow: function () {
+    // grades 是异步拉的，回来时再对齐一次
+    this.syncGrade();
+  },
+
+  onUnload: function () {
+    this.clearAskTimers();
+  },
+
+  onHide: function () {
+    this.clearAskTimers();
+    // 页面被切到后台：本次出题的等待状态作废。
+    // 说明：wx.request 无法在这一层真正中断，因此不写 abort，
+    // 而是让出题结果在回来时"静默落库不跳页"——避免从后台切回来时
+    // 莫名其妙被弹到答题页。见 startAsk 里的 seq 判断。
+    this.askSeq = (this.askSeq || 0) + 1;
+    if (this.data.asking) {
+      this.setData({
+        asking: false,
+        askElapsed: 0,
+        askCaption: ASK_STAGES[0].caption
+      });
+    }
+  },
+
+  /* ---------------- 学段 ---------------- */
+
+  /** 用 app.globalData.grades 刷新学段选项与当前标签 */
+  syncGrade: function () {
+    const fromApp = app.globalData.grades;
+    const grades = (fromApp && fromApp.length) ? fromApp : FALLBACK_GRADES;
+    let current = app.globalData.grade;
+    if (!current) {
+      current = grades[0].value;
+    }
+    this.setData({
+      grades: grades,
+      gradeValue: current,
+      gradeLabel: app.gradeLabel()
+    });
+  },
+
+  onPickGrade: function (e) {
+    const value = e.currentTarget.dataset.value;
+    if (!value || value === this.data.gradeValue) {
+      return;
+    }
+    app.setGrade(value);
+    this.setData({
+      gradeValue: value,
+      gradeLabel: app.gradeLabel()
+    });
+  },
+
+  /* ---------------- 主题输入 ---------------- */
+
+  onTopicInput: function (e) {
+    const value = e.detail.value || '';
+    this.setData({
+      topic: value,
+      canAsk: value.length > 0
+    });
+  },
+
+  onTapChip: function (e) {
+    const topic = e.currentTarget.dataset.topic || '';
+    this.setData({
+      topic: topic,
+      canAsk: topic.length > 0
+    });
+  },
+
+  /* ---------------- 出题 ---------------- */
+
+  onStartAsk: function () {
+    const topic = (this.data.topic || '').trim();
+    if (!topic) {
+      api.toast('先告诉小科你想学什么吧');
+      this.setData({ canAsk: false });
+      return;
+    }
+
+    this.setData({
+      asking: true,
+      askElapsed: 0,
+      askCaption: ASK_STAGES[0].caption,
+      currentFact: SCIENCE_FACTS[0],
+      factIndex: 0
+    });
+
+    this.startAskTimers(0);
+
+    // 出题令牌：取消出题或页面切后台后，晚到的响应不再驱动界面跳转
+    this.askSeq = (this.askSeq || 0) + 1;
+    const seq = this.askSeq;
+
+    const payload = {
+      topic: topic,
+      grade: app.globalData.grade
+    };
+    if (this.data.docId) {
+      payload.doc_id = this.data.docId;
+    }
+
+    // 大模型出题可能较慢，给足 3 分钟；失败提示由 request.js 统一弹出
+    api.post('/quiz/generate', payload, { timeout: 180000 })
+      .then((data) => {
+        if (seq !== this.askSeq) {
+          // 用户已经取消，或页面已切后台：题目仍然留存，交给「再来一局」式的
+          // 后续入口使用，但不打断用户当前正在做的事
+          this.askPendingQuiz = data;
+          return;
+        }
+        this.clearAskTimers();
+        app.globalData.lastQuiz = data;
+        this.setData({
+          asking: false,
+          askElapsed: 0,
+          askCaption: ASK_STAGES[0].caption
+        });
+        wx.navigateTo({ url: '/pages/quiz/index' });
+      })
+      .catch(() => {
+        if (seq !== this.askSeq) {
+          return;
+        }
+        // 回到表单态，主题保留在输入框里，方便孩子改一改再来
+        this.clearAskTimers();
+        this.setData({
+          asking: false,
+          askElapsed: 0,
+          askCaption: ASK_STAGES[0].caption
+        });
+      });
+  },
+
+  /** 启动两个定时器：分档台词（1 秒一跳）+ 科普轮播（4 秒一条） */
+  startAskTimers: function (fromTicks) {
+    this.clearAskTimers();
+    const self = this;
+    this.askTicks = (typeof fromTicks === 'number') ? fromTicks : this.askTicks;
+
+    this.askTimers.push(setInterval(function () {
+      self.askTicks = self.askTicks + 1;
+      self.setData({ askElapsed: self.askTicks });
+      let caption = ASK_STAGES[0].caption;
+      for (let i = 0; i < ASK_STAGES.length; i++) {
+        if (self.askTicks >= ASK_STAGES[i].seconds) {
+          caption = ASK_STAGES[i].caption;
+        }
+      }
+      if (caption !== self.data.askCaption) {
+        self.setData({ askCaption: caption });
+      }
+    }, 1000));
+
+    this.askTimers.push(setInterval(function () {
+      const next = (self.data.factIndex + 1) % SCIENCE_FACTS.length;
+      self.setData({
+        factIndex: next,
+        currentFact: SCIENCE_FACTS[next]
+      });
+    }, FACT_INTERVAL_MS));
+  },
+
+  clearAskTimers: function () {
+    for (let i = 0; i < this.askTimers.length; i++) {
+      clearInterval(this.askTimers[i]);
+    }
+    this.askTimers = [];
+  },
+
+  /** 取消出题：二次确认后回到表单态，输入的主题原样保留 */
+  onCancelAsk: function () {
+    const self = this;
+    wx.showModal({
+      title: '先歇一会儿？',
+      content: '小科会停下出题，你输入的主题还留着。',
+      confirmText: '停下',
+      cancelText: '再等等',
+      confirmColor: '#FF8A65',
+      success: function (res) {
+        if (res.confirm) {
+          // 作废本次出题：晚到的响应不再驱动跳转（见 startAsk 的 seq 判断）
+          self.askSeq = (self.askSeq || 0) + 1;
+          self.clearAskTimers();
+          self.setData({
+            asking: false,
+            askElapsed: 0,
+            askCaption: ASK_STAGES[0].caption
+          });
+          api.toast('好，想好了随时叫小科');
+          return;
+        }
+        // 选择继续等待：把计时器重新接上，从已等待的秒数接着往下走
+        self.startAskTimers(self.askTicks);
+      },
+      fail: function () {
+        self.startAskTimers(self.askTicks);
+      }
+    });
+  }
+});
+
+  window.__kepuPages["pages/index"] = window.__kepuCurrentPage;
+})();
+
+
+/* ===== pages/quiz ===== */
+(function () {
+  window.__kepuCurrentPage = null;
+  /**
+ * 答题闯关页
+ *
+ * 一次一道题，点选项先选中，点「就选这个」才判分：
+ * 判分、讲解全部在本地做（后端题目里已经带了 answer 下标与 analysis），
+ * 所以孩子点完就能马上知道对错和原因，不用等网络。
+ * 只有全部答完才把整份答卷交给后端算分。
+ */
+const api = require('../../utils/request');
+
+const app = getApp();
+
+/** 选项字母：A B C D …（最多支持到 H） */
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+/** 来源标签：据实标注，不谎称是 AI 生成的 */
+const SOURCE_LABELS = {
+  ai: '由 AI 生成',
+  bank: '来自题库',
+  wrongbook: '错题重练'
+};
+
+/** 连错两题就先安抚一下，不逼着孩子一直错下去 */
+const STREAK_LIMIT = 2;
+
+/** 提交算分时按钮上的提示（和 wx.showLoading 的文案保持一致） */
+const SUBMIT_TIP = '小科在算分…';
+
+const nextTick = (function () {
+  if (typeof wx !== 'undefined' && typeof wx.nextTick === 'function') {
+    return wx.nextTick;
+  }
+  return function (fn) {
+    setTimeout(fn, 0);
+  };
+})();
+
+/** 逐题对比，算出当前连错了几题（结尾未作答的题不算） */
+function computeStreak(questionStates) {
+  let streak = 0;
+  for (let i = 0; i < questionStates.length; i++) {
+    const state = questionStates[i];
+    if (!state || !state.judged || state.selected === -1) {
+      continue;
+    }
+    if (state.isCorrect) {
+      streak = 0;
+    } else {
+      streak = streak + 1;
+    }
+  }
+  return streak;
+}
+
+Page({
+  data: {
+    // 考卷
+    hasQuiz: false,
+    quizId: '',
+    title: '',
+    source: 'ai',
+    sourceLabel: '由 AI 生成',
+    gradeLabel: '',
+
+    // 题目
+    questions: [],
+    total: 0,
+    current: 0,
+    currentQuestion: null,
+    options: [],
+    answered: 0,
+    progress: 0,
+
+    // 当前题作答状态
+    selected: -1,
+    judged: false,
+    isCorrect: false,
+
+    // 小科的状态与台词
+    mascotState: 'idle',
+    mascotCaption: '',
+    encourage: false,
+
+    // 提交
+    submitting: false,
+    submitTip: ''
+  },
+
+  // 内部状态：每题的选择与判分结果，以及整份答卷的下标数组
+  questionStates: [],
+  answers: [],
+  streak: 0,
+  startTime: 0,
+  advanceDelay: 700,
+
+  onLoad: function () {
+    this.startTime = Date.now();
+
+    const quiz = app.globalData.lastQuiz;
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+      api.toast('还没有题目，先去选一个主题吧');
+      setTimeout(function () {
+        wx.navigateBack();
+      }, 1200);
+      return;
+    }
+
+    const questions = quiz.questions;
+    const states = [];
+    const answers = [];
+    for (let i = 0; i < questions.length; i++) {
+      states.push({ selected: -1, isCorrect: false, judged: false });
+      answers.push(-1);
+    }
+    this.questionStates = states;
+    this.answers = answers;
+    this.streak = 0;
+
+    this.setData({
+      hasQuiz: true,
+      quizId: quiz.quiz_id,
+      title: quiz.title || '科普闯关',
+      source: quiz.source || 'ai',
+      sourceLabel: SOURCE_LABELS[quiz.source] || '由 AI 生成',
+      gradeLabel: app.gradeLabel(),
+      questions: questions,
+      total: questions.length,
+      current: 0,
+      answered: 0,
+      progress: 0,
+      submitTip: SUBMIT_TIP
+    });
+
+    this.showQuestion(0);
+  },
+
+  /** 把第 index 题渲染出来（未作答状态） */
+  showQuestion: function (index) {
+    const question = this.data.questions[index];
+    if (!question) {
+      return;
+    }
+    const optionList = question.options || [];
+    const options = [];
+    for (let i = 0; i < optionList.length; i++) {
+      options.push({
+        text: optionList[i],
+        key: LETTERS[i] || String(i + 1),
+        state: '',
+        no: i,
+        chosen: false
+      });
+    }
+    this.setData({
+      current: index,
+      currentQuestion: question,
+      options: options,
+      selected: -1,
+      judged: false,
+      isCorrect: false,
+      mascotState: 'idle',
+      mascotCaption: '',
+      encourage: false
+    });
+  },
+
+  /** 选中一个选项；没点「就选这个」之前可以随便改 */
+  onSelectOption: function (e) {
+    if (this.data.judged) {
+      return;
+    }
+    const index = Number(e.currentTarget.dataset.index);
+    const options = this.data.options;
+    if (!options || index < 0 || index >= options.length) {
+      return;
+    }
+    const next = [];
+    for (let i = 0; i < options.length; i++) {
+      const item = options[i];
+      next.push({
+        text: item.text,
+        key: item.key,
+        no: item.no,
+        chosen: i === index,
+        state: i === index ? 'selected' : ''
+      });
+    }
+    this.setData({
+      options: next,
+      selected: index
+    });
+  },
+
+  /** 就地判分 + 立刻讲解 */
+  onJudge: function () {
+    if (this.data.judged) {
+      this.onNext();
+      return;
+    }
+    if (this.data.selected < 0) {
+      api.toast('选一个你觉得对的，小科再看看');
+      return;
+    }
+
+    const question = this.data.currentQuestion;
+    if (!question) {
+      return;
+    }
+    const correctIndex = Number(question.answer);
+    const chosen = this.data.selected;
+    const ok = chosen === correctIndex;
+
+    // 先把判分结果落到内部状态，这样连错计数不会因为延迟而漏算
+    const states = this.questionStates;
+    states[this.data.current] = {
+      selected: chosen,
+      isCorrect: ok,
+      judged: true
+    };
+    this.answers[this.data.current] = chosen;
+    this.streak = computeStreak(states);
+
+    const options = this.data.options;
+    const next = [];
+    for (let i = 0; i < options.length; i++) {
+      const item = options[i];
+      let cls = '';
+      let chosenFlag = false;
+      if (ok && i === correctIndex) {
+        // 答对：直接展示解析，不必再重复一遍选项
+        cls = 'correct';
+        chosenFlag = true;
+      } else if (!ok && i === chosen) {
+        cls = 'wrong';
+        chosenFlag = true;
+      } else if (!ok && i === correctIndex) {
+        cls = 'correct';
+      }
+      next.push({
+        text: item.text,
+        key: item.key,
+        no: item.no,
+        chosen: chosenFlag,
+        state: cls
+      });
+    }
+
+    this.setData({
+      options: next,
+      judged: true,
+      isCorrect: ok,
+      mascotState: ok ? 'correct' : 'wrong',
+      mascotCaption: ok ? this.buildCorrectCaption(question) : '',
+      encourage: this.streak >= STREAK_LIMIT
+    }, () => {
+      this.refreshProgress();
+    });
+
+    // 连错两题：换成鼓励态并给出出口
+    if (this.streak >= STREAK_LIMIT) {
+      const self = this;
+      nextTick(function () {
+        self.setData({
+          mascotState: 'encourage',
+          mascotCaption: '要不要先看看解析？'
+        });
+      });
+    }
+  },
+
+  buildCorrectCaption: function (question) {
+    const point = question && question.knowledge_point ? question.knowledge_point : '';
+    if (point) {
+      return '答对啦！你把「' + point + '」抓住了';
+    }
+    return '';
+  },
+
+  /** 进度按「已经判过的题数」推进 */
+  refreshProgress: function () {
+    let done = 0;
+    for (let i = 0; i < this.questionStates.length; i++) {
+      if (this.questionStates[i] && this.questionStates[i].judged) {
+        done = done + 1;
+      }
+    }
+    const total = this.data.total || 0;
+    const percent = total ? Math.round((done / total) * 100) : 0;
+    this.setData({
+      answered: done,
+      progress: percent
+    });
+  },
+
+  /** 「下一题」/「看看我的报告」 */
+  onNext: function () {
+    if (this.data.submitting) {
+      return;
+    }
+    const index = this.data.current;
+    if (index < this.data.total - 1) {
+      this.showQuestion(index + 1);
+      return;
+    }
+    this.submitQuiz();
+  },
+
+  /** 交卷：把整份答卷和本次耗时交给后端算分 */
+  submitQuiz: function () {
+    if (this.data.submitting) {
+      return;
+    }
+    const self = this;
+    const duration = Date.now() - this.startTime;
+
+    this.setData({
+      submitting: true,
+      submitTip: SUBMIT_TIP
+    });
+    api.loading(SUBMIT_TIP);
+
+    api.post('/quiz/submit', {
+      quiz_id: this.data.quizId,
+      answers: this.answers,
+      duration_ms: duration
+    })
+      .then(function (data) {
+        app.globalData.lastResult = data;
+        // 成功：loading 交给 onUnload 关掉，避免在「小科在算分…」还写着的时候
+        // 屏幕上先空一下再跳页；submitting 保持 true 也挡住重复点击
+        wx.navigateTo({ url: '/pages/report/index' });
+      })
+      .catch(function () {
+        // 判分没成：关闭 loading、恢复按钮；答案全留着，直接再点一次就行。
+        // 具体原因 request.js 已经用小科的口气提示过了，这里不重复弹。
+        api.hideLoading();
+        self.setData({ submitting: false });
+      });
+  },
+
+  onUnload: function () {
+    // 离开本页时把 loading 收干净，不留一个转圈卡在上一屏
+    api.hideLoading();
+  }
+});
+
+  window.__kepuPages["pages/quiz"] = window.__kepuCurrentPage;
+})();
+
+
+/* ===== pages/report ===== */
+(function () {
+  window.__kepuCurrentPage = null;
+  /**
+ * 复盘报告页（pages/report）
+ *
+ * 两种进入方式：
+ *   1) 答题页跳过来：直接读 app.globalData.lastResult（含判题明细，可以展示「本次答题回顾」）
+ *   2) 从「我的」历史记录跳过来：带 quiz_id，只调 /report/generate 拿报告，隐藏「本次答题回顾」
+ *
+ * 请求一律走 utils/request，页面里不出现 wx.request。
+ */
+const api = require('../../utils/request');
+const app = getApp();
+
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+/** 选项下标 → 「B． 木星」这样的可读文案 */
+function optionText(options, index) {
+  const list = options || [];
+  const i = Number(index);
+  if (isNaN(i) || i < 0 || i >= list.length) {
+    return '这题先空着啦';
+  }
+  return (LETTERS[i] || String(i + 1)) + '． ' + list[i];
+}
+
+/** 正确率、掌握度统一成 0—100 的整数（后端给的是百分数，也兼容 0—1 的小数） */
+function toScore(value) {
+  let num = Number(value);
+  if (!num || isNaN(num)) {
+    return 0;
+  }
+  if (num <= 1) {
+    num = num * 100;
+  }
+  num = Math.round(num);
+  if (num < 0) {
+    return 0;
+  }
+  if (num > 100) {
+    return 100;
+  }
+  return num;
+}
+
+/** 按正确率切换吉祥物状态：≥80 通关 / ≥60 答对 / 其余 鼓励 */
+function mascotByScore(score) {
+  if (score >= 80) {
+    return 'win';
+  }
+  if (score >= 60) {
+    return 'correct';
+  }
+  return 'encourage';
+}
+
+/** 报告来源据实标注：ai → 由 AI 生成；rule → 本次由学习助手生成 */
+function sourceText(source) {
+  if (source === 'ai') {
+    return '由 AI 生成';
+  }
+  if (source === 'rule') {
+    return '本次由学习助手生成';
+  }
+  return '';
+}
+
+Page({
+  data: {
+    noData: false,          // 手上既没有判题结果，也没有报告可看
+    fromHistory: false,     // 从历史记录进入
+    hasResult: false,       // 有本次判题明细
+    loading: false,         // 正在等复盘报告
+    reportReady: false,     // 报告已经拿到
+    quizId: '',
+    accuracy: 0,            // 正确率（0—100）
+    correct: 0,
+    total: 0,
+    mastery: 0,             // 掌握度（0—100）
+    level: '',
+    mascotState: 'encourage',
+    summary: '',
+    suggestion: '',
+    weakPoints: [],
+    reportSourceLabel: '',
+    xpGained: 0,
+    wrongAdded: 0,
+    mastered: 0,
+    wrongTotal: 0,
+    wrongList: [],          // 本次答错的题，用于「本次答题回顾」
+    reviewOpen: false
+  },
+
+  onLoad: function (options) {
+    const opts = options || {};
+    const quizId = opts.quiz_id ? String(opts.quiz_id) : '';
+
+    if (quizId) {
+      // 历史记录进来的：没有明细，只拿报告
+      this.setData({ fromHistory: true, quizId: quizId });
+      this.loadReport(quizId);
+      return;
+    }
+
+    const result = app.globalData.lastResult;
+    if (!result) {
+      this.setData({ noData: true, mascotState: 'encourage' });
+      return;
+    }
+    this.useResult(result);
+    this.loadReport(result.quiz_id);
+  },
+
+  /** 把答题页留下的判题结果铺开：得分区 + 结算区 + 答错回顾 */
+  useResult: function (result) {
+    const details = result.details || [];
+    const wrongList = [];
+    for (let i = 0; i < details.length; i++) {
+      const d = details[i];
+      if (d.is_correct) {
+        continue;
+      }
+      wrongList.push({
+        key: 'w' + i + '_' + (d.id === undefined ? i : d.id),
+        index: i + 1,
+        stem: d.stem || '这道题',
+        knowledgePoint: d.knowledge_point || '科普知识',
+        yourAnswer: optionText(d.options, d.user_answer),
+        rightAnswer: optionText(d.options, d.correct_answer),
+        analysis: d.analysis || '先把正确答案记在小本本上，下次就能想起来啦'
+      });
+    }
+
+    const accuracy = toScore(result.accuracy);
+    this.setData({
+      hasResult: true,
+      noData: false,
+      quizId: result.quiz_id || this.data.quizId,
+      accuracy: accuracy,
+      correct: result.correct || 0,
+      total: result.total || 0,
+      mastery: accuracy,
+      mascotState: mascotByScore(accuracy),
+      xpGained: result.xp_gained || 0,
+      wrongAdded: result.wrong_added || 0,
+      mastered: result.mastered || 0,
+      wrongTotal: result.wrong_total || 0,
+      wrongList: wrongList
+    });
+  },
+
+  /** 请求复盘报告（可能较慢，界面上用小科思考的吉祥物陪着等） */
+  loadReport: function (quizId) {
+    const id = quizId || this.data.quizId;
+    if (!id) {
+      this.setData({ loading: false, reportReady: false });
+      return;
+    }
+    const that = this;
+    this.setData({ loading: true, reportReady: false });
+
+    api.post('/report/generate', { quiz_id: id })
+      .then(function (data) {
+        const body = data || {};
+        const report = body.report || {};
+        const patch = {
+          loading: false,
+          reportReady: true,
+          mastery: toScore(report.mastery),
+          level: report.level || '',
+          summary: report.summary || '',
+          suggestion: report.suggestion || '',
+          weakPoints: report.weak_points || [],
+          reportSourceLabel: sourceText(report.source)
+        };
+        if (!that.data.hasResult) {
+          // 从历史记录进来的：得分也从这份报告里取
+          const accuracy = toScore(body.accuracy);
+          patch.accuracy = accuracy;
+          patch.correct = body.correct || 0;
+          patch.total = body.total || 0;
+          patch.mascotState = mascotByScore(accuracy);
+        }
+        if (!patch.summary) {
+          patch.summary = '这一局的题目你已经过了一遍，把喜欢的知识点留在心里啦。';
+        }
+        that.setData(patch);
+      })
+      .catch(function () {
+        // 提示已由 request.js 统一给出，这里只把界面状态恢复
+        that.setData({ loading: false, reportReady: false });
+      });
+  },
+
+  /** 报告没拿到时的重试入口 */
+  onRetryReport: function () {
+    this.loadReport(this.data.quizId);
+  },
+
+  /** 折叠 / 展开本次答题回顾 */
+  onToggleReview: function () {
+    this.setData({ reviewOpen: !this.data.reviewOpen });
+  },
+
+  /** 再来一局：回到首页重新选主题 */
+  onAgain: function () {
+    wx.reLaunch({ url: '/pages/index/index' });
+  },
+
+  /** 去错题本：把这次答错的题再练一练 */
+  onGoWrong: function () {
+    wx.switchTab({ url: '/pages/wrong/index' });
+  }
+});
+
+  window.__kepuPages["pages/report"] = window.__kepuCurrentPage;
+})();
+
+
+/* ===== pages/wrong ===== */
+(function () {
+  window.__kepuCurrentPage = null;
+  /**
+ * 错题本（pages/wrong）
+ *
+ * 未登录：一句话说明 + 登录按钮。
+ * 已登录：错题总数 + 薄弱知识点 + 「只练错题」 + 错题列表（可展开看解析）+ 清空。
+ * 所有请求走 utils/request，时间字段直接截字符串显示，不引日期库。
+ */
+const api = require('../../utils/request');
+const app = getApp();
+
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+/** 选项下标 → 「B． 木星」；拿不到下标就返回空串，界面上不显示这一行 */
+function optionText(options, index) {
+  const list = options || [];
+  const i = Number(index);
+  if (isNaN(i) || i < 0 || i >= list.length) {
+    return '';
+  }
+  return (LETTERS[i] || String(i + 1)) + '． ' + list[i];
+}
+
+/** 「2026-09-15 17:11:51」→「2026-09-15 17:11」 */
+function shortTime(value) {
+  const text = value ? String(value) : '';
+  if (!text) {
+    return '';
+  }
+  return text.length >= 16 ? text.substring(0, 16) : text;
+}
+
+Page({
+  data: {
+    isLogin: false,
+    loading: true,
+    logging: false,
+    practicing: false,
+    total: 0,
+    weakPoints: [],
+    questions: []
+  },
+
+  onShow: function () {
+    // 答完题回到错题本时错题可能变了，每次显示都重新对一次
+    this.refresh();
+  },
+
+  onPullDownRefresh: function () {
+    this.refresh().then(function () {
+      wx.stopPullDownRefresh();
+    });
+  },
+
+  /** 拉取错题本总览；返回 Promise，便于下拉刷新收尾 */
+  refresh: function () {
+    const that = this;
+    const logged = app.isLogin();
+    this.setData({ isLogin: logged });
+
+    if (!logged) {
+      this.setData({ loading: false, total: 0, weakPoints: [], questions: [] });
+      return Promise.resolve();
+    }
+
+    api.loading('小科正在翻错题本…');
+    return api.get('/wrong/questions')
+      .then(function (data) {
+        const body = data || {};
+        const list = body.questions || [];
+        const questions = [];
+        for (let i = 0; i < list.length; i++) {
+          const q = list[i];
+          questions.push({
+            stem: q.stem || '这道题',
+            knowledgePoint: q.knowledge_point || '科普知识',
+            wrongCount: q.wrong_count || 1,
+            rightAnswer: optionText(q.options, q.answer),
+            yourAnswer: optionText(q.options, q.user_answer),
+            analysis: q.analysis || '小科还在想更清楚的讲法，先把正确答案记下来吧',
+            lastAt: shortTime(q.last_wrong_at),
+            expanded: false
+          });
+        }
+        that.setData({
+          loading: false,
+          total: body.total === undefined ? questions.length : body.total,
+          weakPoints: body.weak_points || [],
+          questions: questions
+        });
+      })
+      .catch(function () {
+        // 提示已由 request.js 统一给出，这里只把界面收成空态
+        that.setData({ loading: false, questions: [], weakPoints: [] });
+      })
+      .then(function () {
+        api.hideLoading();
+      });
+  },
+
+  /** 登录：wx.login 拿 code → 换 token → 存会话 → 刷新 */
+  onLogin: function () {
+    if (this.data.logging) {
+      return;
+    }
+    const that = this;
+    this.setData({ logging: true });
+
+    wx.login({
+      success: function (res) {
+        if (!res.code) {
+          that.setData({ logging: false });
+          api.toast('没拿到登录凭证，要不要再试一次？');
+          return;
+        }
+        api.post('/user/login', {
+          code: res.code,
+          nickname: '小科学家',
+          grade: app.globalData.grade
+        })
+          .then(function (data) {
+            const body = data || {};
+            api.saveSession(body.token, body.user);
+            app.globalData.user = body.user || null;
+            that.setData({ logging: false, isLogin: true });
+            api.toast('欢迎回来，小科学家！', 'success');
+            that.refresh();
+          })
+          .catch(function () {
+            that.setData({ logging: false });
+          });
+      },
+      fail: function () {
+        that.setData({ logging: false });
+        api.toast('没成功，要不要再试一次？');
+      }
+    });
+  },
+
+  /** 展开 / 收起一道错题的讲解 */
+  onToggleItem: function (e) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (isNaN(index) || !this.data.questions[index]) {
+      return;
+    }
+    const patch = {};
+    patch['questions[' + index + '].expanded'] = !this.data.questions[index].expanded;
+    this.setData(patch);
+  },
+
+  /** 只练错题：不用等大模型，秒级组一套练习卷 */
+  onPractice: function () {
+    if (!this.data.total || this.data.practicing) {
+      return;
+    }
+    const that = this;
+    this.setData({ practicing: true });
+    wx.showLoading({ title: '小科正在组卷…', mask: true });
+
+    api.post('/wrong/practice', { count: 8, grade: app.globalData.grade })
+      .then(function (data) {
+        app.globalData.lastQuiz = data;
+        app.globalData.lastResult = null;
+        that.setData({ practicing: false });
+        api.hideLoading();
+        wx.navigateTo({ url: '/pages/quiz/index' });
+      })
+      .catch(function () {
+        that.setData({ practicing: false });
+        api.hideLoading();
+      });
+  },
+
+  /** 清空错题本：二次确认 */
+  onClearWrong: function () {
+    const that = this;
+    wx.showModal({
+      title: '清空错题本',
+      content: '确定要清空吗？清空后错题就找不回来了',
+      confirmText: '清空',
+      cancelText: '先留着',
+      success: function (res) {
+        if (!res.confirm) {
+          return;
+        }
+        wx.showLoading({ title: '小科正在收拾…', mask: true });
+        api.del('/wrong/questions')
+          .then(function () {
+            api.hideLoading();
+            api.toast('清空啦，轻装上阵！', 'success');
+            that.refresh();
+          })
+          .catch(function () {
+            api.hideLoading();
+          });
+      }
+    });
+  },
+
+  /** 去闯关：回首页挑一个想探索的主题 */
+  onGoQuiz: function () {
+    wx.switchTab({ url: '/pages/index/index' });
+  }
+});
+
+  window.__kepuPages["pages/wrong"] = window.__kepuCurrentPage;
+})();
+
+
+/* ===== pages/knowledge ===== */
+(function () {
+  window.__kepuCurrentPage = null;
+  /**
+ * 知识库（pages/knowledge）
+ *
+ * 把讲义或课外读本传上来，小科就能照着它出题。
+ * 上传走 api.upload，列表 / 删除 / 照着资料出题都走统一的 api.*。
+ */
+const api = require('../../utils/request');
+const app = getApp();
+
+/** 文件后缀 → 展示用的类型名 */
+function typeText(fileType, filename) {
+  let t = fileType ? String(fileType).toLowerCase() : '';
+  if (!t && filename && filename.indexOf('.') > -1) {
+    t = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+  }
+  if (t === 'markdown') {
+    t = 'md';
+  }
+  return t ? t.toUpperCase() : '资料';
+}
+
+/** 字节数 → B / KB / MB */
+function sizeText(bytes) {
+  const n = Number(bytes);
+  if (!n || isNaN(n) || n <= 0) {
+    return '大小还不清楚';
+  }
+  if (n < 1024) {
+    return n + ' B';
+  }
+  if (n < 1024 * 1024) {
+    return (Math.round(n / 1024 * 10) / 10) + ' KB';
+  }
+  return (Math.round(n / 1024 / 1024 * 10) / 10) + ' MB';
+}
+
+/** 文档状态 → 友好的说法 */
+function statusText(status) {
+  const s = status ? String(status).toLowerCase() : '';
+  if (s === 'ready' || s === 'done' || s === 'parsed') {
+    return '已经备好啦';
+  }
+  if (s === 'pending' || s === 'processing' || s === 'reading') {
+    return '小科正在读';
+  }
+  return '已经收好';
+}
+
+function statusClass(status) {
+  const s = status ? String(status).toLowerCase() : '';
+  if (s === 'ready' || s === 'done' || s === 'parsed') {
+    return 'pill pill-green';
+  }
+  if (s === 'pending' || s === 'processing' || s === 'reading') {
+    return 'pill pill-yellow';
+  }
+  return 'pill';
+}
+
+/** 「2026-09-15 17:11:51」→「2026-09-15 17:11」 */
+function shortTime(value) {
+  const text = value ? String(value) : '';
+  if (!text) {
+    return '';
+  }
+  return text.length >= 16 ? text.substring(0, 16) : text;
+}
+
+Page({
+  data: {
+    loading: true,
+    uploading: false,
+    usingId: '',        // 正在用它出题的文档，避免重复点击
+    documents: [],
+    loadOk: true        // 列表有没有顺利拿到
+  },
+
+  onShow: function () {
+    this.loadDocuments();
+  },
+
+  onPullDownRefresh: function () {
+    this.loadDocuments().then(function () {
+      wx.stopPullDownRefresh();
+    });
+  },
+
+  /** 拉取资料列表 */
+  loadDocuments: function () {
+    const that = this;
+    this.setData({ loading: true });
+    return api.get('/knowledge/documents')
+      .then(function (data) {
+        const list = (data && data.documents) || [];
+        const documents = [];
+        for (let i = 0; i < list.length; i++) {
+          const d = list[i];
+          documents.push({
+            docId: d.doc_id,
+            filename: d.filename || '这份资料',
+            typeText: typeText(d.file_type, d.filename),
+            sizeText: sizeText(d.size_bytes),
+            statusText: statusText(d.status),
+            statusClass: statusClass(d.status),
+            timeText: shortTime(d.created_at)
+          });
+        }
+        that.setData({ loading: false, loadOk: true, documents: documents });
+      })
+      .catch(function () {
+        // 提示已由 request.js 统一给出，这里只把列表收成空态
+        that.setData({ loading: false, loadOk: false, documents: [] });
+      });
+  },
+
+  /** 上传资料：从聊天记录里挑一个文件 */
+  onUpload: function () {
+    const that = this;
+    if (this.data.uploading) {
+      return;
+    }
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['txt', 'md', 'markdown', 'csv', 'pdf', 'docx'],
+      success: function (res) {
+        const files = res.tempFiles || [];
+        if (!files.length) {
+          return;
+        }
+        const file = files[0];
+        if (!file.path) {
+          api.toast('没拿到这份资料，要不要再试一次？');
+          return;
+        }
+        that.setData({ uploading: true });
+        wx.showLoading({ title: '小科正在读这份资料…', mask: true });
+        api.upload('/knowledge/documents', file.path, 'file')
+          .then(function () {
+            api.hideLoading();
+            that.setData({ uploading: false });
+            api.toast('资料收好啦，可以拿它出题了', 'success');
+            that.loadDocuments();
+          })
+          .catch(function (err) {
+            api.hideLoading();
+            that.setData({ uploading: false });
+            if (err && err.code === 4001) {
+              api.toast('这份资料小科读不懂，先试试 txt 或 md 文本文件吧');
+            }
+          });
+      },
+      fail: function () {
+        // 用户自己取消了选择，不打扰
+      }
+    });
+  },
+
+  /** 用它出题：拿这份资料当参考资料生成一套题 */
+  onUseDoc: function (e) {
+    const docId = e.currentTarget.dataset.docId;
+    const filename = e.currentTarget.dataset.docName || '这份资料';
+    if (!docId || this.data.usingId) {
+      return;
+    }
+    const that = this;
+    this.setData({ usingId: docId });
+    wx.showLoading({ title: '小科正在出题…', mask: true });
+
+    api.post('/quiz/generate', {
+      topic: filename,
+      doc_id: docId,
+      grade: app.globalData.grade
+    })
+      .then(function (data) {
+        app.globalData.lastQuiz = data;
+        app.globalData.lastResult = null;
+        that.setData({ usingId: '' });
+        api.hideLoading();
+        wx.navigateTo({ url: '/pages/quiz/index' });
+      })
+      .catch(function () {
+        that.setData({ usingId: '' });
+        api.hideLoading();
+      });
+  },
+
+  /** 删除一份资料：二次确认 */
+  onDeleteDoc: function (e) {
+    const docId = e.currentTarget.dataset.docId;
+    const that = this;
+    if (!docId) {
+      return;
+    }
+    wx.showModal({
+      title: '把这份资料拿走',
+      content: '拿走之后就找不回来啦，确定吗？',
+      confirmText: '拿走',
+      cancelText: '先留着',
+      success: function (res) {
+        if (!res.confirm) {
+          return;
+        }
+        wx.showLoading({ title: '小科正在收拾…', mask: true });
+        api.del('/knowledge/documents/' + docId)
+          .then(function () {
+            api.hideLoading();
+            api.toast('已经拿走啦', 'success');
+            that.loadDocuments();
+          })
+          .catch(function () {
+            api.hideLoading();
+          });
+      }
+    });
+  },
+
+  /** 列表没拿到时的重试 */
+  onRetry: function () {
+    this.loadDocuments();
+  }
+});
+
+  window.__kepuPages["pages/knowledge"] = window.__kepuCurrentPage;
+})();
+
+
+/* ===== pages/profile ===== */
+(function () {
+  window.__kepuCurrentPage = null;
+  /**
+ * 我的（pages/profile）
+ *
+ * 游客模式：只展示一句说明和一个登录按钮，闯关功能不受影响。
+ * 登录后：昵称、累计经验值、错题数、当前学段、薄弱知识点、历史闯关。
+ *
+ * 时间字段 created_at 形如 2026-09-15 17:11:51，直接截字符串显示，不引日期库。
+ */
+const api = require('../../utils/request');
+const app = getApp();
+
+const GRADE_TEXT = {
+  primary_low: '小学低年级',
+  primary_high: '小学高年级',
+  junior: '初中'
+};
+
+const SOURCE_TEXT = {
+  ai: '由 AI 生成',
+  bank: '来自题库',
+  wrongbook: '错题重练'
+};
+
+/** 学段取值 → 中文短名；优先用后端下发的 grades，拿不到就用本地兜底表 */
+function gradeText(value) {
+  if (!value) {
+    return '';
+  }
+  const list = app.globalData.grades || [];
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].value === value) {
+      return list[i].short || list[i].label;
+    }
+  }
+  return GRADE_TEXT[value] || '';
+}
+
+/** 出题来源据实标注 */
+function sourceText(value) {
+  return SOURCE_TEXT[value] || '';
+}
+
+/** 「2026-09-15 17:11:51」→「2026-09-15 17:11」 */
+function shortTime(value) {
+  const text = value ? String(value) : '';
+  if (!text) {
+    return '';
+  }
+  return text.length >= 16 ? text.substring(0, 16) : text;
+}
+
+Page({
+  data: {
+    isLogin: false,
+    loading: true,
+    logging: false,
+    nickname: '',
+    totalXp: 0,
+    wrongCount: 0,
+    gradeLabel: '',
+    weakPoints: [],
+    sessions: []
+  },
+
+  onShow: function () {
+    // 从登录页 / 答题页回来时状态可能变了，每次显示都对齐一次
+    this.refresh();
+  },
+
+  onPullDownRefresh: function () {
+    this.refresh().then(function () {
+      wx.stopPullDownRefresh();
+    });
+  },
+
+  /** 拉取个人中心数据；返回 Promise，便于下拉刷新收尾 */
+  refresh: function () {
+    const that = this;
+    const logged = app.isLogin();
+    this.setData({ isLogin: logged, gradeLabel: app.gradeLabel() });
+
+    if (!logged) {
+      this.setData({
+        loading: false,
+        nickname: '',
+        totalXp: 0,
+        wrongCount: 0,
+        weakPoints: [],
+        sessions: []
+      });
+      return Promise.resolve();
+    }
+
+    api.loading('小科正在整理…');
+    return api.get('/user/profile')
+      .then(function (data) {
+        const body = data || {};
+        const user = body.user || {};
+        const list = body.sessions || [];
+        const sessions = [];
+        for (let i = 0; i < list.length; i++) {
+          const s = list[i];
+          sessions.push({
+            quizId: s.quiz_id,
+            title: s.title || '这一局闯关',
+            gradeLabel: gradeText(s.grade),
+            sourceLabel: sourceText(s.source),
+            timeText: shortTime(s.created_at)
+          });
+        }
+        that.setData({
+          loading: false,
+          nickname: user.nickname || '小科学家',
+          totalXp: user.total_xp || 0,
+          gradeLabel: gradeText(user.grade) || app.gradeLabel(),
+          wrongCount: body.wrong_count || 0,
+          weakPoints: body.weak_points || [],
+          sessions: sessions
+        });
+      })
+      .catch(function () {
+        // 提示已由 request.js 统一给出，这里只恢复界面
+        that.setData({ loading: false, sessions: [], weakPoints: [] });
+      })
+      .then(function () {
+        api.hideLoading();
+      });
+  },
+
+  /** 登录：wx.login 拿 code → 换 token → 存会话 → 刷新 */
+  onLogin: function () {
+    if (this.data.logging) {
+      return;
+    }
+    const that = this;
+    this.setData({ logging: true });
+
+    wx.login({
+      success: function (res) {
+        if (!res.code) {
+          that.setData({ logging: false });
+          api.toast('没拿到登录凭证，要不要再试一次？');
+          return;
+        }
+        api.post('/user/login', {
+          code: res.code,
+          nickname: '小科学家',
+          grade: app.globalData.grade
+        })
+          .then(function (data) {
+            const body = data || {};
+            api.saveSession(body.token, body.user);
+            app.globalData.user = body.user || null;
+            that.setData({ logging: false, isLogin: true });
+            api.toast('欢迎回来，小科学家！', 'success');
+            that.refresh();
+          })
+          .catch(function () {
+            that.setData({ logging: false });
+          });
+      },
+      fail: function () {
+        that.setData({ logging: false });
+        api.toast('没成功，要不要再试一次？');
+      }
+    });
+  },
+
+  /** 点历史闯关 → 看那一局的复盘报告 */
+  onOpenSession: function (e) {
+    const quizId = e.currentTarget.dataset.quizId;
+    if (!quizId) {
+      return;
+    }
+    wx.navigateTo({ url: '/pages/report/index?quiz_id=' + quizId });
+  },
+
+  /** 清空错题本：二次确认 */
+  onClearWrong: function () {
+    const that = this;
+    wx.showModal({
+      title: '清空错题本',
+      content: '确定要清空吗？清空后错题就找不回来了',
+      confirmText: '清空',
+      cancelText: '先留着',
+      success: function (res) {
+        if (!res.confirm) {
+          return;
+        }
+        wx.showLoading({ title: '小科正在收拾…', mask: true });
+        api.del('/wrong/questions')
+          .then(function () {
+            api.hideLoading();
+            api.toast('错题本清空啦，重新出发！', 'success');
+            that.refresh();
+          })
+          .catch(function () {
+            api.hideLoading();
+          });
+      }
+    });
+  }
+});
+
+  window.__kepuPages["pages/profile"] = window.__kepuCurrentPage;
+})();
+
+</script>
+<script>
+document.getElementById('api-base-label').textContent =
+  localStorage.getItem('kepu_api_base') || 'http://127.0.0.1:8000/api/v1';
+window.__kepuBoot();
+</script>
+</body>
+</html>
