@@ -8,6 +8,7 @@
 """
 import io
 import json
+import os
 import sys
 import time
 import urllib.request
@@ -15,6 +16,9 @@ import urllib.request
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from playwright.sync_api import sync_playwright      # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SHOTS = os.path.join(ROOT, "web", "shots")
 
 WEB = "http://127.0.0.1:8000/app/"
 ADMIN = "http://127.0.0.1:8000/admin/"
@@ -87,21 +91,27 @@ check(len(detail.get("wrong_items") or []) >= 1,
 check("by_grade" in (detail.get("stats") or {}), "详情接口含按学段的统计")
 
 with sync_playwright() as p:
+    os.makedirs(SHOTS, exist_ok=True)
     b = p.chromium.launch(channel="chrome")
     ctx = b.new_context(viewport={"width": 1440, "height": 950})
     pg = ctx.new_page()
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
 
+    def shot(name):
+        pg.screenshot(path=os.path.join(SHOTS, name + ".png"), full_page=True)
+
     # ---------- 2. 入口页的管理员页签 ----------
     pg.goto(WEB)
     pg.wait_for_timeout(2000)
+    shot("11_入口页_学生登录")
     check(pg.locator("#tab-admin").count() == 1, "入口页有「管理员」页签")
     pg.locator("#tab-admin").click()
     pg.wait_for_timeout(400)
     t = pg.locator("#view").inner_text()
     check("进入管理端" in t, "切到管理员页签后出现管理员登录表单")
     check(pg.locator("#auth-guest").count() == 0, "管理员页签下不显示「游客体验」")
+    shot("12_入口页_管理员登录")
     # 先故意输错，确认报错而不是静默跳转
     pg.locator("#auth-user").fill(ADMIN_USER)
     pg.locator("#auth-pass").fill("wrong-password")
@@ -141,6 +151,7 @@ with sync_playwright() as p:
     pg.locator("#u-table button:has-text('答题详情')").first.click()
     pg.wait_for_timeout(2500)
     check(pg.locator("#user-modal").is_visible(), "「答题详情」按钮打开了详情面板")
+    shot("13_管理端_学生答题详情")
     d = pg.locator("#user-detail").inner_text()
     print("     面板文字（前 160 字）：", d[:160].replace("\n", " / "))
 
@@ -156,6 +167,27 @@ with sync_playwright() as p:
     sec3 = d.split("三、错题明细")[-1].split("四、知识库资料")[0]
     check("还没有错题" not in sec3, "错题明细里有真实错题（学生刚答错 2 题）")
     check(len(sec3.strip()) > 20, "错题明细区块有内容")
+
+    # 光看文字还不够：面板要真的是「宽弹窗 + 四块上下排开」，不能挤成一团或溢出
+    box = pg.locator("#user-modal .modal-card").bounding_box()
+    check(box and box["width"] >= 700, "详情面板是宽弹窗（宽 %.0f px）" % (box["width"] if box else 0))
+    geom = pg.evaluate("""() => {
+      const vw = window.innerWidth;
+      const cards = [...document.querySelectorAll('#user-detail .detail-cards .card')];
+      const panels = [...document.querySelectorAll('#user-detail .panel')];
+      return {
+        cardCount: cards.length,
+        cardW: cards.length ? cards[0].getBoundingClientRect().width : 0,
+        panelCount: panels.length,
+        tops: panels.map(p => Math.round(p.getBoundingClientRect().top)),
+        overflow: document.querySelector('#user-modal .modal-card').scrollWidth > vw,
+      };
+    }""")
+    check(geom["cardCount"] == 4, "顶部四张概览卡都渲染出来了（%d 张）" % geom["cardCount"])
+    check(geom["cardW"] > 100, "概览卡有实际宽度（%.0f px）" % geom["cardW"])
+    check(geom["panelCount"] == 4, "四个分块面板都渲染出来了（%d 块）" % geom["panelCount"])
+    check(geom["tops"] == sorted(geom["tops"]), "四个分块按顺序自上而下排列（top=%s）" % geom["tops"])
+    check(not geom["overflow"], "弹窗没有横向溢出")
 
     pg.locator("#user-modal button:has-text('关闭')").click()
     pg.wait_for_timeout(500)

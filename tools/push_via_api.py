@@ -81,17 +81,44 @@ def call(method, path, body=None, auth=None):
         raise RuntimeError("GitHub API %s %s 失败 [%s]：%s" % (method, path, exc.code, detail[:300]))
 
 
+def local_blobs():
+    """{路径: blob sha}，取自本地 HEAD（提交里的内容，不是工作区的字节）。"""
+    out = {}
+    raw = git("ls-tree", "-r", "-z", "HEAD")
+    for item in raw.decode("utf-8").split("\0"):
+        if not item.strip():
+            continue
+        meta, path = item.split("\t", 1)
+        mode, typ, sha = meta.split()
+        if typ == "blob":
+            out[path] = sha
+    return out
+
+
+def remote_blobs(commit_sha, auth):
+    """{路径: blob sha}，取自远程某次提交。"""
+    tree_sha = call("GET", "/repos/%s/git/commits/%s" % (OWNER_REPO, commit_sha),
+                    auth=auth)["tree"]["sha"]
+    tree = call("GET", "/repos/%s/git/trees/%s?recursive=1" % (OWNER_REPO, tree_sha), auth=auth)
+    out = {}
+    for e in tree.get("tree", []):
+        if e["type"] == "blob":
+            out[e["path"]] = e["sha"]
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--since", help="只上传该提交之后变化的文件（默认与远程最新提交比较）。"
-                                   "不传则全量上传——文件多时会慢很多")
-    ap.add_argument("--all", action="store_true", help="强制全量上传")
+    ap.add_argument("--since", help="（保留参数，已不需要）旧做法是按某个本地提交算差异；"
+                                   "现在直接和远程的树逐文件比 blob 哈希，比 --since 更准")
+    ap.add_argument("--all", action="store_true", help="忽略哈希比对，强制全量上传")
     args = ap.parse_args()
 
     branch = git("rev-parse", "--abbrev-ref", "HEAD").decode().strip()
     head = git("rev-parse", "HEAD").decode().strip()
-    files = [f for f in git("ls-files").decode("utf-8").split("\n") if f]
+    local = local_blobs()
+    files = sorted(local)
 
     # 待上传的提交：API 方式一次只建一个提交对象，无法逐个还原多个本地提交，
     # 因此把「本地领先 origin/main 的那一串」的说明合并成一条，信息不丢。
@@ -111,8 +138,6 @@ def main():
     say("分支：%s" % branch)
     say("本地提交：%s" % head[:10])
     say("文件数：%d" % len(files))
-    say("待上传提交数：%d" % max(1, len(chunks)))
-    say("提交信息首行：%s" % subject.split("\n")[0][:70])
     if args.dry_run:
         for f in files[:15]:
             say("   " + f)
@@ -131,40 +156,44 @@ def main():
         say("已经是同一个提交，无需上传")
         return 0
 
-    # 只上传变化的文件。
-    # 为什么重要：API 方式每个文件都要单独发一次请求，全量重传 138 个文件
-    # 会非常慢（这也是之前「感觉卡住了」的原因）。GitHub 的 tree API 支持
-    # base_tree：未列出的文件自动沿用上一棵树，所以只传差异即可。
-    since = args.since
-    if args.all:
-        changed = files
+    # 决定要传哪些文件：直接拿本地 HEAD 的树和远程最新提交的树逐文件比 blob 哈希。
+    # 为什么不按「本地提交之间的 diff」算：
+    #   1) 这台机器 fetch 不通，origin/main 引用永远是旧的，diff 基点可能是几个提交
+    #      之前的状态，会漏文件（远程曾因此和本地长期不一致）；
+    #   2) 工作区换行符（CRLF）和提交里的字节不一样，按工作区文件上传会让远程
+    #      的 blob 哈希对不上本地 HEAD，看起来永远「有 15 个文件不一致」。
+    # 逐文件比哈希既准又省：一样的文件一个请求都不发。
+    if remote_head:
+        say("正在比对远程与本地 HEAD 的文件哈希…")
+        remote = remote_blobs(remote_head, auth)
     else:
-        base = since or remote_head
-        try:
-            # 用 -z 取以 NUL 分隔的原始字节，再按 utf-8 解码：
-            # 不能用默认输出——中文文件名会被转义成 "\351\246\226" 这种八进制，
-            # 既对不上真实路径，也会让解码抛异常。
-            raw = git("diff", "--name-only", "-z", base, head)
-            changed = [p for p in raw.decode("utf-8").split("\0") if p]
-            tracked = set(files)
-            changed = [f for f in changed if f in tracked]
-        except Exception as exc:
-            say("（差异计算失败，回退为全量上传：%s）" % exc)
-            changed = files
-    say("需要上传的文件：%d / %d（其余沿用远程已有内容）" % (len(changed), len(files)))
-    if not changed:
-        say("没有文件变化，只更新提交信息")
+        remote = {}
+    if args.all:
+        changed = list(files)
+        # 远程有、本地 HEAD 没有的路径要在新树里显式删除（base_tree 会保留未列出的路径）
+        removed = sorted(set(remote) - set(local))
+    elif remote:
+        changed = sorted(p for p in files if remote.get(p) != local[p])
+        removed = sorted(p for p in remote if p not in local)
+    else:
+        changed = list(files)
+        removed = []
+    say("需要上传的文件：%d / %d，需要在远程删除：%d" % (len(changed), len(files), len(removed)))
+    for p in removed[:20]:
+        say("   删除 " + p)
+    if not changed and not removed:
+        say("文件内容与远程完全一致，只更新提交信息")
     if args.dry_run:
         for f in changed[:20]:
             say("   " + f)
         return 0
 
-    # 1) 逐个文件建 blob
+    # 1) 逐个文件建 blob。
+    # 内容取自提交里的 blob（git cat-file），不是工作区文件，这样远程那份就是
+    # `git ls-tree -r HEAD` 所描述的内容，两边哈希可以对上。
     tree = []
     for i, rel in enumerate(changed, 1):
-        path = os.path.join(ROOT, rel)
-        with open(path, "rb") as fh:
-            content = fh.read()
+        content = git("cat-file", "blob", local[rel])
         ext = os.path.splitext(rel)[1].lower()
         if ext in BINARY_EXT:
             blob = call("POST", "/repos/%s/git/blobs" % OWNER_REPO, {
@@ -183,6 +212,9 @@ def main():
                      "type": "blob", "sha": blob["sha"]})
         if i % 10 == 0 or i == len(changed):
             say("  已上传 %d / %d 个文件" % (i, len(changed)))
+    for rel in removed:
+        # sha 置 null 即表示在该树里删掉这个路径
+        tree.append({"path": rel, "mode": "100644", "type": "blob", "sha": None})
 
     # 2) 建 tree / commit
     kwargs = {"tree": tree}
