@@ -1,5 +1,45 @@
 /* 我的页面专属样式：颜色只用 app.wxss 的 CSS 变量 */
 
+/* ---------- 等级与进度 ---------- */
+.lv-row {
+  display: flex;
+  align-items: center;
+  margin: 8rpx 0 16rpx;
+}
+
+.lv-badge {
+  padding: 6rpx 20rpx;
+  margin-right: 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-primary);
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.lv-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.lv-bar {
+  margin-bottom: 12rpx;
+}
+
+.lv-tip {
+  margin-bottom: 8rpx;
+}
+
+/* ---------- 音效开关 ---------- */
+.sound-card {
+  margin-bottom: 40rpx;
+}
+
+.sound-card .grow {
+  padding-right: 20rpx;
+}
+
 .center-col {
   display: flex;
   flex-direction: column;

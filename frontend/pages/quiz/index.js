@@ -7,6 +7,7 @@
  * 只有全部答完才把整份答卷交给后端算分。
  */
 const api = require('../../utils/request');
+const sound = require('../../utils/sound');
 
 const app = getApp();
 
@@ -22,6 +23,20 @@ const SOURCE_LABELS = {
 
 /** 连错两题就先安抚一下，不逼着孩子一直错下去 */
 const STREAK_LIMIT = 2;
+
+/** 连对几题开始给「连对」的额外奖励感 */
+const COMBO_MIN = 2;
+
+/**
+ * 每题的建议思考时间（秒）。到点**不判负、不扣分**，只是把小科换成鼓励态、
+ * 把倒计时改成累计用时，提醒一下可以作答了。
+ * 这样既有游戏的节奏感，又不会给小朋友压力。
+ */
+const TIME_LIMIT = {
+  primary_low: 45,
+  primary_high: 40,
+  junior: 35
+};
 
 /** 提交算分时按钮上的提示（和 wx.showLoading 的文案保持一致） */
 const SUBMIT_TIP = '小科在算分…';
@@ -50,6 +65,34 @@ function computeStreak(questionStates) {
     }
   }
   return streak;
+}
+
+/** 逐题对比，算出当前连对了几题（用于「连对」奖励） */
+function computeCombo(questionStates) {
+  let combo = 0;
+  for (let i = questionStates.length - 1; i >= 0; i--) {
+    const state = questionStates[i];
+    if (!state || !state.judged || state.selected === -1) {
+      continue;
+    }
+    if (state.isCorrect) {
+      combo = combo + 1;
+    } else {
+      break;
+    }
+  }
+  return combo;
+}
+
+/** 连对时的喝彩语，越连越热闹 */
+function comboText(combo) {
+  const words = {
+    2: '连对两题！',
+    3: '三连对，稳住！',
+    4: '四连对，厉害了！',
+    5: '五连对，太棒了！'
+  };
+  return words[combo] || (combo + ' 连对，停不下来！');
 }
 
 Page({
@@ -81,6 +124,15 @@ Page({
     mascotCaption: '',
     encourage: false,
 
+    // 闯关趣味层：倒计时 / 连对 / 奖励动画
+    leftSeconds: 0,
+    timeOver: false,
+    elapsedSeconds: 0,
+    combo: 0,
+    comboShow: false,
+    comboText: '',
+    flash: '',
+
     // 提交
     submitting: false,
     submitTip: ''
@@ -92,6 +144,11 @@ Page({
   streak: 0,
   startTime: 0,
   advanceDelay: 700,
+  tickTimer: null,
+  tickLeft: 0,
+  tickElapsed: 0,
+  flashTimer: null,
+  comboHit: 0,
 
   onLoad: function () {
     this.startTime = Date.now();
@@ -160,8 +217,90 @@ Page({
       isCorrect: false,
       mascotState: 'idle',
       mascotCaption: '',
-      encourage: false
+      encourage: false,
+      // 换题时把上一题的连对徽标与奖励气泡收掉
+      comboShow: false,
+      comboText: '',
+      flash: ''
     });
+    this.startTick();
+  },
+
+  /* ---------------- 每题计时：给节奏感，但不给压力 ----------------
+   * 倒计时走完不判负、不扣分，只把小科换成鼓励态并把显示切换成累计用时。
+   * 这是「游戏化」和「不吓到孩子」之间的取舍，宁可少一点紧张感。
+   */
+  timeLimit: function () {
+    const rule = TIME_LIMIT[app.globalData.grade];
+    return rule || TIME_LIMIT.primary_high;
+  },
+
+  startTick: function () {
+    this.stopTick();
+    this.tickLeft = this.timeLimit();
+    this.tickElapsed = 0;
+    this.setData({
+      leftSeconds: this.tickLeft,
+      timeOver: false,
+      elapsedSeconds: 0
+    });
+    const self = this;
+    this.tickTimer = setInterval(function () {
+      if (self.data.judged) {
+        // 判分之后只累计用时，不再倒计时
+        self.tickElapsed = self.tickElapsed + 1;
+        self.setData({ elapsedSeconds: self.tickElapsed });
+        return;
+      }
+      self.tickLeft = self.tickLeft - 1;
+      if (self.tickLeft > 0) {
+        self.setData({ leftSeconds: self.tickLeft });
+        return;
+      }
+      // 到点了：换成鼓励，不打断作答
+      self.setData({
+        leftSeconds: 0,
+        timeOver: true,
+        elapsedSeconds: 0
+      });
+      if (self.data.mascotState === 'idle') {
+        self.setData({
+          mascotState: 'encourage',
+          mascotCaption: '想好了就选一个吧，小科陪着你'
+        });
+      }
+    }, 1000);
+  },
+
+  stopTick: function () {
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
+  },
+
+  onUnload: function () {
+    this.stopTick();
+    if (this.flashTimer) {
+      clearTimeout(this.flashTimer);
+      this.flashTimer = null;
+    }
+  },
+
+  /** 奖励动画：让一个「+分 / 连对」小气泡飞一下 */
+  playFlash: function (text) {
+    const self = this;
+    this.comboHit = this.comboHit + 1;
+    const key = 'flash-' + this.comboHit;
+    this.setData({ flash: '' }, function () {
+      self.setData({ flash: text, flashKey: key });
+    });
+    if (this.flashTimer) {
+      clearTimeout(this.flashTimer);
+    }
+    this.flashTimer = setTimeout(function () {
+      self.setData({ flash: '' });
+    }, 1100);
   },
 
   /** 选中一个选项；没点「就选这个」之前可以随便改 */
@@ -189,6 +328,7 @@ Page({
       options: next,
       selected: index
     });
+    sound.tap();
   },
 
   /** 就地判分 + 立刻讲解 */
@@ -219,6 +359,7 @@ Page({
     };
     this.answers[this.data.current] = chosen;
     this.streak = computeStreak(states);
+    const combo = computeCombo(states);
 
     const options = this.data.options;
     const next = [];
@@ -251,10 +392,24 @@ Page({
       isCorrect: ok,
       mascotState: ok ? 'correct' : 'wrong',
       mascotCaption: ok ? this.buildCorrectCaption(question) : '',
-      encourage: this.streak >= STREAK_LIMIT
+      encourage: this.streak >= STREAK_LIMIT,
+      combo: combo,
+      comboShow: ok && combo >= COMBO_MIN,
+      comboText: ok && combo >= COMBO_MIN ? comboText(combo) : ''
     }, () => {
       this.refreshProgress();
     });
+
+    // 即时反馈：声音 + 抖动 + 飞一个奖励气泡
+    if (ok) {
+      sound.correct(combo);
+      if (combo >= 3) {
+        sound.combo(combo);
+      }
+      this.playFlash(combo >= COMBO_MIN ? comboText(combo) : '答对啦 +2');
+    } else {
+      sound.wrong();
+    }
 
     // 连错两题：换成鼓励态并给出出口
     if (this.streak >= STREAK_LIMIT) {

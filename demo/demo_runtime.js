@@ -87,6 +87,18 @@
     removeStorageSync: storage.remove,
     stopPullDownRefresh: function () {},
     setNavigationBarTitle: function (o) { setTitle(o && o.title); },
+
+    /* 音效与震动：浏览器里用原生 WebAudio / Vibration API 顶替，
+       这样「答对/答错给个声音」这条链路在演示页也能真正跑到 */
+    createWebAudioContext: function () {
+      var Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return null;
+      try { return new Ctor(); } catch (e) { return null; }
+    },
+    vibrateShort: function () {
+      if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+    },
+
     navigateTo: function (o) { router.push(o.url); },
     redirectTo: function (o) { router.replace(o.url); },
     switchTab: function (o) { router.replace(o.url); },

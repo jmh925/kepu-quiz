@@ -121,6 +121,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--c-primary); }
 .table tr:hover td { background: #fafcfe; }
 .table .stem { max-width: 420px; }
 .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; background: #eef4fb; color: var(--c-primary); }
+/* 学段标签用颜色区分，扫一眼就知道这道题是给哪个学段的 */
+.tag-grade { font-weight: 600; }
+.g-primary_low { background: #eaf7f0; color: #2e9e6b; }
+.g-primary_high { background: #eef4fb; color: var(--c-primary); }
+.g-junior { background: #f3eefb; color: #6b4bc4; }
 .tag-ok { background: #eaf7f0; color: var(--c-ok); }
 .tag-off { background: #f4f5f7; color: var(--c-sub); }
 .tag-warn { background: #fdf1e7; color: var(--c-warn); }

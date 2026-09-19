@@ -20,7 +20,7 @@ import httpx
 from . import grades
 from . import safety
 from .config import settings
-from .question_bank import all_questions, match_theme
+from .question_bank import all_questions, match_theme, questions_by_grade
 
 QUIZ_PROMPT = """你是一名面向中小学生的科普出题老师。请围绕主题「{topic}」生成 {count} 道科普闯关题。
 要求：
@@ -77,16 +77,27 @@ def _extract_json(text: str):
         raise
 
 
-def _pool_questions(theme, count, exclude_stems=None):
-    """从管理端维护的题目资源池取题（管理端启用后优先命中）。"""
+def _pool_questions(theme, count, exclude_stems=None, grade=None):
+    """从管理端维护的题目资源池取题。
+
+    资源池的每道题都标了学段，因此这里**按学段过滤**：
+    小学低年级不应该抽到初中的题，反之同理。
+    """
     try:
         from . import database as db
         sql = "SELECT * FROM question_pool WHERE enabled=1"
         params = []
+        if grade:
+            sql += " AND grade=?"
+            params.append(grade)
         if theme:
             sql += " AND theme=?"
             params.append(theme)
         rows = db.query(sql, tuple(params))
+        if not rows and grade:
+            # 该学段下没有这个主题的题：放宽主题，但不跨越学段
+            rows = db.query("SELECT * FROM question_pool WHERE enabled=1 AND grade=?",
+                            (grade,))
     except Exception:
         return []
     exclude = set(exclude_stems or [])
@@ -104,14 +115,20 @@ def _pool_questions(theme, count, exclude_stems=None):
     return picked[:count]
 
 
-def _bank_questions(topic, count, exclude_stems=None):
-    """从题库取题：优先「资源池 → 内置同主题 → 内置其他主题」，保证题量体验。"""
+def _bank_questions(topic, count, exclude_stems=None, grade=None):
+    """从题库取题：优先「资源池 → 内置同主题 → 内置同学段其他主题」。
+
+    全程**不跨学段取题**：宁可换主题，也不给小学低年级拿初中的题。
+    """
+    from . import grades as grades_mod
+    g = grades_mod.normalize_grade(grade) if grade else None
     theme = match_theme(topic)
     exclude = set(exclude_stems or [])
-    picked = _pool_questions(theme, count, exclude)
+    picked = _pool_questions(theme, count, exclude, g)
 
     if len(picked) < count:
-        pool = [q for q in all_questions() if q.get("stem") not in exclude]
+        pool = [q for q in questions_by_grade(g) if q.get("stem") not in exclude] if g \
+            else [q for q in all_questions() if q.get("stem") not in exclude]
         same = [q for q in pool if theme and q.get("theme") == theme]
         other = [q for q in pool if not (theme and q.get("theme") == theme)]
         need = count - len(picked)
@@ -159,7 +176,7 @@ def generate_questions(topic: str, count=None, grade=None):
                 if len(cleaned) < count:
                     extra = _bank_questions(
                         topic, count - len(cleaned),
-                        exclude_stems=[q.get("stem") for q in cleaned])
+                        exclude_stems=[q.get("stem") for q in cleaned], grade=g)
                     for j, q in enumerate(extra):
                         q["id"] = len(cleaned) + j + 1
                     cleaned.extend(extra)
@@ -170,8 +187,8 @@ def generate_questions(topic: str, count=None, grade=None):
         except Exception:
             pass
 
-    # 题库降级
-    picked = _bank_questions(topic, count)
+    # 题库降级（按学段取题，不跨学段）
+    picked = _bank_questions(topic, count, grade=g)
     for i, q in enumerate(picked):
         q["id"] = i + 1
     theme = match_theme(topic)

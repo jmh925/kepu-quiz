@@ -85,6 +85,15 @@ Page({
     wrongAdded: 0,
     mastered: 0,
     wrongTotal: 0,
+
+    // 等级进度（本地由经验值换算，给孩子一个看得见的成长）
+    // 名字故意不叫 level：上面的 level 是报告的档位文案（优秀/良好…），不能混用
+    levelShow: false,
+    lvNum: 1,
+    lvTitle: '',
+    lvPercent: 0,
+    lvRemain: 0,
+
     wrongList: [],          // 本次答错的题，用于「本次答题回顾」
     reviewOpen: false
   },
@@ -145,6 +154,52 @@ Page({
       wrongTotal: result.wrong_total || 0,
       wrongList: wrongList
     });
+
+    // 等级进度：用累计经验值换算，本地算，不需要额外接口
+    this.refreshLevel();
+  },
+
+  /** 把累计经验值换算成等级进度显示出来（拿不到就用「本次获得」累加，保证有反馈） */
+  refreshLevel: function () {
+    const that = this;
+    const apply = function (totalXp) {
+      const info = app.levelInfo(totalXp);
+      that.setData({
+        levelShow: true,
+        lvNum: info.level,
+        lvTitle: app.levelTitle(info.level),
+        lvPercent: info.percent,
+        lvRemain: info.remain
+      });
+    };
+
+    if (!app.isLogin()) {
+      // 游客也能看到成长反馈：按本地累计的本次经验估算
+      let localXp = 0;
+      try {
+        localXp = Number(wx.getStorageSync('guest_xp')) || 0;
+      } catch (e) {
+        localXp = 0;
+      }
+      localXp = localXp + (this.data.xpGained || 0);
+      try {
+        wx.setStorageSync('guest_xp', localXp);
+      } catch (e) {
+        // 存不上就只显示本次这一档
+      }
+      apply(localXp);
+      return;
+    }
+
+    // 登录用户以服务端的累计经验值为准
+    api.get('/user/profile', { silent: true })
+      .then(function (data) {
+        const user = (data && data.user) || {};
+        apply(user.total_xp || that.data.xpGained || 0);
+      })
+      .catch(function () {
+        apply(that.data.xpGained || 0);
+      });
   },
 
   /** 请求复盘报告（可能较慢，界面上用小科思考的吉祥物陪着等） */

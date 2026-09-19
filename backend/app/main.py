@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """应用入口：装配路由、统一异常处理、CORS、静态管理端。
 
 启动方式（两种都行）：
@@ -80,11 +80,14 @@ def _startup():
 
 @app.get("/")
 def index():
-    """根路径给出可点击的入口，方便答辩演示时快速定位。"""
+    """根路径直接跳到学生端网页版，方便演示时只记一个地址。"""
+    from fastapi.responses import RedirectResponse
+    if os.path.isdir(_web_dir):
+        return RedirectResponse(url="/app/")
     return {
         "code": 0, "message": "ok",
         "data": {
-            "service": "科普知识闯关小程序 · 服务端",
+            "service": "科普闯关系统 · 服务端",
             "version": app.version,
             "docs": "/docs",
             "admin": "/admin/",
@@ -92,6 +95,13 @@ def index():
         },
     }
 
+
+# ---------------- 学生端网页版 ----------------
+# 网页版是「开箱可演示」的主力入口：后端一启动，打开 / 就能直接用，
+# 不需要小程序开发者工具，也不依赖任何构建步骤。
+_web_dir = os.path.join(os.path.dirname(BASE_DIR), "web")
+if os.path.isdir(_web_dir):
+    app.mount("/app", StaticFiles(directory=_web_dir, html=True), name="web")
 
 # ---------------- 管理端静态页面 ----------------
 _admin_dir = os.path.join(os.path.dirname(BASE_DIR), "admin")

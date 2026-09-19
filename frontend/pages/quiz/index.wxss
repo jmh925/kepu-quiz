@@ -66,6 +66,23 @@
   font-size: 28rpx;
 }
 
+/* 答对那一项轻轻弹一下，给一个「对了」的身体感觉 */
+.opt-pop {
+  animation: opt-pop 0.34s ease-out;
+}
+
+@keyframes opt-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* ---------- 讲解卡 ---------- */
 .feedback-card {
   background: #FBFDFF;
@@ -127,4 +144,109 @@
 .hover-soft {
   transform: scale(0.97);
   opacity: 0.92;
+}
+
+/* ============================================================
+   闯关趣味层：计时 / 连对 / 奖励气泡
+   目标是有节奏感与即时反馈，但不用「失败」去施压：
+   倒计时到点只是换文案，连对给的是正反馈，答错仍然是暖橙的安抚。
+   ============================================================ */
+
+.head-right {
+  gap: 14rpx;
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 20rpx;
+  border-radius: var(--r-pill);
+  background: #EAF7FE;
+  color: var(--c-primary-deep);
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+/* 到点或已判分：换成中性灰蓝，不再暗示「超时」 */
+.timer-over {
+  background: #F1F7FC;
+  color: var(--c-sub);
+}
+
+.timer-icon {
+  margin-right: 8rpx;
+  font-size: 26rpx;
+}
+
+/* 连对徽标 */
+.combo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+  padding: 10rpx 24rpx;
+  border-radius: var(--r-pill);
+  background: #FFF6DC;
+  animation: combo-in 0.32s ease-out;
+}
+
+.combo-flame {
+  font-size: 34rpx;
+  margin-right: 10rpx;
+}
+
+.combo-text {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #9A6B00;
+}
+
+@keyframes combo-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 奖励气泡：从选项区中间往上飘一下再消失 */
+.flash-bubble {
+  position: fixed;
+  left: 50%;
+  top: 46%;
+  transform: translateX(-50%);
+  padding: 14rpx 32rpx;
+  border-radius: var(--r-pill);
+  background: rgba(46, 158, 107, 0.94);
+  color: #FFFFFF;
+  font-size: 32rpx;
+  font-weight: 700;
+  z-index: 20;
+  pointer-events: none;
+  animation: flash-up 1s ease-out forwards;
+}
+
+@keyframes flash-up {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20rpx) scale(0.9);
+  }
+  22% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-40rpx) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-90rpx) scale(0.98);
+  }
 }

@@ -1,5 +1,40 @@
 /* 复盘报告页专属样式：颜色一律取 app.wxss 的 CSS 变量，不写死色值 */
 
+/* ---------- 等级进度（把经验值变成看得见的成长） ---------- */
+.level-box {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 2rpx solid var(--c-line);
+}
+
+.level-head {
+  margin-bottom: 14rpx;
+}
+
+.level-badge {
+  padding: 6rpx 20rpx;
+  margin-right: 16rpx;
+  border-radius: var(--r-pill);
+  background: var(--c-primary);
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.level-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.level-bar {
+  margin-bottom: 12rpx;
+}
+
+.level-tip {
+  text-align: center;
+}
+
 /* ---------- 得分区 ---------- */
 .score-card {
   text-align: center;

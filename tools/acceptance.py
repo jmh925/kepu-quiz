@@ -114,9 +114,19 @@ def main():
     ok = run([PY, os.path.join("tools", "check_wrongbook_crud.py")])
     results.append(("错题本 CRUD（接口层，15 项）", ok))
 
+    section("4.1 题库完整性与学段分级")
+    ok = run([PY, os.path.join("tools", "check_bank_integrity.py")])
+    results.append(("题库完整性 + 学段分离（150 题）", ok))
+    ok = run([PY, os.path.join("tools", "check_grade_split.py")])
+    results.append(("学段分级出题（低年级与初中不重题）", ok))
+
     section("5. 论文成稿检查")
     ok = run([PY, os.path.join("tools", "check_thesis.py")])
     results.append(("论文成稿检查", ok))
+
+    section("6. 网页版端到端（真实浏览器点一遍）")
+    ok = run([PY, os.path.join("tools", "verify_web.py")])
+    results.append(("网页版端到端（27 项 + 截图）", ok))
 
     section("验收汇总")
     failed = 0

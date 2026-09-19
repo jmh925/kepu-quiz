@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>科普闯关系统 · 中小学生</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+/* 全局反馈层（不属于任何页面） */
+#toast {
+  position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%) scale(.94);
+  background: rgba(30,40,50,.9); color: #fff; padding: 12px 22px; border-radius: 12px;
+  font-size: 15px; opacity: 0; pointer-events: none; transition: .2s; z-index: 90;
+  max-width: 78vw; text-align: center;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+#loading {
+  position: fixed; inset: 0; background: rgba(255,255,255,.7); display: none;
+  align-items: center; justify-content: center; flex-direction: column; gap: 14px; z-index: 95;
+}
+#loading.show { display: flex; }
+#loading .ring {
+  width: 42px; height: 42px; border: 4px solid #CBE7F7; border-top-color: var(--c-primary);
+  border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-text { font-size: 15px; color: #35506e; }
+#modal { position: fixed; inset: 0; background: rgba(20,40,60,.42); display: none; align-items: center; justify-content: center; z-index: 100; }
+#modal.show { display: flex; }
+#modal .box { width: 340px; max-width: 86vw; background: #fff; border-radius: 16px; overflow: hidden; text-align: center; }
+#modal .box h3 { margin: 0; padding: 20px 18px 8px; font-size: 17px; }
+#modal .box p { margin: 0; padding: 0 20px 18px; font-size: 15px; color: var(--c-sub); line-height: 1.7; }
+#modal .btns { display: flex; border-top: 1px solid var(--c-line); }
+#modal button { flex: 1; border: 0; background: #fff; padding: 15px 0; font-size: 16px; cursor: pointer; color: var(--c-sub); font-family: inherit; }
+#modal button + button { border-left: 1px solid var(--c-line); }
+
+/* 奖励气泡：答对 / 连对时飞一下 */
+#flash {
+  position: fixed; left: 50%; top: 42%; transform: translateX(-50%);
+  padding: 14px 32px; border-radius: var(--r-pill); background: rgba(46,158,107,.94);
+  color: #fff; font-size: 18px; font-weight: 700; z-index: 88; pointer-events: none; opacity: 0;
+}
+#flash.show { animation: flash-up 1.1s ease-out forwards; }
+@keyframes flash-up {
+  0% { opacity: 0; transform: translateX(-50%) translateY(18px) scale(.9); }
+  22% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  70% { opacity: 1; transform: translateX(-50%) translateY(-36px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-84px) scale(.98); }
+}
+
+/* 页面级小样式 */
+.greet { display: flex; align-items: center; gap: 18px; background: linear-gradient(135deg, #EAF7FE, #F7FBFF); }
+.greet-text { flex: 1; }
+.grade-list { display: flex; gap: 12px; flex-wrap: wrap; }
+.grade-btn {
+  flex: 1; min-width: 130px; min-height: 74px; border-radius: 16px; border: 2px solid var(--c-line);
+  background: #fff; cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px; font-family: inherit;
+}
+.grade-btn .ge { font-size: 22px; }
+.grade-btn .gn { font-size: 15px; font-weight: 600; color: var(--c-text); }
+.grade-btn.on { border-color: var(--c-primary); background: #F2FBFF; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+  border-radius: var(--r-pill); background: #F1F7FC; color: var(--c-text);
+  font-size: 15px; cursor: pointer; border: 2px solid transparent;
+}
+.chip:hover { border-color: var(--c-primary); }
+.chip.on { border-color: var(--c-green); background: #EEF9EF; }
+.chip .ck { font-weight: 700; color: var(--c-primary-deep); }
+.chip.on .ck { color: #2E7D32; }
+
+.ask-box { text-align: center; }
+.fact-box { background: #FFF9E8; border-radius: 14px; padding: 16px 18px; margin: 18px 0 14px; text-align: left; }
+.fact-head { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #9A6B00; font-size: 15px; }
+.fact-text { margin: 8px 0 6px; font-size: 16px; }
+
+.combo-bar {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 14px; padding: 8px 20px; border-radius: var(--r-pill);
+  background: #FFF6DC; color: #9A6B00; font-weight: 700; font-size: 16px;
+  animation: opt-pop .32s ease-out;
+}
+.head-right { display: flex; align-items: center; gap: 10px; }
+.timer { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: var(--r-pill); background: #EAF7FE; color: var(--c-primary-deep); font-size: 14px; font-weight: 600; }
+.timer.over { background: #F1F7FC; color: var(--c-sub); }
+.feedback { background: #FBFDFF; }
+.encourage { display: flex; align-items: center; gap: 10px; background: #FFF3EE; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; color: #C24A22; font-size: 15px; }
+
+.score-row { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 10px 0 22px; }
+.score-num { font-size: 58px; font-weight: 700; color: var(--c-primary-deep); line-height: 1; }
+.score-unit { font-size: 24px; }
+.settle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; }
+.settle-num { font-size: 26px; font-weight: 700; color: var(--c-primary-deep); }
+@media (max-width: 640px) { .settle-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.level-box { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--c-line); }
+.level-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.level-badge { padding: 5px 16px; margin-right: 12px; border-radius: var(--r-pill); background: var(--c-primary); color: #fff; font-size: 14px; font-weight: 700; }
+.level-title { font-size: 16px; font-weight: 600; }
+.level-tip { text-align: center; margin-top: 8px; }
+
+.item { border-top: 1px solid var(--c-line); padding: 16px 0; }
+.item:first-child { border-top: 0; }
+.item-head { cursor: pointer; }
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.edit-box { margin-top: 14px; padding: 16px; background: #F7FBFF; border-radius: 14px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 14px; color: var(--c-sub); margin-bottom: 6px; }
+.acts { display: flex; gap: 10px; flex-wrap: wrap; }
+.doc-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid var(--c-line); }
+.doc-row:first-child { border-top: 0; }
+.empty-box { text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<header class="topbar">
+  <div class="brand"><span class="brand-dot">科</span> 科普闯关</div>
+  <nav class="navlinks">
+    <a href="#/home" data-nav="home">去闯关</a>
+    <a href="#/wrong" data-nav="wrong">错题本</a>
+    <a href="#/knowledge" data-nav="knowledge">知识库</a>
+    <a href="#/profile" data-nav="profile">我的</a>
+  </nav>
+  <div class="topbar-right">
+    <span id="lv-chip" class="lv-chip">Lv.1 科学小新芽</span>
+    <span class="muted" id="who"></span>
+    <a href="/admin/" target="_blank" class="muted" style="text-decoration:none">管理端 ↗</a>
+  </div>
+</header>
+
+<main class="wrap" id="view"></main>
+
+<!-- 反馈层 -->
+<div id="toast"></div>
+<div id="loading"><div class="ring"></div><div id="loading-text">小科正在准备…</div></div>
+<div id="modal">
+  <div class="box">
+    <h3 id="modal-title"></h3>
+    <p id="modal-content"></p>
+    <div class="btns">
+      <button id="modal-cancel">取消</button>
+      <button id="modal-ok">确定</button>
+    </div>
+  </div>
+</div>
+<div id="flash"></div>
+
+<script src="assets/app.js"></script>
+<script src="assets/main.js"></script>
+</body>
+</html>

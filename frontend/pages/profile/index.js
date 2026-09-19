@@ -59,7 +59,14 @@ Page({
     wrongCount: 0,
     gradeLabel: '',
     weakPoints: [],
-    sessions: []
+    sessions: [],
+
+    // 成长体系与音效
+    lvNum: 1,
+    lvTitle: '',
+    lvPercent: 0,
+    lvRemain: 0,
+    soundOn: true
   },
 
   onShow: function () {
@@ -73,11 +80,34 @@ Page({
     });
   },
 
+  /** 由累计经验值算出等级与进度（本地换算，见 app.js 的 levelInfo） */
+  applyLevel: function (totalXp) {
+    const info = app.levelInfo(totalXp);
+    this.setData({
+      lvNum: info.level,
+      lvTitle: app.levelTitle(info.level),
+      lvPercent: info.percent,
+      lvRemain: info.remain
+    });
+  },
+
+  /** 音效开关：关掉后连震动一起关，安静场合不打扰别人 */
+  onToggleSound: function (e) {
+    const on = !!(e.detail && e.detail.value);
+    app.setSoundOn(on);
+    this.setData({ soundOn: on });
+    api.toast(on ? '音效打开啦' : '好，安静模式');
+  },
+
   /** 拉取个人中心数据；返回 Promise，便于下拉刷新收尾 */
   refresh: function () {
     const that = this;
     const logged = app.isLogin();
-    this.setData({ isLogin: logged, gradeLabel: app.gradeLabel() });
+    this.setData({
+      isLogin: logged,
+      gradeLabel: app.gradeLabel(),
+      soundOn: app.soundOn()
+    });
 
     if (!logged) {
       this.setData({
@@ -88,6 +118,7 @@ Page({
         weakPoints: [],
         sessions: []
       });
+      this.applyLevel(0);
       return Promise.resolve();
     }
 
@@ -117,6 +148,7 @@ Page({
           weakPoints: body.weak_points || [],
           sessions: sessions
         });
+        that.applyLevel(user.total_xp || 0);
       })
       .catch(function () {
         // 提示已由 request.js 统一给出，这里只恢复界面

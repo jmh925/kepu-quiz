@@ -21,6 +21,17 @@
       <!-- 个人概览 -->
       <view class="card hero">
         <view class="h2">{{nickname}}</view>
+
+        <!-- 等级：把累计经验值换算成看得见的成长 -->
+        <view class="lv-row">
+          <text class="lv-badge">Lv.{{lvNum}}</text>
+          <text class="lv-title">{{lvTitle}}</text>
+        </view>
+        <view class="progress lv-bar">
+          <view class="progress-inner" style="width: {{lvPercent}}%;"></view>
+        </view>
+        <view class="muted lv-tip">再攒 {{lvRemain}} 点经验就升级啦</view>
+
         <view class="xp-box">
           <view class="xp-num mono-num">{{totalXp}}</view>
           <view class="muted">累计经验值</view>
@@ -70,6 +81,17 @@
 
       <!-- 清空错题本 -->
       <button class="btn btn-ghost clear-btn" bindtap="onClearWrong">清空错题本</button>
+
+      <!-- 音效开关：课堂上不想出声时可以关掉（关掉后连震动也一起关） -->
+      <view class="card sound-card">
+        <view class="between">
+          <view class="grow">
+            <view class="h3">闯关音效</view>
+            <view class="muted">答对、连对会有轻声提示，安静的地方可以关掉</view>
+          </view>
+          <switch checked="{{soundOn}}" bindchange="onToggleSound" color="#4FC3F7" />
+        </view>
+      </view>
 
     </block>
   </block>

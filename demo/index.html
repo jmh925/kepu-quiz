@@ -776,6 +776,22 @@
   color: var(--c-orange);
   font-size: 14px;
 }
+.mp-page[data-page="pages/quiz"] .opt-pop {
+  animation: opt-pop 0.34s ease-out;
+}
+
+
+@keyframes opt-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 .mp-page[data-page="pages/quiz"] .feedback-card {
   background: #FBFDFF;
 }
@@ -824,8 +840,126 @@
   transform: scale(0.97);
   opacity: 0.92;
 }
+.mp-page[data-page="pages/quiz"] .head-right {
+  gap: 7px;
+}
+.mp-page[data-page="pages/quiz"] .timer {
+  display: flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: #EAF7FE;
+  color: var(--c-primary-deep);
+  font-size: 14px;
+  font-weight: 600;
+}
+.mp-page[data-page="pages/quiz"] .timer-over {
+  background: #F1F7FC;
+  color: var(--c-sub);
+}
+.mp-page[data-page="pages/quiz"] .timer-icon {
+  margin-right: 4px;
+  font-size: 13px;
+}
+.mp-page[data-page="pages/quiz"] .combo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: #FFF6DC;
+  animation: combo-in 0.32s ease-out;
+}
+.mp-page[data-page="pages/quiz"] .combo-flame {
+  font-size: 17px;
+  margin-right: 5px;
+}
+.mp-page[data-page="pages/quiz"] .combo-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #9A6B00;
+}
+
+
+@keyframes combo-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.mp-page[data-page="pages/quiz"] .flash-bubble {
+  position: fixed;
+  left: 50%;
+  top: 46%;
+  transform: translateX(-50%);
+  padding: 7px 16px;
+  border-radius: var(--r-pill);
+  background: rgba(46, 158, 107, 0.94);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  z-index: 20;
+  pointer-events: none;
+  animation: flash-up 1s ease-out forwards;
+}
+
+
+@keyframes flash-up {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.9);
+  }
+  22% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-20px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-45px) scale(0.98);
+  }
+}
 
 /* ---- pages/report ---- */
+.mp-page[data-page="pages/report"] .level-box {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-line);
+}
+.mp-page[data-page="pages/report"] .level-head {
+  margin-bottom: 7px;
+}
+.mp-page[data-page="pages/report"] .level-badge {
+  padding: 3px 10px;
+  margin-right: 8px;
+  border-radius: var(--r-pill);
+  background: var(--c-primary);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+}
+.mp-page[data-page="pages/report"] .level-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.mp-page[data-page="pages/report"] .level-bar {
+  margin-bottom: 6px;
+}
+.mp-page[data-page="pages/report"] .level-tip {
+  text-align: center;
+}
 .mp-page[data-page="pages/report"] .score-card {
   text-align: center;
 }
@@ -1136,6 +1270,37 @@
 }
 
 /* ---- pages/profile ---- */
+.mp-page[data-page="pages/profile"] .lv-row {
+  display: flex;
+  align-items: center;
+  margin: 4px 0 8px;
+}
+.mp-page[data-page="pages/profile"] .lv-badge {
+  padding: 3px 10px;
+  margin-right: 8px;
+  border-radius: var(--r-pill);
+  background: var(--c-primary);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+}
+.mp-page[data-page="pages/profile"] .lv-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.mp-page[data-page="pages/profile"] .lv-bar {
+  margin-bottom: 6px;
+}
+.mp-page[data-page="pages/profile"] .lv-tip {
+  margin-bottom: 4px;
+}
+.mp-page[data-page="pages/profile"] .sound-card {
+  margin-bottom: 20px;
+}
+.mp-page[data-page="pages/profile"] .sound-card .grow {
+  padding-right: 10px;
+}
 .mp-page[data-page="pages/profile"] .center-col {
   display: flex;
   flex-direction: column;
@@ -1383,6 +1548,18 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
     removeStorageSync: storage.remove,
     stopPullDownRefresh: function () {},
     setNavigationBarTitle: function (o) { setTitle(o && o.title); },
+
+    /* 音效与震动：浏览器里用原生 WebAudio / Vibration API 顶替，
+       这样「答对/答错给个声音」这条链路在演示页也能真正跑到 */
+    createWebAudioContext: function () {
+      var Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return null;
+      try { return new Ctor(); } catch (e) { return null; }
+    },
+    vibrateShort: function () {
+      if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+    },
+
     navigateTo: function (o) { router.push(o.url); },
     redirectTo: function (o) { router.replace(o.url); },
     switchTab: function (o) { router.replace(o.url); },
@@ -2082,7 +2259,7 @@ html, body { margin: 0; height: 100%; background: #eef3f9; font-family: -apple-s
 </script>
 <script>
 /* ---------- 页面源与路由表（供运行时渲染使用） ---------- */
-window.__kepuPageSources = {"pages/index":"<!-- 首页 —— 去闯关：选学段、写主题、出题等待 -->\n<view class=\"page\">\n\n  <!-- 顶部问候 -->\n  <view class=\"greet-card\">\n    <view class=\"greet-left\">\n      <view class=\"h1\">去闯关</view>\n      <view class=\"greet-line body\">今天想探索什么？你是{{gradeLabel}}哦</view>\n      <view class=\"muted\">小科负责出题，你只管大胆猜。</view>\n    </view>\n    <mascot state=\"idle\" size=\"md\" caption=\"\"></mascot>\n  </view>\n\n  <!-- 出题中：分档台词 + 科普轮播 + 取消入口 -->\n  <block wx:if=\"{{asking}}\">\n    <view class=\"card asking-card\">\n      <mascot state=\"thinking\" size=\"lg\" caption=\"{{askCaption}}\"></mascot>\n\n      <view class=\"fact-box\">\n        <view class=\"fact-head row\">\n          <text class=\"fact-emoji\">💡</text>\n          <text class=\"fact-title\">等一会儿，先看条小知识</text>\n        </view>\n        <view class=\"fact-text\">{{currentFact}}</view>\n        <view class=\"muted fact-index\">第 {{factIndex + 1}} / {{facts.length}} 条</view>\n      </view>\n\n      <view class=\"ask-hint muted\">已经等了 {{askElapsed}} 秒，出题一般需要 20—40 秒</view>\n      <view class=\"btn btn-ghost ask-cancel\" hover-class=\"hover-soft\" bindtap=\"onCancelAsk\">先不出了</view>\n    </view>\n  </block>\n\n  <!-- 表单态 -->\n  <block wx:else>\n\n    <!-- 学段选择 -->\n    <view class=\"card\">\n      <view class=\"card-title\">先选一个学段</view>\n      <view class=\"grade-list\">\n        <view\n          wx:for=\"{{grades}}\"\n          wx:key=\"value\"\n          class=\"grade-btn {{gradeValue === item.value ? 'grade-on' : ''}}\"\n          data-value=\"{{item.value}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onPickGrade\"\n        >\n          <text class=\"grade-emoji\">{{item.emoji}}</text>\n          <text class=\"grade-name\">{{item.short}}</text>\n        </view>\n      </view>\n      <view class=\"muted grade-tip\">换学段会让题目变难或变简单，随时可以换回来。</view>\n    </view>\n\n    <!-- 主题输入 -->\n    <view class=\"card\">\n      <view class=\"card-title\">想探索什么主题？</view>\n\n      <!-- 来自知识库的资料 -->\n      <view class=\"doc-card\" wx:if=\"{{docId}}\">\n        <view class=\"row\">\n          <text class=\"doc-emoji\">📘</text>\n          <view class=\"grow\">\n            <view class=\"doc-title\">本次将基于《{{docName}}》出题</view>\n            <view class=\"muted\">小科会照着这份资料来出题</view>\n          </view>\n        </view>\n      </view>\n\n      <input\n        class=\"input\"\n        type=\"text\"\n        value=\"{{topic}}\"\n        maxlength=\"30\"\n        placeholder=\"比如：太阳系、恐龙、彩虹是怎么来的\"\n        placeholder-class=\"input-ph\"\n        confirm-type=\"done\"\n        bindinput=\"onTopicInput\"\n        bindconfirm=\"onStartAsk\"\n      />\n\n      <view class=\"chip-wrap wrap\">\n        <view\n          wx:for=\"{{chips}}\"\n          wx:key=\"label\"\n          class=\"chip\"\n          data-topic=\"{{item.topic}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onTapChip\"\n        >\n          <text class=\"chip-emoji\">{{item.emoji}}</text>\n          <text>{{item.label}}</text>\n        </view>\n      </view>\n\n      <view class=\"ask-warn muted\" wx:if=\"{{!canAsk}}\">先告诉小科你想学什么吧</view>\n\n      <view\n        class=\"btn btn-primary btn-block {{canAsk ? '' : 'disabled'}}\"\n        hover-class=\"{{canAsk ? 'hover-soft' : ''}}\"\n        bindtap=\"onStartAsk\"\n      >开始出题</view>\n    </view>\n\n  </block>\n\n</view>\n","pages/quiz":"<!-- 答题闯关页：本地即时判分 + 随堂讲解 -->\n<view class=\"page\" wx:if=\"{{hasQuiz}}\">\n\n  <!-- 进度区 -->\n  <view class=\"head\">\n    <view class=\"between head-top\">\n      <text class=\"h3 head-title\">{{title}}</text>\n      <text class=\"pill\">{{gradeLabel}}</text>\n    </view>\n\n    <view class=\"progress head-bar\">\n      <view class=\"progress-inner\" style=\"width: {{progress}}%;\"></view>\n    </view>\n\n    <view class=\"between head-bottom\">\n      <text class=\"h3\">第 {{current + 1}} / {{total}} 题</text>\n      <text class=\"tag\">{{sourceLabel}}</text>\n    </view>\n  </view>\n\n  <!-- 题干 -->\n  <view class=\"card\" wx:if=\"{{currentQuestion}}\">\n    <view class=\"h2 stem\">{{currentQuestion.stem}}</view>\n    <view class=\"muted stem-tip\">选出你觉得对的那一个</view>\n  </view>\n\n  <!-- 选项 -->\n  <view class=\"option-list\">\n    <view\n      wx:for=\"{{options}}\"\n      wx:key=\"no\"\n      class=\"option {{item.state}} {{judged ? 'disabled' : ''}}\"\n      data-index=\"{{item.no}}\"\n      hover-class=\"{{judged ? '' : 'hover-soft'}}\"\n      bindtap=\"onSelectOption\"\n    >\n      <view class=\"option-key\">{{item.key}}</view>\n      <view class=\"grow option-text\">{{item.text}}</view>\n      <text class=\"opt-mark mark-correct\" wx:if=\"{{item.state === 'correct'}}\">✓</text>\n      <text class=\"opt-mark mark-wrong\" wx:if=\"{{item.state === 'wrong'}}\">再想想</text>\n    </view>\n  </view>\n\n  <!-- 讲解卡：判完分马上给，不对也不错得不明不白 -->\n  <view class=\"card feedback-card\" wx:if=\"{{judged}}\">\n    <view class=\"row feedback-head\">\n      <mascot state=\"{{mascotState}}\" size=\"sm\" caption=\"{{mascotCaption}}\"></mascot>\n    </view>\n\n    <view class=\"encourage-box\" wx:if=\"{{encourage}}\">\n      <text class=\"encourage-emoji\">🤝</text>\n      <text class=\"encourage-text\">要不要先看看解析？看懂了再往下走，一点也不急。</text>\n    </view>\n\n    <view class=\"pill pill-orange point-pill\" wx:if=\"{{currentQuestion.knowledge_point}}\">{{currentQuestion.knowledge_point}}</view>\n\n    <view class=\"analysis-title h3\">小科讲讲这道题</view>\n    <view class=\"analysis-text body\">{{currentQuestion.analysis}}</view>\n  </view>\n\n  <!-- 底部按钮 -->\n  <view class=\"footer\">\n    <view\n      class=\"btn btn-primary btn-block {{(selected < 0 && !judged) ? 'disabled' : ''}}\"\n      hover-class=\"{{submitting ? '' : 'hover-soft'}}\"\n      bindtap=\"onJudge\"\n    >\n      <block wx:if=\"{{!judged}}\">就选这个</block>\n      <block wx:elif=\"{{current + 1 < total}}\">下一题</block>\n      <block wx:else>看看我的报告</block>\n    </view>\n    <view class=\"muted footer-tip\" wx:if=\"{{submitting}}\">{{submitTip}}</view>\n    <view class=\"muted footer-tip\" wx:elif=\"{{judged && current + 1 < total}}\">想清楚了就继续，小科在这儿等你。</view>\n  </view>\n\n</view>\n","pages/report":"<!-- 复盘报告：先看得分，再看小科的复盘，最后是这一局的收获与回顾 -->\n<view class=\"page\">\n\n  <!-- 一、得分区 -->\n  <view class=\"card score-card\" wx:if=\"{{hasResult || reportReady}}\">\n    <mascot state=\"{{mascotState}}\" size=\"lg\"></mascot>\n\n    <view class=\"score-row\">\n      <view class=\"score-num mono-num\">{{accuracy}}<text class=\"score-unit\">%</text></view>\n      <view class=\"score-meta\">\n        <view class=\"h3\">这一局的正确率</view>\n        <view class=\"muted\">答对 {{correct}} / {{total}} 题</view>\n      </view>\n    </view>\n\n    <view class=\"progress mastery-bar\">\n      <view class=\"progress-inner\" style=\"width: {{mastery}}%;\"></view>\n    </view>\n    <view class=\"between mastery-label\">\n      <text class=\"muted\">掌握度</text>\n      <text class=\"muted\">{{mastery}} 分</text>\n    </view>\n  </view>\n\n  <!-- 二、小科正在写报告 -->\n  <view class=\"card\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"md\" caption=\"小科在写复盘报告…\"></mascot>\n  </view>\n\n  <!-- 三、报告没拿到时的重试入口 -->\n  <view class=\"card\" wx:if=\"{{!loading && !reportReady && (hasResult || fromHistory)}}\">\n    <view class=\"body\">小科这份复盘还没写好，要不要再写一次？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetryReport\">再写一次</button>\n  </view>\n\n  <!-- 四、复盘报告正文 -->\n  <view class=\"card\" wx:if=\"{{reportReady}}\">\n    <view class=\"between\">\n      <text class=\"card-title\">小科的复盘</text>\n      <text class=\"tag\" wx:if=\"{{reportSourceLabel}}\">{{reportSourceLabel}}</text>\n    </view>\n\n    <view class=\"row level-row\" wx:if=\"{{level}}\">\n      <text class=\"pill pill-yellow\">{{level}}</text>\n      <text class=\"muted mastery-text\">掌握度 {{mastery}} 分</text>\n    </view>\n\n    <view class=\"divider\"></view>\n    <view class=\"body\">{{summary}}</view>\n\n    <view class=\"suggest-box\" wx:if=\"{{suggestion}}\">\n      <view class=\"h3\">下一步可以这样</view>\n      <view class=\"body\">{{suggestion}}</view>\n    </view>\n\n    <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n      <view class=\"h3\">值得再看看的知识点</view>\n      <view class=\"wrap pills\">\n        <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"*this\">{{item}}</text>\n      </view>\n    </view>\n  </view>\n\n  <!-- 五、结算区：只在手上有本次判题结果时出现 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"card-title\">这一局的收获</view>\n    <view class=\"settle-grid\">\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">+{{xpGained}}</view>\n        <view class=\"muted\">经验值</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongAdded}}</view>\n        <view class=\"muted\">新收的错题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{mastered}}</view>\n        <view class=\"muted\">已经掌握的题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongTotal}}</view>\n        <view class=\"muted\">错题本共</view>\n      </view>\n    </view>\n  </view>\n\n  <!-- 六、本次答题回顾：只列答错的题，可以折叠 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"between review-head\" bindtap=\"onToggleReview\">\n      <text class=\"card-title\">本次答题回顾</text>\n      <text class=\"muted\">{{reviewOpen ? '收起' : '展开'}}</text>\n    </view>\n\n    <view class=\"body\" wx:if=\"{{!wrongList.length}}\">这一局全都答对啦，真厉害！</view>\n\n    <view class=\"muted review-tip\" wx:if=\"{{!reviewOpen && wrongList.length}}\">\n      有 {{wrongList.length}} 道题想和你再聊聊，点上面展开看看～\n    </view>\n\n    <block wx:if=\"{{reviewOpen}}\">\n      <view class=\"review-item\" wx:for=\"{{wrongList}}\" wx:key=\"key\">\n        <view class=\"h3\">{{item.index}}. {{item.stem}}</view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">你的答案</text>\n          <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n        </view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">正确答案</text>\n          <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n        </view>\n        <view class=\"analysis\">\n          <text class=\"tag\">{{item.knowledgePoint}}</text>\n          <view class=\"body\">{{item.analysis}}</view>\n        </view>\n      </view>\n    </block>\n  </view>\n\n  <!-- 七、底部入口 -->\n  <view class=\"foot-btns\" wx:if=\"{{hasResult || reportReady}}\">\n    <button class=\"btn btn-primary foot-btn\" bindtap=\"onAgain\">再来一局</button>\n    <button class=\"btn btn-ghost foot-btn\" bindtap=\"onGoWrong\">去错题本</button>\n  </view>\n\n  <!-- 八、没有可看的报告时 -->\n  <view class=\"card\" wx:if=\"{{noData}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"center h3 no-data-text\">还没有报告可以看，先去闯一关吧</view>\n    <button class=\"btn btn-primary\" bindtap=\"onAgain\">去闯关</button>\n  </view>\n\n</view>\n","pages/wrong":"<!-- 错题本：统计 → 只练错题 → 错题清单 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">登录后才能把错题存下来哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 二、读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在翻错题本…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n      <!-- 三、统计卡 -->\n      <view class=\"card stat-card\">\n        <view class=\"total-num mono-num\">{{total}}</view>\n        <view class=\"muted\">错题本里一共有这么多题</view>\n        <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n          <view class=\"h3\">薄弱知识点</view>\n          <view class=\"wrap\">\n            <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n              {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n            </text>\n          </view>\n        </view>\n      </view>\n\n      <!-- 四、只练错题 -->\n      <view class=\"card\">\n        <button class=\"btn btn-primary practice-btn\" disabled=\"{{total === 0}}\"\n                loading=\"{{practicing}}\" bindtap=\"onPractice\">只练错题</button>\n        <view class=\"muted center tip-text\">不用等 AI 出题，马上就能开始</view>\n      </view>\n\n      <!-- 五、错题清单 -->\n      <block wx:if=\"{{questions.length}}\">\n        <view class=\"card\" wx:for=\"{{questions}}\" wx:key=\"stem\">\n          <view class=\"item-head\" data-index=\"{{index}}\" bindtap=\"onToggleItem\">\n            <view class=\"h3 stem-text\">{{index + 1}}. {{item.stem}}</view>\n            <view class=\"wrap meta-row\">\n              <text class=\"pill meta-item\">{{item.knowledgePoint}}</text>\n              <text class=\"pill pill-orange meta-item\">错过 {{item.wrongCount}} 次</text>\n              <text class=\"muted meta-item\">{{item.expanded ? '收起讲解' : '看看讲解'}}</text>\n            </view>\n          </view>\n\n          <view class=\"detail\" wx:if=\"{{item.expanded}}\">\n            <view class=\"review-line\" wx:if=\"{{item.yourAnswer}}\">\n              <text class=\"line-key\">你的答案</text>\n              <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n            </view>\n            <view class=\"review-line\" wx:if=\"{{item.rightAnswer}}\">\n              <text class=\"line-key\">正确答案</text>\n              <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n            </view>\n            <view class=\"analysis\">\n              <text class=\"tag\">{{item.knowledgePoint}}</text>\n              <view class=\"body\">{{item.analysis}}</view>\n            </view>\n            <view class=\"muted last-at\" wx:if=\"{{item.lastAt}}\">最近一次：{{item.lastAt}}</view>\n\n            <!-- 改 / 删：错题本也要能维护，不然攒久了就没法用了 -->\n            <view class=\"row actions-row\" wx:if=\"{{editingIndex !== index}}\">\n              <view class=\"btn btn-ghost btn-sm act-btn\" data-index=\"{{index}}\" bindtap=\"onStartEdit\">改一改</view>\n              <view class=\"btn btn-ghost btn-sm act-btn act-del\" data-index=\"{{index}}\" bindtap=\"onDeleteItem\">不用留了</view>\n            </view>\n\n            <!-- 内联编辑表单 -->\n            <view class=\"edit-box\" wx:if=\"{{editingIndex === index}}\">\n              <view class=\"h3 edit-title\">改一改这道题</view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">题干</text>\n                <input class=\"input edit-input\" value=\"{{editStem}}\" bindinput=\"onEditInput\" data-field=\"stem\"\n                       placeholder=\"题干\" />\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">知识点</text>\n                <input class=\"input edit-input\" value=\"{{editKnowledge}}\" bindinput=\"onEditInput\" data-field=\"knowledge_point\"\n                       placeholder=\"比如：月球运动\" />\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">选项（点一下就是正确答案）</text>\n                <view class=\"wrap\">\n                  <view class=\"chip-opt {{editAnswer === i ? 'chip-opt-on' : ''}}\"\n                        wx:for=\"{{editOptions}}\" wx:key=\"index\" data-index=\"{{index}}\" bindtap=\"onPickAnswer\">\n                    <text class=\"chip-opt-key\">{{editKeys[index]}}</text>\n                    <text class=\"chip-opt-text\">{{item}}</text>\n                  </view>\n                </view>\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">解析</text>\n                <textarea class=\"input edit-textarea\" value=\"{{editAnalysis}}\" bindinput=\"onEditInput\" data-field=\"analysis\"\n                          placeholder=\"用一句话讲清楚为什么\"></textarea>\n              </view>\n\n              <view class=\"row actions-row\">\n                <view class=\"btn btn-primary btn-sm act-btn\" bindtap=\"onSaveEdit\">就改这样</view>\n                <view class=\"btn btn-ghost btn-sm act-btn\" bindtap=\"onCancelEdit\">算了</view>\n              </view>\n            </view>\n          </view>\n        </view>\n      </block>\n\n      <!-- 六、空态 -->\n      <view class=\"card center-col\" wx:if=\"{{!questions.length}}\">\n        <mascot state=\"idle\" size=\"sm\"></mascot>\n        <view class=\"h3 empty-text\">还没有错题，去闯一关吧！</view>\n        <button class=\"btn btn-primary guest-btn\" bindtap=\"onGoQuiz\">去闯关</button>\n      </view>\n\n      <!-- 七、清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" wx:if=\"{{total > 0}}\" bindtap=\"onClearWrong\">清空错题本</button>\n    </block>\n\n  </block>\n\n</view>\n","pages/knowledge":"<!-- 知识库：上传资料 → 照着资料出题 -->\n<view class=\"page\">\n\n  <!-- 一、说明卡 -->\n  <view class=\"card\">\n    <view class=\"h2\">知识库</view>\n    <view class=\"body intro-text\">把讲义或课外读本传上来，小科就能照着它出题。</view>\n    <button class=\"btn btn-primary upload-btn\" loading=\"{{uploading}}\" bindtap=\"onUpload\">上传资料</button>\n  </view>\n\n  <!-- 二、读取中 -->\n  <view class=\"card center-col\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理资料…\"></mascot>\n  </view>\n\n  <!-- 三、列表没拿到时的重试 -->\n  <view class=\"card\" wx:if=\"{{!loading && !loadOk}}\">\n    <view class=\"body\">小科这会儿没翻到资料架，要不要再看一眼？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetry\">再看一眼</button>\n  </view>\n\n  <!-- 四、资料列表 -->\n  <block wx:if=\"{{!loading && loadOk && documents.length}}\">\n    <view class=\"card\" wx:for=\"{{documents}}\" wx:key=\"docId\">\n      <view class=\"h3 doc-name\">{{item.filename}}</view>\n      <view class=\"wrap meta-row\">\n        <text class=\"tag meta-item\">{{item.typeText}}</text>\n        <text class=\"tag meta-item\">{{item.sizeText}}</text>\n        <text class=\"{{item.statusClass}} meta-item\">{{item.statusText}}</text>\n        <text class=\"muted time-text\">{{item.timeText}}</text>\n      </view>\n      <view class=\"row doc-actions\">\n        <button class=\"btn btn-primary btn-sm action-btn\" loading=\"{{usingId === item.docId}}\"\n                data-doc-id=\"{{item.docId}}\" data-doc-name=\"{{item.filename}}\"\n                bindtap=\"onUseDoc\">用它出题</button>\n        <button class=\"btn btn-ghost btn-sm action-btn action-btn-last\"\n                data-doc-id=\"{{item.docId}}\" bindtap=\"onDeleteDoc\">删除</button>\n      </view>\n    </view>\n  </block>\n\n  <!-- 五、空态 -->\n  <view class=\"card center-col\" wx:if=\"{{!loading && loadOk && !documents.length}}\">\n    <mascot state=\"idle\" size=\"sm\"></mascot>\n    <view class=\"h3 empty-text\">还没有资料，传一份上来试试吧</view>\n    <view class=\"muted\">讲义、读本、课堂笔记都可以，小科会照着它们出题。</view>\n  </view>\n\n  <!-- 六、诚实说明 -->\n  <view class=\"card note-card\">\n    <view class=\"h3\">小科的小说明</view>\n    <view class=\"body\">当前直接支持 txt / md 文本；pdf / docx 需要服务端安装 pypdf、docx2txt 依赖。</view>\n  </view>\n\n</view>\n","pages/profile":"<!-- 我的：游客态一句说明 + 登录；登录后是经验值、错题、薄弱知识点与历史闯关 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">你来啦！登录后才有经验值和错题本哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <!-- 二、已登录 -->\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n\n      <!-- 个人概览 -->\n      <view class=\"card hero\">\n        <view class=\"h2\">{{nickname}}</view>\n        <view class=\"xp-box\">\n          <view class=\"xp-num mono-num\">{{totalXp}}</view>\n          <view class=\"muted\">累计经验值</view>\n        </view>\n        <view class=\"wrap stat-wrap\">\n          <view class=\"stat-item\">\n            <view class=\"stat-num mono-num\">{{wrongCount}}</view>\n            <view class=\"muted\">错题本里的题</view>\n          </view>\n          <view class=\"stat-item\">\n            <view class=\"stat-text\">{{gradeLabel}}</view>\n            <view class=\"muted\">当前学段</view>\n          </view>\n        </view>\n      </view>\n\n      <!-- 薄弱知识点 -->\n      <view class=\"card\">\n        <view class=\"card-title\">要多看两眼的知识点</view>\n        <view class=\"wrap\" wx:if=\"{{weakPoints.length}}\">\n          <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n            {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n          </text>\n        </view>\n        <view class=\"body\" wx:if=\"{{!weakPoints.length}}\">还没有薄弱知识点，保持这个势头！</view>\n      </view>\n\n      <!-- 历史闯关 -->\n      <view class=\"card\">\n        <view class=\"card-title\">历史闯关</view>\n        <block wx:if=\"{{sessions.length}}\">\n          <view class=\"session-item\" wx:for=\"{{sessions}}\" wx:key=\"quizId\"\n                data-quiz-id=\"{{item.quizId}}\" bindtap=\"onOpenSession\">\n            <view class=\"between\">\n              <text class=\"h3 session-title\">{{item.title}}</text>\n              <text class=\"tag\">{{item.timeText}}</text>\n            </view>\n            <view class=\"wrap session-tags\">\n              <text class=\"pill session-tag\" wx:if=\"{{item.gradeLabel}}\">{{item.gradeLabel}}</text>\n              <text class=\"tag session-tag\" wx:if=\"{{item.sourceLabel}}\">{{item.sourceLabel}}</text>\n              <text class=\"muted go-text\">看看这一局的复盘 ›</text>\n            </view>\n          </view>\n        </block>\n        <view class=\"body\" wx:if=\"{{!sessions.length}}\">还没有闯关记录，去闯一关吧！</view>\n      </view>\n\n      <!-- 清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" bindtap=\"onClearWrong\">清空错题本</button>\n\n    </block>\n  </block>\n\n</view>\n"};
+window.__kepuPageSources = {"pages/index":"<!-- 首页 —— 去闯关：选学段、写主题、出题等待 -->\n<view class=\"page\">\n\n  <!-- 顶部问候 -->\n  <view class=\"greet-card\">\n    <view class=\"greet-left\">\n      <view class=\"h1\">去闯关</view>\n      <view class=\"greet-line body\">今天想探索什么？你是{{gradeLabel}}哦</view>\n      <view class=\"muted\">小科负责出题，你只管大胆猜。</view>\n    </view>\n    <mascot state=\"idle\" size=\"md\" caption=\"\"></mascot>\n  </view>\n\n  <!-- 出题中：分档台词 + 科普轮播 + 取消入口 -->\n  <block wx:if=\"{{asking}}\">\n    <view class=\"card asking-card\">\n      <mascot state=\"thinking\" size=\"lg\" caption=\"{{askCaption}}\"></mascot>\n\n      <view class=\"fact-box\">\n        <view class=\"fact-head row\">\n          <text class=\"fact-emoji\">💡</text>\n          <text class=\"fact-title\">等一会儿，先看条小知识</text>\n        </view>\n        <view class=\"fact-text\">{{currentFact}}</view>\n        <view class=\"muted fact-index\">第 {{factIndex + 1}} / {{facts.length}} 条</view>\n      </view>\n\n      <view class=\"ask-hint muted\">已经等了 {{askElapsed}} 秒，出题一般需要 20—40 秒</view>\n      <view class=\"btn btn-ghost ask-cancel\" hover-class=\"hover-soft\" bindtap=\"onCancelAsk\">先不出了</view>\n    </view>\n  </block>\n\n  <!-- 表单态 -->\n  <block wx:else>\n\n    <!-- 学段选择 -->\n    <view class=\"card\">\n      <view class=\"card-title\">先选一个学段</view>\n      <view class=\"grade-list\">\n        <view\n          wx:for=\"{{grades}}\"\n          wx:key=\"value\"\n          class=\"grade-btn {{gradeValue === item.value ? 'grade-on' : ''}}\"\n          data-value=\"{{item.value}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onPickGrade\"\n        >\n          <text class=\"grade-emoji\">{{item.emoji}}</text>\n          <text class=\"grade-name\">{{item.short}}</text>\n        </view>\n      </view>\n      <view class=\"muted grade-tip\">换学段会让题目变难或变简单，随时可以换回来。</view>\n    </view>\n\n    <!-- 主题输入 -->\n    <view class=\"card\">\n      <view class=\"card-title\">想探索什么主题？</view>\n\n      <!-- 来自知识库的资料 -->\n      <view class=\"doc-card\" wx:if=\"{{docId}}\">\n        <view class=\"row\">\n          <text class=\"doc-emoji\">📘</text>\n          <view class=\"grow\">\n            <view class=\"doc-title\">本次将基于《{{docName}}》出题</view>\n            <view class=\"muted\">小科会照着这份资料来出题</view>\n          </view>\n        </view>\n      </view>\n\n      <input\n        class=\"input\"\n        type=\"text\"\n        value=\"{{topic}}\"\n        maxlength=\"30\"\n        placeholder=\"比如：太阳系、恐龙、彩虹是怎么来的\"\n        placeholder-class=\"input-ph\"\n        confirm-type=\"done\"\n        bindinput=\"onTopicInput\"\n        bindconfirm=\"onStartAsk\"\n      />\n\n      <view class=\"chip-wrap wrap\">\n        <view\n          wx:for=\"{{chips}}\"\n          wx:key=\"label\"\n          class=\"chip\"\n          data-topic=\"{{item.topic}}\"\n          hover-class=\"hover-soft\"\n          bindtap=\"onTapChip\"\n        >\n          <text class=\"chip-emoji\">{{item.emoji}}</text>\n          <text>{{item.label}}</text>\n        </view>\n      </view>\n\n      <view class=\"ask-warn muted\" wx:if=\"{{!canAsk}}\">先告诉小科你想学什么吧</view>\n\n      <view\n        class=\"btn btn-primary btn-block {{canAsk ? '' : 'disabled'}}\"\n        hover-class=\"{{canAsk ? 'hover-soft' : ''}}\"\n        bindtap=\"onStartAsk\"\n      >开始出题</view>\n    </view>\n\n  </block>\n\n</view>\n","pages/quiz":"<!-- 答题闯关页：本地即时判分 + 随堂讲解 -->\n<view class=\"page\" wx:if=\"{{hasQuiz}}\">\n\n  <!-- 进度区 -->\n  <view class=\"head\">\n    <view class=\"between head-top\">\n      <text class=\"h3 head-title\">{{title}}</text>\n      <text class=\"pill\">{{gradeLabel}}</text>\n    </view>\n\n    <view class=\"progress head-bar\">\n      <view class=\"progress-inner\" style=\"width: {{progress}}%;\"></view>\n    </view>\n\n    <view class=\"between head-bottom\">\n      <text class=\"h3\">第 {{current + 1}} / {{total}} 题</text>\n      <view class=\"row head-right\">\n        <!-- 计时：给节奏感；到点不判负，只换成累计用时 -->\n        <text class=\"timer {{timeOver ? 'timer-over' : ''}}\" wx:if=\"{{!judged}}\">\n          <text class=\"timer-icon\">⏳</text>{{leftSeconds}} 秒\n        </text>\n        <text class=\"timer timer-over\" wx:else>\n          <text class=\"timer-icon\">⏱</text>用了 {{elapsedSeconds}} 秒\n        </text>\n        <text class=\"tag\">{{sourceLabel}}</text>\n      </view>\n    </view>\n  </view>\n\n  <!-- 连对徽标：答对连着来的时候出现 -->\n  <view class=\"combo-bar\" wx:if=\"{{comboShow}}\">\n    <text class=\"combo-flame\">🔥</text>\n    <text class=\"combo-text\">{{comboText}}</text>\n  </view>\n\n  <!-- 题干 -->\n  <view class=\"card\" wx:if=\"{{currentQuestion}}\">\n    <view class=\"h2 stem\">{{currentQuestion.stem}}</view>\n    <view class=\"muted stem-tip\">选出你觉得对的那一个</view>\n  </view>\n\n  <!-- 选项 -->\n  <view class=\"option-list\">\n    <view\n      wx:for=\"{{options}}\"\n      wx:key=\"no\"\n      class=\"option {{item.state}} {{judged ? 'disabled' : ''}} {{item.state === 'correct' ? 'opt-pop' : ''}}\"\n      data-index=\"{{item.no}}\"\n      hover-class=\"{{judged ? '' : 'hover-soft'}}\"\n      bindtap=\"onSelectOption\"\n    >\n      <view class=\"option-key\">{{item.key}}</view>\n      <view class=\"grow option-text\">{{item.text}}</view>\n      <text class=\"opt-mark mark-correct\" wx:if=\"{{item.state === 'correct'}}\">✓</text>\n      <text class=\"opt-mark mark-wrong\" wx:if=\"{{item.state === 'wrong'}}\">再想想</text>\n    </view>\n  </view>\n\n  <!-- 奖励气泡：答对 / 连对时飞一下，纯动画，1 秒后自己消失 -->\n  <view class=\"flash-bubble\" wx:if=\"{{flash}}\">{{flash}}</view>\n\n  <!-- 讲解卡：判完分马上给，不对也不错得不明不白 -->\n  <view class=\"card feedback-card\" wx:if=\"{{judged}}\">\n    <view class=\"row feedback-head\">\n      <mascot state=\"{{mascotState}}\" size=\"sm\" caption=\"{{mascotCaption}}\"></mascot>\n    </view>\n\n    <view class=\"encourage-box\" wx:if=\"{{encourage}}\">\n      <text class=\"encourage-emoji\">🤝</text>\n      <text class=\"encourage-text\">要不要先看看解析？看懂了再往下走，一点也不急。</text>\n    </view>\n\n    <view class=\"pill pill-orange point-pill\" wx:if=\"{{currentQuestion.knowledge_point}}\">{{currentQuestion.knowledge_point}}</view>\n\n    <view class=\"analysis-title h3\">小科讲讲这道题</view>\n    <view class=\"analysis-text body\">{{currentQuestion.analysis}}</view>\n  </view>\n\n  <!-- 底部按钮 -->\n  <view class=\"footer\">\n    <view\n      class=\"btn btn-primary btn-block {{(selected < 0 && !judged) ? 'disabled' : ''}}\"\n      hover-class=\"{{submitting ? '' : 'hover-soft'}}\"\n      bindtap=\"onJudge\"\n    >\n      <block wx:if=\"{{!judged}}\">就选这个</block>\n      <block wx:elif=\"{{current + 1 < total}}\">下一题</block>\n      <block wx:else>看看我的报告</block>\n    </view>\n    <view class=\"muted footer-tip\" wx:if=\"{{submitting}}\">{{submitTip}}</view>\n    <view class=\"muted footer-tip\" wx:elif=\"{{judged && current + 1 < total}}\">想清楚了就继续，小科在这儿等你。</view>\n  </view>\n\n</view>\n","pages/report":"<!-- 复盘报告：先看得分，再看小科的复盘，最后是这一局的收获与回顾 -->\n<view class=\"page\">\n\n  <!-- 一、得分区 -->\n  <view class=\"card score-card\" wx:if=\"{{hasResult || reportReady}}\">\n    <mascot state=\"{{mascotState}}\" size=\"lg\"></mascot>\n\n    <view class=\"score-row\">\n      <view class=\"score-num mono-num\">{{accuracy}}<text class=\"score-unit\">%</text></view>\n      <view class=\"score-meta\">\n        <view class=\"h3\">这一局的正确率</view>\n        <view class=\"muted\">答对 {{correct}} / {{total}} 题</view>\n      </view>\n    </view>\n\n    <view class=\"progress mastery-bar\">\n      <view class=\"progress-inner\" style=\"width: {{mastery}}%;\"></view>\n    </view>\n    <view class=\"between mastery-label\">\n      <text class=\"muted\">掌握度</text>\n      <text class=\"muted\">{{mastery}} 分</text>\n    </view>\n  </view>\n\n  <!-- 二、小科正在写报告 -->\n  <view class=\"card\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"md\" caption=\"小科在写复盘报告…\"></mascot>\n  </view>\n\n  <!-- 三、报告没拿到时的重试入口 -->\n  <view class=\"card\" wx:if=\"{{!loading && !reportReady && (hasResult || fromHistory)}}\">\n    <view class=\"body\">小科这份复盘还没写好，要不要再写一次？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetryReport\">再写一次</button>\n  </view>\n\n  <!-- 四、复盘报告正文 -->\n  <view class=\"card\" wx:if=\"{{reportReady}}\">\n    <view class=\"between\">\n      <text class=\"card-title\">小科的复盘</text>\n      <text class=\"tag\" wx:if=\"{{reportSourceLabel}}\">{{reportSourceLabel}}</text>\n    </view>\n\n    <view class=\"row level-row\" wx:if=\"{{level}}\">\n      <text class=\"pill pill-yellow\">{{level}}</text>\n      <text class=\"muted mastery-text\">掌握度 {{mastery}} 分</text>\n    </view>\n\n    <view class=\"divider\"></view>\n    <view class=\"body\">{{summary}}</view>\n\n    <view class=\"suggest-box\" wx:if=\"{{suggestion}}\">\n      <view class=\"h3\">下一步可以这样</view>\n      <view class=\"body\">{{suggestion}}</view>\n    </view>\n\n    <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n      <view class=\"h3\">值得再看看的知识点</view>\n      <view class=\"wrap pills\">\n        <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"*this\">{{item}}</text>\n      </view>\n    </view>\n  </view>\n\n  <!-- 五、结算区：只在手上有本次判题结果时出现 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"card-title\">这一局的收获</view>\n    <view class=\"settle-grid\">\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">+{{xpGained}}</view>\n        <view class=\"muted\">经验值</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongAdded}}</view>\n        <view class=\"muted\">新收的错题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{mastered}}</view>\n        <view class=\"muted\">已经掌握的题</view>\n      </view>\n      <view class=\"settle-item\">\n        <view class=\"settle-num mono-num\">{{wrongTotal}}</view>\n        <view class=\"muted\">错题本共</view>\n      </view>\n    </view>\n\n    <!-- 等级进度：把经验值变成看得见的成长，给一个一直够得着的短期目标 -->\n    <view class=\"level-box\" wx:if=\"{{levelShow}}\">\n      <view class=\"between level-head\">\n        <view class=\"row\">\n          <text class=\"level-badge\">Lv.{{lvNum}}</text>\n          <text class=\"level-title\">{{lvTitle}}</text>\n        </view>\n        <text class=\"muted\">还差 {{lvRemain}} 点升级</text>\n      </view>\n      <view class=\"progress level-bar\">\n        <view class=\"progress-inner\" style=\"width: {{lvPercent}}%;\"></view>\n      </view>\n      <view class=\"muted level-tip\">每 50 点经验升一级，继续闯关就能升级啦</view>\n    </view>\n  </view>\n\n  <!-- 六、本次答题回顾：只列答错的题，可以折叠 -->\n  <view class=\"card\" wx:if=\"{{hasResult}}\">\n    <view class=\"between review-head\" bindtap=\"onToggleReview\">\n      <text class=\"card-title\">本次答题回顾</text>\n      <text class=\"muted\">{{reviewOpen ? '收起' : '展开'}}</text>\n    </view>\n\n    <view class=\"body\" wx:if=\"{{!wrongList.length}}\">这一局全都答对啦，真厉害！</view>\n\n    <view class=\"muted review-tip\" wx:if=\"{{!reviewOpen && wrongList.length}}\">\n      有 {{wrongList.length}} 道题想和你再聊聊，点上面展开看看～\n    </view>\n\n    <block wx:if=\"{{reviewOpen}}\">\n      <view class=\"review-item\" wx:for=\"{{wrongList}}\" wx:key=\"key\">\n        <view class=\"h3\">{{item.index}}. {{item.stem}}</view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">你的答案</text>\n          <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n        </view>\n        <view class=\"review-line\">\n          <text class=\"line-key\">正确答案</text>\n          <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n        </view>\n        <view class=\"analysis\">\n          <text class=\"tag\">{{item.knowledgePoint}}</text>\n          <view class=\"body\">{{item.analysis}}</view>\n        </view>\n      </view>\n    </block>\n  </view>\n\n  <!-- 七、底部入口 -->\n  <view class=\"foot-btns\" wx:if=\"{{hasResult || reportReady}}\">\n    <button class=\"btn btn-primary foot-btn\" bindtap=\"onAgain\">再来一局</button>\n    <button class=\"btn btn-ghost foot-btn\" bindtap=\"onGoWrong\">去错题本</button>\n  </view>\n\n  <!-- 八、没有可看的报告时 -->\n  <view class=\"card\" wx:if=\"{{noData}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"center h3 no-data-text\">还没有报告可以看，先去闯一关吧</view>\n    <button class=\"btn btn-primary\" bindtap=\"onAgain\">去闯关</button>\n  </view>\n\n</view>\n","pages/wrong":"<!-- 错题本：统计 → 只练错题 → 错题清单 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">登录后才能把错题存下来哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 二、读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在翻错题本…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n      <!-- 三、统计卡 -->\n      <view class=\"card stat-card\">\n        <view class=\"total-num mono-num\">{{total}}</view>\n        <view class=\"muted\">错题本里一共有这么多题</view>\n        <view class=\"wp-box\" wx:if=\"{{weakPoints.length}}\">\n          <view class=\"h3\">薄弱知识点</view>\n          <view class=\"wrap\">\n            <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n              {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n            </text>\n          </view>\n        </view>\n      </view>\n\n      <!-- 四、只练错题 -->\n      <view class=\"card\">\n        <button class=\"btn btn-primary practice-btn\" disabled=\"{{total === 0}}\"\n                loading=\"{{practicing}}\" bindtap=\"onPractice\">只练错题</button>\n        <view class=\"muted center tip-text\">不用等 AI 出题，马上就能开始</view>\n      </view>\n\n      <!-- 五、错题清单 -->\n      <block wx:if=\"{{questions.length}}\">\n        <view class=\"card\" wx:for=\"{{questions}}\" wx:key=\"stem\">\n          <view class=\"item-head\" data-index=\"{{index}}\" bindtap=\"onToggleItem\">\n            <view class=\"h3 stem-text\">{{index + 1}}. {{item.stem}}</view>\n            <view class=\"wrap meta-row\">\n              <text class=\"pill meta-item\">{{item.knowledgePoint}}</text>\n              <text class=\"pill pill-orange meta-item\">错过 {{item.wrongCount}} 次</text>\n              <text class=\"muted meta-item\">{{item.expanded ? '收起讲解' : '看看讲解'}}</text>\n            </view>\n          </view>\n\n          <view class=\"detail\" wx:if=\"{{item.expanded}}\">\n            <view class=\"review-line\" wx:if=\"{{item.yourAnswer}}\">\n              <text class=\"line-key\">你的答案</text>\n              <text class=\"line-val your-val\">{{item.yourAnswer}}</text>\n            </view>\n            <view class=\"review-line\" wx:if=\"{{item.rightAnswer}}\">\n              <text class=\"line-key\">正确答案</text>\n              <text class=\"line-val right-val\">{{item.rightAnswer}}</text>\n            </view>\n            <view class=\"analysis\">\n              <text class=\"tag\">{{item.knowledgePoint}}</text>\n              <view class=\"body\">{{item.analysis}}</view>\n            </view>\n            <view class=\"muted last-at\" wx:if=\"{{item.lastAt}}\">最近一次：{{item.lastAt}}</view>\n\n            <!-- 改 / 删：错题本也要能维护，不然攒久了就没法用了 -->\n            <view class=\"row actions-row\" wx:if=\"{{editingIndex !== index}}\">\n              <view class=\"btn btn-ghost btn-sm act-btn\" data-index=\"{{index}}\" bindtap=\"onStartEdit\">改一改</view>\n              <view class=\"btn btn-ghost btn-sm act-btn act-del\" data-index=\"{{index}}\" bindtap=\"onDeleteItem\">不用留了</view>\n            </view>\n\n            <!-- 内联编辑表单 -->\n            <view class=\"edit-box\" wx:if=\"{{editingIndex === index}}\">\n              <view class=\"h3 edit-title\">改一改这道题</view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">题干</text>\n                <input class=\"input edit-input\" value=\"{{editStem}}\" bindinput=\"onEditInput\" data-field=\"stem\"\n                       placeholder=\"题干\" />\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">知识点</text>\n                <input class=\"input edit-input\" value=\"{{editKnowledge}}\" bindinput=\"onEditInput\" data-field=\"knowledge_point\"\n                       placeholder=\"比如：月球运动\" />\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">选项（点一下就是正确答案）</text>\n                <view class=\"wrap\">\n                  <view class=\"chip-opt {{editAnswer === i ? 'chip-opt-on' : ''}}\"\n                        wx:for=\"{{editOptions}}\" wx:key=\"index\" data-index=\"{{index}}\" bindtap=\"onPickAnswer\">\n                    <text class=\"chip-opt-key\">{{editKeys[index]}}</text>\n                    <text class=\"chip-opt-text\">{{item}}</text>\n                  </view>\n                </view>\n              </view>\n\n              <view class=\"edit-field\">\n                <text class=\"edit-label\">解析</text>\n                <textarea class=\"input edit-textarea\" value=\"{{editAnalysis}}\" bindinput=\"onEditInput\" data-field=\"analysis\"\n                          placeholder=\"用一句话讲清楚为什么\"></textarea>\n              </view>\n\n              <view class=\"row actions-row\">\n                <view class=\"btn btn-primary btn-sm act-btn\" bindtap=\"onSaveEdit\">就改这样</view>\n                <view class=\"btn btn-ghost btn-sm act-btn\" bindtap=\"onCancelEdit\">算了</view>\n              </view>\n            </view>\n          </view>\n        </view>\n      </block>\n\n      <!-- 六、空态 -->\n      <view class=\"card center-col\" wx:if=\"{{!questions.length}}\">\n        <mascot state=\"idle\" size=\"sm\"></mascot>\n        <view class=\"h3 empty-text\">还没有错题，去闯一关吧！</view>\n        <button class=\"btn btn-primary guest-btn\" bindtap=\"onGoQuiz\">去闯关</button>\n      </view>\n\n      <!-- 七、清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" wx:if=\"{{total > 0}}\" bindtap=\"onClearWrong\">清空错题本</button>\n    </block>\n\n  </block>\n\n</view>\n","pages/knowledge":"<!-- 知识库：上传资料 → 照着资料出题 -->\n<view class=\"page\">\n\n  <!-- 一、说明卡 -->\n  <view class=\"card\">\n    <view class=\"h2\">知识库</view>\n    <view class=\"body intro-text\">把讲义或课外读本传上来，小科就能照着它出题。</view>\n    <button class=\"btn btn-primary upload-btn\" loading=\"{{uploading}}\" bindtap=\"onUpload\">上传资料</button>\n  </view>\n\n  <!-- 二、读取中 -->\n  <view class=\"card center-col\" wx:if=\"{{loading}}\">\n    <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理资料…\"></mascot>\n  </view>\n\n  <!-- 三、列表没拿到时的重试 -->\n  <view class=\"card\" wx:if=\"{{!loading && !loadOk}}\">\n    <view class=\"body\">小科这会儿没翻到资料架，要不要再看一眼？</view>\n    <button class=\"btn btn-ghost retry-btn\" bindtap=\"onRetry\">再看一眼</button>\n  </view>\n\n  <!-- 四、资料列表 -->\n  <block wx:if=\"{{!loading && loadOk && documents.length}}\">\n    <view class=\"card\" wx:for=\"{{documents}}\" wx:key=\"docId\">\n      <view class=\"h3 doc-name\">{{item.filename}}</view>\n      <view class=\"wrap meta-row\">\n        <text class=\"tag meta-item\">{{item.typeText}}</text>\n        <text class=\"tag meta-item\">{{item.sizeText}}</text>\n        <text class=\"{{item.statusClass}} meta-item\">{{item.statusText}}</text>\n        <text class=\"muted time-text\">{{item.timeText}}</text>\n      </view>\n      <view class=\"row doc-actions\">\n        <button class=\"btn btn-primary btn-sm action-btn\" loading=\"{{usingId === item.docId}}\"\n                data-doc-id=\"{{item.docId}}\" data-doc-name=\"{{item.filename}}\"\n                bindtap=\"onUseDoc\">用它出题</button>\n        <button class=\"btn btn-ghost btn-sm action-btn action-btn-last\"\n                data-doc-id=\"{{item.docId}}\" bindtap=\"onDeleteDoc\">删除</button>\n      </view>\n    </view>\n  </block>\n\n  <!-- 五、空态 -->\n  <view class=\"card center-col\" wx:if=\"{{!loading && loadOk && !documents.length}}\">\n    <mascot state=\"idle\" size=\"sm\"></mascot>\n    <view class=\"h3 empty-text\">还没有资料，传一份上来试试吧</view>\n    <view class=\"muted\">讲义、读本、课堂笔记都可以，小科会照着它们出题。</view>\n  </view>\n\n  <!-- 六、诚实说明 -->\n  <view class=\"card note-card\">\n    <view class=\"h3\">小科的小说明</view>\n    <view class=\"body\">当前直接支持 txt / md 文本；pdf / docx 需要服务端安装 pypdf、docx2txt 依赖。</view>\n  </view>\n\n</view>\n","pages/profile":"<!-- 我的：游客态一句说明 + 登录；登录后是经验值、错题、薄弱知识点与历史闯关 -->\n<view class=\"page\">\n\n  <!-- 一、游客态 -->\n  <view class=\"card center-col\" wx:if=\"{{!isLogin}}\">\n    <mascot state=\"encourage\" size=\"lg\"></mascot>\n    <view class=\"h3 guest-text\">你来啦！登录后才有经验值和错题本哦，现在也能正常闯关</view>\n    <button class=\"btn btn-primary guest-btn\" loading=\"{{logging}}\" bindtap=\"onLogin\">登录</button>\n  </view>\n\n  <!-- 二、已登录 -->\n  <block wx:if=\"{{isLogin}}\">\n\n    <!-- 读取中 -->\n    <view class=\"card center-col\" wx:if=\"{{loading}}\">\n      <mascot state=\"thinking\" size=\"sm\" caption=\"小科正在整理…\"></mascot>\n    </view>\n\n    <block wx:if=\"{{!loading}}\">\n\n      <!-- 个人概览 -->\n      <view class=\"card hero\">\n        <view class=\"h2\">{{nickname}}</view>\n\n        <!-- 等级：把累计经验值换算成看得见的成长 -->\n        <view class=\"lv-row\">\n          <text class=\"lv-badge\">Lv.{{lvNum}}</text>\n          <text class=\"lv-title\">{{lvTitle}}</text>\n        </view>\n        <view class=\"progress lv-bar\">\n          <view class=\"progress-inner\" style=\"width: {{lvPercent}}%;\"></view>\n        </view>\n        <view class=\"muted lv-tip\">再攒 {{lvRemain}} 点经验就升级啦</view>\n\n        <view class=\"xp-box\">\n          <view class=\"xp-num mono-num\">{{totalXp}}</view>\n          <view class=\"muted\">累计经验值</view>\n        </view>\n        <view class=\"wrap stat-wrap\">\n          <view class=\"stat-item\">\n            <view class=\"stat-num mono-num\">{{wrongCount}}</view>\n            <view class=\"muted\">错题本里的题</view>\n          </view>\n          <view class=\"stat-item\">\n            <view class=\"stat-text\">{{gradeLabel}}</view>\n            <view class=\"muted\">当前学段</view>\n          </view>\n        </view>\n      </view>\n\n      <!-- 薄弱知识点 -->\n      <view class=\"card\">\n        <view class=\"card-title\">要多看两眼的知识点</view>\n        <view class=\"wrap\" wx:if=\"{{weakPoints.length}}\">\n          <text class=\"pill pill-orange pill-gap\" wx:for=\"{{weakPoints}}\" wx:key=\"knowledge_point\">\n            {{item.knowledge_point}} · 错 {{item.wrong_times}} 次\n          </text>\n        </view>\n        <view class=\"body\" wx:if=\"{{!weakPoints.length}}\">还没有薄弱知识点，保持这个势头！</view>\n      </view>\n\n      <!-- 历史闯关 -->\n      <view class=\"card\">\n        <view class=\"card-title\">历史闯关</view>\n        <block wx:if=\"{{sessions.length}}\">\n          <view class=\"session-item\" wx:for=\"{{sessions}}\" wx:key=\"quizId\"\n                data-quiz-id=\"{{item.quizId}}\" bindtap=\"onOpenSession\">\n            <view class=\"between\">\n              <text class=\"h3 session-title\">{{item.title}}</text>\n              <text class=\"tag\">{{item.timeText}}</text>\n            </view>\n            <view class=\"wrap session-tags\">\n              <text class=\"pill session-tag\" wx:if=\"{{item.gradeLabel}}\">{{item.gradeLabel}}</text>\n              <text class=\"tag session-tag\" wx:if=\"{{item.sourceLabel}}\">{{item.sourceLabel}}</text>\n              <text class=\"muted go-text\">看看这一局的复盘 ›</text>\n            </view>\n          </view>\n        </block>\n        <view class=\"body\" wx:if=\"{{!sessions.length}}\">还没有闯关记录，去闯一关吧！</view>\n      </view>\n\n      <!-- 清空错题本 -->\n      <button class=\"btn btn-ghost clear-btn\" bindtap=\"onClearWrong\">清空错题本</button>\n\n      <!-- 音效开关：课堂上不想出声时可以关掉（关掉后连震动也一起关） -->\n      <view class=\"card sound-card\">\n        <view class=\"between\">\n          <view class=\"grow\">\n            <view class=\"h3\">闯关音效</view>\n            <view class=\"muted\">答对、连对会有轻声提示，安静的地方可以关掉</view>\n          </view>\n          <switch checked=\"{{soundOn}}\" bindchange=\"onToggleSound\" color=\"#4FC3F7\" />\n        </view>\n      </view>\n\n    </block>\n  </block>\n\n</view>\n"};
 window.__kepuPageMeta = {"pages/index":{"title":"去闯关"},"pages/quiz":{"title":"答题闯关"},"pages/report":{"title":"复盘报告"},"pages/wrong":{"title":"错题本"},"pages/knowledge":{"title":"知识库"},"pages/profile":{"title":"我的"}};
 window.__kepuTabBar = [{"pagePath":"pages/index/index","text":"去闯关"},{"pagePath":"pages/wrong/index","text":"错题本"},{"pagePath":"pages/knowledge/index","text":"知识库"},{"pagePath":"pages/profile/index","text":"我的"}];
 </script>
@@ -2108,7 +2285,7 @@ window.__kepuTabBar = [{"pagePath":"pages/index/index","text":"去闯关"},{"pag
 <script>
 /* ---------- app.js ---------- */
 (function () {
-  var APP_SRC = "/**\n * 小程序入口：静默登录、学段偏好、跨页数据中转。\n * 设计原则：未登录也能完整体验（游客模式），登录后才有经验值与错题本。\n */\nconst api = require('./utils/request');\n\nApp({\n  globalData: {\n    user: null,            // 登录用户信息\n    grade: 'primary_high', // 当前学段：primary_low / primary_high / junior\n    grades: [],            // 学段选项（来自后端 /grades）\n    lastQuiz: null,        // 出题结果，供答题页读取\n    lastResult: null       // 判题结果，供报告页读取\n  },\n\n  onLaunch: function () {\n    this.restore();\n    this.silentLogin();\n    this.loadGrades();\n  },\n\n  /** 恢复本地缓存的会话与学段偏好 */\n  restore: function () {\n    try {\n      const user = wx.getStorageSync('user');\n      const grade = wx.getStorageSync('grade');\n      if (user) {\n        this.globalData.user = user;\n      }\n      if (grade) {\n        this.globalData.grade = grade;\n      }\n    } catch (e) {\n      // 缓存读取失败不影响启动\n    }\n  },\n\n  /**\n   * 静默登录：wx.login 拿 code 换 token。\n   * 失败（未配置微信登录 / 网络异常）时进入游客模式，核心功能照常可用。\n   */\n  silentLogin: function () {\n    const self = this;\n    wx.login({\n      success: function (res) {\n        if (!res.code) {\n          return;\n        }\n        api.post('/user/login', { code: res.code, nickname: '小科学家' }, { silent: true })\n          .then(function (data) {\n            api.saveSession(data.token, data.user);\n            self.globalData.user = data.user;\n          })\n          .catch(function () {\n            // 游客模式：不阻断任何页面\n          });\n      },\n      fail: function () {\n        // 游客模式\n      }\n    });\n  },\n\n  /** 拉取学段选项，供首页选择 */\n  loadGrades: function () {\n    const self = this;\n    api.get('/grades', { silent: true })\n      .then(function (data) {\n        self.globalData.grades = (data && data.grades) || [];\n        let saved = '';\n        try {\n          saved = wx.getStorageSync('grade');\n        } catch (e) {\n          saved = '';\n        }\n        if (saved) {\n          self.globalData.grade = saved;\n        } else if (data && data.default) {\n          self.globalData.grade = data.default;\n        }\n      })\n      .catch(function () {\n        // 拉不到就用默认学段，不影响使用\n      });\n  },\n\n  /** 设置并持久化学段 */\n  setGrade: function (grade) {\n    this.globalData.grade = grade;\n    try {\n      wx.setStorageSync('grade', grade);\n    } catch (e) {}\n  },\n\n  /** 学段的中文短名，用于界面展示 */\n  gradeLabel: function () {\n    const list = this.globalData.grades || [];\n    for (let i = 0; i < list.length; i++) {\n      if (list[i].value === this.globalData.grade) {\n        return list[i].short || list[i].label;\n      }\n    }\n    return '小学高年级';\n  },\n\n  /** 是否已登录（游客模式下为 false） */\n  isLogin: function () {\n    return !!api.getToken();\n  }\n});\n";
+  var APP_SRC = "/**\n * 小程序入口：静默登录、学段偏好、跨页数据中转。\n * 设计原则：未登录也能完整体验（游客模式），登录后才有经验值与错题本。\n */\nconst api = require('./utils/request');\n\nApp({\n  globalData: {\n    user: null,            // 登录用户信息\n    grade: 'primary_high', // 当前学段：primary_low / primary_high / junior\n    grades: [],            // 学段选项（来自后端 /grades）\n    lastQuiz: null,        // 出题结果，供答题页读取\n    lastResult: null       // 判题结果，供报告页读取\n  },\n\n  onLaunch: function () {\n    this.restore();\n    this.silentLogin();\n    this.loadGrades();\n  },\n\n  /** 恢复本地缓存的会话与学段偏好 */\n  restore: function () {\n    try {\n      const user = wx.getStorageSync('user');\n      const grade = wx.getStorageSync('grade');\n      if (user) {\n        this.globalData.user = user;\n      }\n      if (grade) {\n        this.globalData.grade = grade;\n      }\n    } catch (e) {\n      // 缓存读取失败不影响启动\n    }\n  },\n\n  /**\n   * 静默登录：wx.login 拿 code 换 token。\n   * 失败（未配置微信登录 / 网络异常）时进入游客模式，核心功能照常可用。\n   */\n  silentLogin: function () {\n    const self = this;\n    wx.login({\n      success: function (res) {\n        if (!res.code) {\n          return;\n        }\n        api.post('/user/login', { code: res.code, nickname: '小科学家' }, { silent: true })\n          .then(function (data) {\n            api.saveSession(data.token, data.user);\n            self.globalData.user = data.user;\n          })\n          .catch(function () {\n            // 游客模式：不阻断任何页面\n          });\n      },\n      fail: function () {\n        // 游客模式\n      }\n    });\n  },\n\n  /** 拉取学段选项，供首页选择 */\n  loadGrades: function () {\n    const self = this;\n    api.get('/grades', { silent: true })\n      .then(function (data) {\n        self.globalData.grades = (data && data.grades) || [];\n        let saved = '';\n        try {\n          saved = wx.getStorageSync('grade');\n        } catch (e) {\n          saved = '';\n        }\n        if (saved) {\n          self.globalData.grade = saved;\n        } else if (data && data.default) {\n          self.globalData.grade = data.default;\n        }\n      })\n      .catch(function () {\n        // 拉不到就用默认学段，不影响使用\n      });\n  },\n\n  /** 设置并持久化学段 */\n  setGrade: function (grade) {\n    this.globalData.grade = grade;\n    try {\n      wx.setStorageSync('grade', grade);\n    } catch (e) {}\n  },\n\n  /** 学段的中文短名，用于界面展示 */\n  gradeLabel: function () {\n    const list = this.globalData.grades || [];\n    for (let i = 0; i < list.length; i++) {\n      if (list[i].value === this.globalData.grade) {\n        return list[i].short || list[i].label;\n      }\n    }\n    return '小学高年级';\n  },\n\n  /** 是否已登录（游客模式下为 false） */\n  isLogin: function () {\n    return !!api.getToken();\n  },\n\n  /* ---------------- 成长体系：把经验值换算成小朋友看得懂的「等级 + 进度」 ----------------\n   * 只做本地换算，不改后端协议：经验值来自 /user/profile 与 /quiz/submit 的 total_xp。\n   * 每 50 点一级，进度条满就升一级，给孩子一个一直够得着的短期目标。\n   */\n  LEVEL_XP: 50,\n\n  /** 由累计经验值算出等级与当前进度 */\n  levelInfo: function (totalXp) {\n    const unit = this.LEVEL_XP;\n    const xp = Math.max(0, Number(totalXp) || 0);\n    const level = Math.floor(xp / unit) + 1;\n    const inLevel = xp % unit;\n    return {\n      level: level,\n      inLevel: inLevel,\n      need: unit,\n      remain: unit - inLevel,\n      percent: Math.round((inLevel / unit) * 100)\n    };\n  },\n\n  /** 等级称号：让「升到几级」有意义，而不是干巴巴一个数字 */\n  levelTitle: function (level) {\n    const titles = ['科学小新芽', '好奇心学徒', '问题小侦探', '实验小助手',\n                    '知识小达人', '探索小队长', '科学小博士'];\n    const index = Math.max(0, Math.min(titles.length - 1, (Number(level) || 1) - 1));\n    return titles[index];\n  },\n\n  /** 音效开关（在「我的」页可切换） */\n  soundOn: function () {\n    try {\n      const saved = wx.getStorageSync('sound_on');\n      return saved === '' || saved === undefined ? true : !!saved;\n    } catch (e) {\n      return true;\n    }\n  },\n\n  setSoundOn: function (on) {\n    try {\n      wx.setStorageSync('sound_on', !!on);\n    } catch (e) {\n      // 存不上也不影响本次使用\n    }\n  }\n});\n";
   var mod = { exports: {} };
   var fn = new Function('module', 'exports', 'require', 'wx', 'App', APP_SRC);
   fn(mod, mod.exports, function (p) {
@@ -2441,6 +2618,7 @@ Page({
  * 只有全部答完才把整份答卷交给后端算分。
  */
 const api = require('../../utils/request');
+const sound = require('../../utils/sound');
 
 const app = getApp();
 
@@ -2456,6 +2634,20 @@ const SOURCE_LABELS = {
 
 /** 连错两题就先安抚一下，不逼着孩子一直错下去 */
 const STREAK_LIMIT = 2;
+
+/** 连对几题开始给「连对」的额外奖励感 */
+const COMBO_MIN = 2;
+
+/**
+ * 每题的建议思考时间（秒）。到点**不判负、不扣分**，只是把小科换成鼓励态、
+ * 把倒计时改成累计用时，提醒一下可以作答了。
+ * 这样既有游戏的节奏感，又不会给小朋友压力。
+ */
+const TIME_LIMIT = {
+  primary_low: 45,
+  primary_high: 40,
+  junior: 35
+};
 
 /** 提交算分时按钮上的提示（和 wx.showLoading 的文案保持一致） */
 const SUBMIT_TIP = '小科在算分…';
@@ -2484,6 +2676,34 @@ function computeStreak(questionStates) {
     }
   }
   return streak;
+}
+
+/** 逐题对比，算出当前连对了几题（用于「连对」奖励） */
+function computeCombo(questionStates) {
+  let combo = 0;
+  for (let i = questionStates.length - 1; i >= 0; i--) {
+    const state = questionStates[i];
+    if (!state || !state.judged || state.selected === -1) {
+      continue;
+    }
+    if (state.isCorrect) {
+      combo = combo + 1;
+    } else {
+      break;
+    }
+  }
+  return combo;
+}
+
+/** 连对时的喝彩语，越连越热闹 */
+function comboText(combo) {
+  const words = {
+    2: '连对两题！',
+    3: '三连对，稳住！',
+    4: '四连对，厉害了！',
+    5: '五连对，太棒了！'
+  };
+  return words[combo] || (combo + ' 连对，停不下来！');
 }
 
 Page({
@@ -2515,6 +2735,15 @@ Page({
     mascotCaption: '',
     encourage: false,
 
+    // 闯关趣味层：倒计时 / 连对 / 奖励动画
+    leftSeconds: 0,
+    timeOver: false,
+    elapsedSeconds: 0,
+    combo: 0,
+    comboShow: false,
+    comboText: '',
+    flash: '',
+
     // 提交
     submitting: false,
     submitTip: ''
@@ -2526,6 +2755,11 @@ Page({
   streak: 0,
   startTime: 0,
   advanceDelay: 700,
+  tickTimer: null,
+  tickLeft: 0,
+  tickElapsed: 0,
+  flashTimer: null,
+  comboHit: 0,
 
   onLoad: function () {
     this.startTime = Date.now();
@@ -2594,8 +2828,90 @@ Page({
       isCorrect: false,
       mascotState: 'idle',
       mascotCaption: '',
-      encourage: false
+      encourage: false,
+      // 换题时把上一题的连对徽标与奖励气泡收掉
+      comboShow: false,
+      comboText: '',
+      flash: ''
     });
+    this.startTick();
+  },
+
+  /* ---------------- 每题计时：给节奏感，但不给压力 ----------------
+   * 倒计时走完不判负、不扣分，只把小科换成鼓励态并把显示切换成累计用时。
+   * 这是「游戏化」和「不吓到孩子」之间的取舍，宁可少一点紧张感。
+   */
+  timeLimit: function () {
+    const rule = TIME_LIMIT[app.globalData.grade];
+    return rule || TIME_LIMIT.primary_high;
+  },
+
+  startTick: function () {
+    this.stopTick();
+    this.tickLeft = this.timeLimit();
+    this.tickElapsed = 0;
+    this.setData({
+      leftSeconds: this.tickLeft,
+      timeOver: false,
+      elapsedSeconds: 0
+    });
+    const self = this;
+    this.tickTimer = setInterval(function () {
+      if (self.data.judged) {
+        // 判分之后只累计用时，不再倒计时
+        self.tickElapsed = self.tickElapsed + 1;
+        self.setData({ elapsedSeconds: self.tickElapsed });
+        return;
+      }
+      self.tickLeft = self.tickLeft - 1;
+      if (self.tickLeft > 0) {
+        self.setData({ leftSeconds: self.tickLeft });
+        return;
+      }
+      // 到点了：换成鼓励，不打断作答
+      self.setData({
+        leftSeconds: 0,
+        timeOver: true,
+        elapsedSeconds: 0
+      });
+      if (self.data.mascotState === 'idle') {
+        self.setData({
+          mascotState: 'encourage',
+          mascotCaption: '想好了就选一个吧，小科陪着你'
+        });
+      }
+    }, 1000);
+  },
+
+  stopTick: function () {
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
+  },
+
+  onUnload: function () {
+    this.stopTick();
+    if (this.flashTimer) {
+      clearTimeout(this.flashTimer);
+      this.flashTimer = null;
+    }
+  },
+
+  /** 奖励动画：让一个「+分 / 连对」小气泡飞一下 */
+  playFlash: function (text) {
+    const self = this;
+    this.comboHit = this.comboHit + 1;
+    const key = 'flash-' + this.comboHit;
+    this.setData({ flash: '' }, function () {
+      self.setData({ flash: text, flashKey: key });
+    });
+    if (this.flashTimer) {
+      clearTimeout(this.flashTimer);
+    }
+    this.flashTimer = setTimeout(function () {
+      self.setData({ flash: '' });
+    }, 1100);
   },
 
   /** 选中一个选项；没点「就选这个」之前可以随便改 */
@@ -2623,6 +2939,7 @@ Page({
       options: next,
       selected: index
     });
+    sound.tap();
   },
 
   /** 就地判分 + 立刻讲解 */
@@ -2653,6 +2970,7 @@ Page({
     };
     this.answers[this.data.current] = chosen;
     this.streak = computeStreak(states);
+    const combo = computeCombo(states);
 
     const options = this.data.options;
     const next = [];
@@ -2685,10 +3003,24 @@ Page({
       isCorrect: ok,
       mascotState: ok ? 'correct' : 'wrong',
       mascotCaption: ok ? this.buildCorrectCaption(question) : '',
-      encourage: this.streak >= STREAK_LIMIT
+      encourage: this.streak >= STREAK_LIMIT,
+      combo: combo,
+      comboShow: ok && combo >= COMBO_MIN,
+      comboText: ok && combo >= COMBO_MIN ? comboText(combo) : ''
     }, () => {
       this.refreshProgress();
     });
+
+    // 即时反馈：声音 + 抖动 + 飞一个奖励气泡
+    if (ok) {
+      sound.correct(combo);
+      if (combo >= 3) {
+        sound.combo(combo);
+      }
+      this.playFlash(combo >= COMBO_MIN ? comboText(combo) : '答对啦 +2');
+    } else {
+      sound.wrong();
+    }
 
     // 连错两题：换成鼓励态并给出出口
     if (this.streak >= STREAK_LIMIT) {
@@ -2872,6 +3204,15 @@ Page({
     wrongAdded: 0,
     mastered: 0,
     wrongTotal: 0,
+
+    // 等级进度（本地由经验值换算，给孩子一个看得见的成长）
+    // 名字故意不叫 level：上面的 level 是报告的档位文案（优秀/良好…），不能混用
+    levelShow: false,
+    lvNum: 1,
+    lvTitle: '',
+    lvPercent: 0,
+    lvRemain: 0,
+
     wrongList: [],          // 本次答错的题，用于「本次答题回顾」
     reviewOpen: false
   },
@@ -2932,6 +3273,52 @@ Page({
       wrongTotal: result.wrong_total || 0,
       wrongList: wrongList
     });
+
+    // 等级进度：用累计经验值换算，本地算，不需要额外接口
+    this.refreshLevel();
+  },
+
+  /** 把累计经验值换算成等级进度显示出来（拿不到就用「本次获得」累加，保证有反馈） */
+  refreshLevel: function () {
+    const that = this;
+    const apply = function (totalXp) {
+      const info = app.levelInfo(totalXp);
+      that.setData({
+        levelShow: true,
+        lvNum: info.level,
+        lvTitle: app.levelTitle(info.level),
+        lvPercent: info.percent,
+        lvRemain: info.remain
+      });
+    };
+
+    if (!app.isLogin()) {
+      // 游客也能看到成长反馈：按本地累计的本次经验估算
+      let localXp = 0;
+      try {
+        localXp = Number(wx.getStorageSync('guest_xp')) || 0;
+      } catch (e) {
+        localXp = 0;
+      }
+      localXp = localXp + (this.data.xpGained || 0);
+      try {
+        wx.setStorageSync('guest_xp', localXp);
+      } catch (e) {
+        // 存不上就只显示本次这一档
+      }
+      apply(localXp);
+      return;
+    }
+
+    // 登录用户以服务端的累计经验值为准
+    api.get('/user/profile', { silent: true })
+      .then(function (data) {
+        const user = (data && data.user) || {};
+        apply(user.total_xp || that.data.xpGained || 0);
+      })
+      .catch(function () {
+        apply(that.data.xpGained || 0);
+      });
   },
 
   /** 请求复盘报告（可能较慢，界面上用小科思考的吉祥物陪着等） */
@@ -3641,7 +4028,14 @@ Page({
     wrongCount: 0,
     gradeLabel: '',
     weakPoints: [],
-    sessions: []
+    sessions: [],
+
+    // 成长体系与音效
+    lvNum: 1,
+    lvTitle: '',
+    lvPercent: 0,
+    lvRemain: 0,
+    soundOn: true
   },
 
   onShow: function () {
@@ -3655,11 +4049,34 @@ Page({
     });
   },
 
+  /** 由累计经验值算出等级与进度（本地换算，见 app.js 的 levelInfo） */
+  applyLevel: function (totalXp) {
+    const info = app.levelInfo(totalXp);
+    this.setData({
+      lvNum: info.level,
+      lvTitle: app.levelTitle(info.level),
+      lvPercent: info.percent,
+      lvRemain: info.remain
+    });
+  },
+
+  /** 音效开关：关掉后连震动一起关，安静场合不打扰别人 */
+  onToggleSound: function (e) {
+    const on = !!(e.detail && e.detail.value);
+    app.setSoundOn(on);
+    this.setData({ soundOn: on });
+    api.toast(on ? '音效打开啦' : '好，安静模式');
+  },
+
   /** 拉取个人中心数据；返回 Promise，便于下拉刷新收尾 */
   refresh: function () {
     const that = this;
     const logged = app.isLogin();
-    this.setData({ isLogin: logged, gradeLabel: app.gradeLabel() });
+    this.setData({
+      isLogin: logged,
+      gradeLabel: app.gradeLabel(),
+      soundOn: app.soundOn()
+    });
 
     if (!logged) {
       this.setData({
@@ -3670,6 +4087,7 @@ Page({
         weakPoints: [],
         sessions: []
       });
+      this.applyLevel(0);
       return Promise.resolve();
     }
 
@@ -3699,6 +4117,7 @@ Page({
           weakPoints: body.weak_points || [],
           sessions: sessions
         });
+        that.applyLevel(user.total_xp || 0);
       })
       .catch(function () {
         // 提示已由 request.js 统一给出，这里只恢复界面

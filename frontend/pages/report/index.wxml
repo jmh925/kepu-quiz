@@ -82,6 +82,21 @@
         <view class="muted">错题本共</view>
       </view>
     </view>
+
+    <!-- 等级进度：把经验值变成看得见的成长，给一个一直够得着的短期目标 -->
+    <view class="level-box" wx:if="{{levelShow}}">
+      <view class="between level-head">
+        <view class="row">
+          <text class="level-badge">Lv.{{lvNum}}</text>
+          <text class="level-title">{{lvTitle}}</text>
+        </view>
+        <text class="muted">还差 {{lvRemain}} 点升级</text>
+      </view>
+      <view class="progress level-bar">
+        <view class="progress-inner" style="width: {{lvPercent}}%;"></view>
+      </view>
+      <view class="muted level-tip">每 50 点经验升一级，继续闯关就能升级啦</view>
+    </view>
   </view>
 
   <!-- 六、本次答题回顾：只列答错的题，可以折叠 -->

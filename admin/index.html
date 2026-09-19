@@ -60,11 +60,19 @@
       <header class="view-head">
         <h2>题库资源池</h2>
         <div class="tools">
+          <select id="q-grade" class="input" onchange="Admin.reloadQuestions()">
+            <option value="">全部学段</option>
+            <option value="primary_low">小学低年级</option>
+            <option value="primary_high">小学高年级</option>
+            <option value="junior">初中</option>
+          </select>
+          <select id="q-theme" class="input" onchange="Admin.reloadQuestions()"></select>
           <input id="q-keyword" class="input" placeholder="按题干 / 知识点搜索">
           <button class="btn btn-primary btn-sm" onclick="Admin.openQuestion()">新增题目</button>
         </div>
       </header>
-      <p class="tip">资源池中的题目会在出题时被优先命中；未启用大模型 Key 时，它就是出题的主要来源。</p>
+      <p class="tip">资源池按<b>主题 + 学段</b>分开管理：低年级与初中的题不能混用，
+        出题时会按学生当前学段过滤；未启用大模型 Key 时，它就是出题的主要来源。</p>
       <div class="panel"><table id="q-table" class="table"></table></div>
       <div id="q-pager" class="pager"></div>
     </section>

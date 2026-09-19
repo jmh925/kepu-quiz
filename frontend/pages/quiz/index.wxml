@@ -14,8 +14,23 @@
 
     <view class="between head-bottom">
       <text class="h3">第 {{current + 1}} / {{total}} 题</text>
-      <text class="tag">{{sourceLabel}}</text>
+      <view class="row head-right">
+        <!-- 计时：给节奏感；到点不判负，只换成累计用时 -->
+        <text class="timer {{timeOver ? 'timer-over' : ''}}" wx:if="{{!judged}}">
+          <text class="timer-icon">⏳</text>{{leftSeconds}} 秒
+        </text>
+        <text class="timer timer-over" wx:else>
+          <text class="timer-icon">⏱</text>用了 {{elapsedSeconds}} 秒
+        </text>
+        <text class="tag">{{sourceLabel}}</text>
+      </view>
     </view>
+  </view>
+
+  <!-- 连对徽标：答对连着来的时候出现 -->
+  <view class="combo-bar" wx:if="{{comboShow}}">
+    <text class="combo-flame">🔥</text>
+    <text class="combo-text">{{comboText}}</text>
   </view>
 
   <!-- 题干 -->
@@ -29,7 +44,7 @@
     <view
       wx:for="{{options}}"
       wx:key="no"
-      class="option {{item.state}} {{judged ? 'disabled' : ''}}"
+      class="option {{item.state}} {{judged ? 'disabled' : ''}} {{item.state === 'correct' ? 'opt-pop' : ''}}"
       data-index="{{item.no}}"
       hover-class="{{judged ? '' : 'hover-soft'}}"
       bindtap="onSelectOption"
@@ -40,6 +55,9 @@
       <text class="opt-mark mark-wrong" wx:if="{{item.state === 'wrong'}}">再想想</text>
     </view>
   </view>
+
+  <!-- 奖励气泡：答对 / 连对时飞一下，纯动画，1 秒后自己消失 -->
+  <view class="flash-bubble" wx:if="{{flash}}">{{flash}}</view>
 
   <!-- 讲解卡：判完分马上给，不对也不错得不明不白 -->
   <view class="card feedback-card" wx:if="{{judged}}">

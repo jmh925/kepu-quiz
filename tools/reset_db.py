@@ -81,9 +81,48 @@ def seed_demo():
     print("演示数据灌入完成。")
 
 
+def seed_pool_from_bank():
+    """把内置分级题库导入题目资源池。
+
+    为什么需要：资源池是管理端维护的，出题时优先命中；
+    但它初始为空时，管理端「题库资源池」页面看不到任何数据，
+    也没法按学段筛选查看。这个函数把内置的 150 道分级题导入池子，
+    让管理端一打开就有内容可看、可改、可删。
+    """
+    sys.path.insert(0, BACKEND)
+    from app.question_bank import all_questions
+    from app import admin_db
+
+    added = 0
+    for q in all_questions():
+        theme = q.get("theme") or "通用"
+        grade = q.get("grade") or "primary_high"
+        stem = q.get("stem")
+        if not stem:
+            continue
+        exists = db.query_one("SELECT id FROM question_pool WHERE stem=?", (stem,))
+        if exists:
+            continue
+        options = q.get("options") or []
+        answer = int(q.get("answer") or 0)
+        if len(options) < 2 or answer < 0 or answer >= len(options):
+            continue         # 宁可少导一条，也不往池子里塞不合法数据
+        admin_db.create_pool_question({
+            "theme": theme, "grade": grade, "stem": stem, "options": options,
+            "answer": answer, "analysis": q.get("analysis") or "",
+            "knowledge_point": q.get("knowledge_point") or "科普知识",
+            "difficulty": {"primary_low": 1, "primary_high": 2, "junior": 3}.get(grade, 2),
+            "enabled": 1,
+        }, "seed")
+        added += 1
+    print("题库导入资源池：新增 %d 道（已存在的跳过）" % added)
+
+
 def main():
     parser = argparse.ArgumentParser(description="重置 / 初始化数据库")
     parser.add_argument("--demo", action="store_true", help="额外灌入演示数据")
+    parser.add_argument("--seed-pool", action="store_true",
+                        help="把内置分级题库导入题目资源池（管理端可见、可改）")
     parser.add_argument("--keep", action="store_true", help="只建表，不清空已有数据")
     args = parser.parse_args()
 
@@ -98,6 +137,8 @@ def main():
     print("已建表 %d 张：%s" % (len(tables), "、".join(tables)))
     print("默认管理员：%s%s" % (settings.admin_username,
                               "（本次新建）" if created else "（已存在）"))
+    if args.seed_pool:
+        seed_pool_from_bank()
     if args.demo:
         seed_demo()
     return 0

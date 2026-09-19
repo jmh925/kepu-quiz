@@ -106,5 +106,52 @@ App({
   /** 是否已登录（游客模式下为 false） */
   isLogin: function () {
     return !!api.getToken();
+  },
+
+  /* ---------------- 成长体系：把经验值换算成小朋友看得懂的「等级 + 进度」 ----------------
+   * 只做本地换算，不改后端协议：经验值来自 /user/profile 与 /quiz/submit 的 total_xp。
+   * 每 50 点一级，进度条满就升一级，给孩子一个一直够得着的短期目标。
+   */
+  LEVEL_XP: 50,
+
+  /** 由累计经验值算出等级与当前进度 */
+  levelInfo: function (totalXp) {
+    const unit = this.LEVEL_XP;
+    const xp = Math.max(0, Number(totalXp) || 0);
+    const level = Math.floor(xp / unit) + 1;
+    const inLevel = xp % unit;
+    return {
+      level: level,
+      inLevel: inLevel,
+      need: unit,
+      remain: unit - inLevel,
+      percent: Math.round((inLevel / unit) * 100)
+    };
+  },
+
+  /** 等级称号：让「升到几级」有意义，而不是干巴巴一个数字 */
+  levelTitle: function (level) {
+    const titles = ['科学小新芽', '好奇心学徒', '问题小侦探', '实验小助手',
+                    '知识小达人', '探索小队长', '科学小博士'];
+    const index = Math.max(0, Math.min(titles.length - 1, (Number(level) || 1) - 1));
+    return titles[index];
+  },
+
+  /** 音效开关（在「我的」页可切换） */
+  soundOn: function () {
+    try {
+      const saved = wx.getStorageSync('sound_on');
+      return saved === '' || saved === undefined ? true : !!saved;
+    } catch (e) {
+      return true;
+    }
+  },
+
+  setSoundOn: function (on) {
+    try {
+      wx.setStorageSync('sound_on', !!on);
+    } catch (e) {
+      // 存不上也不影响本次使用
+    }
   }
 });

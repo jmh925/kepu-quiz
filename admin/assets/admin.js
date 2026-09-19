@@ -121,16 +121,35 @@ var Admin = (function () {
   }
 
   // ---------- 题库资源池 ----------
+  /** 主题 + 学段筛选（学段很关键：低年级与初中的题不能混用） */
+  function loadThemes() {
+    return get('/questions/themes').then(function (d) {
+      var sel = $('q-theme');
+      if (!sel) return;
+      var opts = ['<option value="">全部主题</option>'];
+      (d.themes || []).forEach(function (t) {
+        opts.push('<option value="' + esc(t.theme) + '">' + esc(t.theme) + '（' + t.count + '）</option>');
+      });
+      sel.innerHTML = opts.join('');
+    }).catch(function () {});
+  }
+
   function loadQuestions(page) {
     state.qPage = page || 1;
     var kw = $('q-keyword').value.trim();
-    return get('/questions?page=' + state.qPage + '&size=10&keyword=' + encodeURIComponent(kw))
+    var theme = $('q-theme') ? $('q-theme').value : '';
+    var grade = $('q-grade') ? $('q-grade').value : '';
+    loadThemes();
+    var qs = '/questions?page=' + state.qPage + '&size=10&keyword=' + encodeURIComponent(kw);
+    if (theme) qs += '&theme=' + encodeURIComponent(theme);
+    if (grade) qs += '&grade=' + encodeURIComponent(grade);
+    return get(qs)
       .then(function (d) {
         var rows = (d.items || []).map(function (q) {
           return '<tr>' +
             '<td>' + q.id + '</td>' +
             '<td><span class="tag">' + esc(q.theme) + '</span></td>' +
-            '<td><span class="tag">' + gradeLabel(q.grade) + '</span></td>' +
+            '<td><span class="tag tag-grade g-' + esc(q.grade) + '">' + gradeLabel(q.grade) + '</span></td>' +
             '<td class="stem">' + esc(q.stem) + '</td>' +
             '<td>' + esc((q.options || []).join(' / ')) + '</td>' +
             '<td>' + 'ABCD'.charAt(q.answer) + '</td>' +
@@ -142,7 +161,7 @@ var Admin = (function () {
         }).join('');
         $('q-table').innerHTML = '<tr><th>ID</th><th>主题</th><th>学段</th><th>题干</th><th>选项</th>' +
           '<th>答案</th><th>知识点</th><th>状态</th><th>操作</th></tr>' +
-          (rows || '<tr><td colspan="9" class="muted">资源池还是空的，点右上角「新增题目」加一道吧</td></tr>');
+          (rows || '<tr><td colspan="9" class="muted">这个条件下还没有题目，换个筛选或点右上角「新增题目」加一道</td></tr>');
         state.qCache = d.items || [];
         renderPager('q-pager', d.total, d.page, d.size, loadQuestions);
       }).catch(function (e) { alert(e.message); });
@@ -309,6 +328,7 @@ var Admin = (function () {
   return {
     loadDashboard: loadDashboard, loadUsers: loadUsers, loadSessions: loadSessions,
     loadLogs: loadLogs, openQuestion: openQuestion, closeModal: closeModal,
-    saveQuestion: saveQuestion, removeQuestion: removeQuestion, toggleUser: toggleUser
+    saveQuestion: saveQuestion, removeQuestion: removeQuestion, toggleUser: toggleUser,
+    reloadQuestions: function () { loadQuestions(1); }
   };
 })();
