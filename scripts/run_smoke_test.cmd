@@ -1,13 +1,19 @@
 @echo off
 REM ============================================================
-REM  科普知识闯关小程序 · 后端接口冒烟测试（Windows）
-REM  产物：backend\tests\smoke_report.md（论文第 6 章表 6-1～表 6-3 的实测数据）
-REM  前置：先在另一个窗口运行 scripts\run_server.cmd
+REM  kepu-quiz : backend API smoke test (Windows)
+REM
+REM  Prerequisite: the server must already be running in another
+REM  window (scripts\run_server.cmd).
+REM
+REM  Output: backend\tests\smoke_report.md
+REM          (the measured data used by chapter 6 of the thesis)
+REM
+REM  NOTE: keep this file pure ASCII (see scripts\share.cmd header).
 REM ============================================================
 setlocal
 set "ROOT=%~dp0.."
 if "%KEPU_PYTHON%"=="" set "KEPU_PYTHON=python"
 if exist "%ROOT%\backend\deps" set "PYTHONPATH=%ROOT%\backend\deps"
 cd /d "%ROOT%\backend"
-"%KEPU_PYTHON%" tests\smoke_test.py
+"%KEPU_PYTHON%" -X utf8 tests\smoke_test.py
 endlocal

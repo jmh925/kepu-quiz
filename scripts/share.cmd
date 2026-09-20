@@ -1,15 +1,26 @@
 @echo off
 REM ============================================================
-REM  科普知识闯关系统 · 一键对外演示（Windows）
-REM  用法：双击本文件，或在命令行执行 scripts\share.cmd
+REM  kepu-quiz : one-click public demo (Windows)
 REM
-REM  它会做四件事：
-REM    1. 启动服务端（已经在跑就直接复用，不重复起）
-REM    2. 建立 Cloudflare 免费临时隧道（cloudflared 会自动下载到用户目录）
-REM    3. 等到公网地址真的返回 200，才把地址打印出来
-REM    4. 打印学生端 / 管理端地址与管理员口令
+REM  Starts the API server, opens a free Cloudflare quick tunnel,
+REM  waits until the public URL really answers, then prints the
+REM  student / admin URLs and the admin password.
 REM
-REM  结束后按 Ctrl+C：隧道会关掉；服务端只在"是本脚本起的"时候才关。
+REM  Usage:  double-click this file, or:
+REM            scripts\share.cmd                 (server + tunnel)
+REM            scripts\share.cmd --no-tunnel     (local only)
+REM            scripts\share.cmd --tunnel-only   (server already up)
+REM
+REM  Press Ctrl+C to stop. The tunnel is always closed; the API
+REM  server is stopped only if this script started it.
+REM
+REM  NOTE FOR MAINTAINERS -- KEEP THIS FILE PURE ASCII.
+REM  cmd.exe reads .cmd files using the OEM code page (GBK on
+REM  Chinese Windows). UTF-8 Chinese bytes get re-paired, which
+REM  swallows the following ASCII character -- including quote
+REM  marks -- and cmd then tries to run fragments of the text as
+REM  commands. All Chinese output lives in tools\share.py, which
+REM  is UTF-8 safe. tools\check_cmd_encoding.py guards this rule.
 REM ============================================================
 setlocal
 set "ROOT=%~dp0.."
@@ -18,10 +29,13 @@ if "%KEPU_PYTHON%"=="" set "KEPU_PYTHON=python"
 if exist "%ROOT%\backend\deps" set "PYTHONPATH=%ROOT%\backend\deps"
 
 cd /d "%ROOT%"
-title kepu-quiz 对外演示（Ctrl+C 结束）
+title kepu-quiz public demo  (Ctrl+C to stop)
 "%KEPU_PYTHON%" -X utf8 tools\share.py %*
+set "RC=%ERRORLEVEL%"
 
 echo.
-echo [kepu] 已结束。按任意键关闭这个窗口。
+if not "%RC%"=="0" echo [kepu] script exited with code %RC%
+echo [kepu] finished - press any key to close this window.
 pause >nul
 endlocal
+exit /b %RC%

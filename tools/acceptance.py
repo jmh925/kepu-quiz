@@ -140,6 +140,10 @@ def main():
     ok = run([PY, os.path.join("tools", "check_secrets.py")])
     results.append(("默认口令轮换自检", ok))
 
+    section("10. 批处理文件编码（.cmd 里出现中文会让 cmd.exe 解析崩掉）")
+    ok = run([PY, os.path.join("tools", "check_cmd_encoding.py")])
+    results.append(("批处理文件纯 ASCII 自检", ok))
+
     section("验收汇总")
     failed = 0
     for name, ok in results:

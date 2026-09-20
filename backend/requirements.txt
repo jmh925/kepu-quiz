@@ -1,6 +1,8 @@
 # 运行期依赖（Python 3.10+）
 # 安装：pip install -r requirements.txt
-# 说明：仓库内已自带依赖副本 backend/deps/，不安装也能直接启动（见 scripts/run_server.cmd）
+# 说明：仓库里**没有**内置依赖副本，请先执行上面的 pip 命令。
+#       （scripts/run_server.cmd 里留了一行"如果存在 backend/deps 就把它加进
+#         PYTHONPATH"的兼容逻辑，那是给离线环境自己拷依赖用的，仓库默认不带。）
 fastapi>=0.110,<1.0
 uvicorn[standard]>=0.27
 pydantic>=2.5
