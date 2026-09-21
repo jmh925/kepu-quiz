@@ -4,14 +4,25 @@
    答错用暖橙而不是纯红，避免「红色叉号」带来的挫败感。
    ============================================================ */
 :root {
+  /* 主色分两个：--c-primary 只做**浅色调**（浅底、描边、进度条、装饰），
+     上面不压白字；要压白字的实心元素一律用 --c-primary-ink。
+
+     为什么必须分开：--c-primary 是 #4FC3F7 这种明亮的天空蓝，
+     白字压在上面对比度只有 2.0:1，远低于 WCAG AA 要求的 4.5:1 ——
+     主按钮、段位胶囊、当前导航项都是这种组合，在亮屏或视力不佳时真的看不清。
+     #0277BD 与白字的对比度是 4.80:1，达标，而且仍是同一套蓝，
+     视觉上不会跑掉。 */
   --c-primary: #4FC3F7;
   --c-primary-deep: #0288D1;
+  --c-primary-ink: #0277BD;
   --c-yellow: #FFCA28;
   --c-green: #66BB6A;
   --c-orange: #FF8A65;
   --c-purple: #9575CD;
   --c-text: #2F3E4E;
-  --c-sub: #7B8A99;
+  /* 次要文字原来是 #7B8A99，白底上只有 3.54:1，不达标；
+     改成 #5F6E7A（5.25:1），仍是同一族灰蓝，视觉上只稍微压深一点。 */
+  --c-sub: #5F6E7A;
   --c-line: #E3EEF7;
   --c-bg: #F7FBFF;
   --c-card: #FFFFFF;
@@ -32,34 +43,48 @@ body {
 }
 
 /* ---------- 顶栏 ---------- */
+/* 窄屏折成两行：第一行「品牌 + 段位 + 登录」，第二行是可横向滑动的导航。
+   为什么必须折行：导航有 6 项，加上段位胶囊、昵称、登录按钮、管理端入口，
+   一字排开在最窄的手机（390px）上会宽到 456px，直接顶出横向滚动条。
+   修掉之前 390px 下整页可以左右拖动，顶栏右侧被切掉。 */
 .topbar {
   position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   padding: 12px 22px;
   background: #FFFFFF;
   border-bottom: 1px solid var(--c-line);
 }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; white-space: nowrap; }
 .brand-dot {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--c-primary); color: #fff;
+  width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--c-primary-ink); color: #fff;
   display: flex; align-items: center; justify-content: center; font-size: 16px;
 }
 .navlinks { display: flex; gap: 6px; margin-left: 8px; }
 .navlinks a {
   padding: 8px 16px; border-radius: var(--r-pill); text-decoration: none;
-  color: var(--c-sub); font-size: 15px;
+  color: var(--c-sub); font-size: 15px; white-space: nowrap;
 }
 .navlinks a:hover { background: #EEF7FD; color: var(--c-primary-deep); }
-.navlinks a.on { background: var(--c-primary); color: #fff; font-weight: 600; }
+.navlinks a.on { background: var(--c-primary-ink); color: #fff; font-weight: 600; }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--c-sub); }
+/* 「管理端 ↗」这类纯文字链接也要给足高度：
+   它的自然高度只有 23.99px，刚好卡在 WCAG 2.5.8 要求的 24px 之下。
+   顺手做成一个带内边距的小胶囊，鼠标和手指都好点。 */
+.admin-link {
+  display: inline-flex; align-items: center; min-height: 28px;
+  padding: 0 6px; border-radius: 8px;
+}
+.admin-link:hover { background: #EEF7FD; color: var(--c-primary-deep); }
 
 /* 等级 / 段位胶囊 */
 .lv-chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 14px; border-radius: var(--r-pill);
-  background: var(--c-primary); color: #fff; font-size: 14px; font-weight: 700;
+  background: var(--c-primary-ink); color: #fff; font-size: 14px; font-weight: 700;
+  white-space: nowrap;
 }
+.lv-num { opacity: .85; font-weight: 600; }
 
 /* ---------- 主题分组胶囊 ---------- */
 .chip-group { margin-top: 14px; }
@@ -120,7 +145,7 @@ body {
 
 .tag-win { background: #EEF9EF; color: #2E7D32; }
 .tag-draw { background: #F2FBFF; color: var(--c-primary-deep); }
-.tag-soon { background: #FFF3EE; color: #C24A22; }
+.tag-soon { background: #FFF3EE; color: #B8421A; }
 
 /* ---------- 成长阶梯 ---------- */
 .rank-hero {
@@ -174,13 +199,13 @@ body {
   transition: transform .12s ease, opacity .12s ease;
 }
 .btn:active { transform: scale(.97); }
-.btn-primary { background: var(--c-primary); color: #fff; box-shadow: 0 6px 16px rgba(79,195,247,.35); }
-.btn-primary:disabled, .btn-primary.off { background: #C9E6F5; box-shadow: none; cursor: not-allowed; }
+.btn-primary { background: var(--c-primary-ink); color: #fff; box-shadow: 0 6px 16px rgba(79,195,247,.35); }
+.btn-primary:disabled, .btn-primary.off { background: #DCEBF3; color: #55636E; box-shadow: none; cursor: not-allowed; }
 .btn-ghost { background: #fff; color: var(--c-primary-deep); border: 2px solid var(--c-primary); }
 .btn-warm { background: var(--c-orange); color: #fff; }
 .btn-sm { min-height: 40px; font-size: 15px; padding: 0 18px; }
 .btn-block { width: 100%; }
-.btn-danger-ghost { background: #fff; border: 2px solid var(--c-orange); color: #C24A22; }
+.btn-danger-ghost { background: #fff; border: 2px solid var(--c-orange); color: #B8421A; }
 
 /* ---------- 胶囊 / 标签 ---------- */
 .pill {
@@ -190,7 +215,7 @@ body {
 }
 .pill-yellow { background: #FFF6DC; color: #9A6B00; }
 .pill-green { background: #E8F6E9; color: #2E7D32; }
-.pill-orange { background: #FFEDE6; color: #C24A22; }
+.pill-orange { background: #FFEDE6; color: #B8421A; }
 .tag {
   display: inline-flex; align-items: center; padding: 4px 12px;
   border-radius: 8px; font-size: 13px; background: #F1F7FC; color: var(--c-sub);
@@ -302,11 +327,57 @@ textarea { line-height: 1.7; resize: vertical; }
 .mascot-win .mouth { width: 30px; height: 16px; }
 .mascot-win .mascot-head { background: linear-gradient(160deg, #FFFFFF, #FFF6DC); border-color: var(--c-yellow); }
 
-/* ---------- 小屏适配 ---------- */
+/* ---------- 小屏适配 ----------
+ *
+ * 媒体查询不改变优先级，所以这一块必须放在所有基础规则**之后**：
+ * 放前面会被后面的同名规则盖掉（第一版就踩了这个坑，改了等于没改）。
+ */
+
+/* 导航栏在任何宽度都不会把顶栏顶宽：
+ *   flex: 1 1 auto + min-width: 0 让它可以被压缩，
+ *   overflow-x: auto 让它在挤不下时自己横向滑动。
+ * 这样从手机到宽屏都不会出现「顶栏比视口宽 → 整页横向滚动」。
+ * 6 个导航项一字排开在 390px 上是 456px，正是之前顶破视口的原因。 */
+.navlinks {
+  flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; flex-wrap: nowrap;
+  scrollbar-width: none;
+}
+.navlinks::-webkit-scrollbar { display: none; }
+
+@media (max-width: 900px) {
+  .topbar { gap: 10px; padding: 10px 14px; }
+  .brand { font-size: 16px; gap: 8px; }
+  .brand-dot { width: 26px; height: 26px; font-size: 14px; }
+  .lv-chip { padding: 5px 11px; font-size: 13px; }
+  .topbar-right { gap: 8px; }
+  /* 触摸目标不小于 40px 高，手指才点得准 */
+  .topbar-right .btn { min-height: 40px; }
+  .navlinks a { padding: 10px 14px; font-size: 14px; min-height: 40px;
+                display: inline-flex; align-items: center; }
+}
+
 @media (max-width: 640px) {
   .wrap { padding: 16px 14px 48px; }
   .topbar { padding: 10px 14px; gap: 8px; }
-  .navlinks a { padding: 6px 10px; font-size: 14px; }
+  /* 窄屏把导航整体挪到第二行：横滑浏览比在一行里挤成细条好用 */
+  .navlinks { order: 5; flex-basis: 100%; width: 100%; margin-left: 0; }
+  /* 「Lv.7」在窄屏先让位——段位名比等级数字更有意义 */
+  .lv-num { display: none; }
   .topbar-right .muted { display: none; }
   .h1 { font-size: 22px; }
+  .h2 { font-size: 18px; }
+  .card { padding: 16px; }
+  /* 等分网格在窄屏改两列，避免每格窄到读不清 */
+  .settle-grid { grid-template-columns: repeat(2, 1fr); }
+  .pk-score-num { font-size: 38px; }
+  .rank-hero-badge { width: 60px; height: 60px; font-size: 30px; border-radius: 18px; }
+  .rank-badge { width: 40px; height: 40px; font-size: 19px; }
+}
+
+@media (max-width: 480px) {
+  /* 更窄时把结算网格也收成一列两行，数字不至于被压断 */
+  .settle-grid { grid-template-columns: repeat(2, 1fr); }
+  .pk-vs-mid { font-size: 18px; padding: 0 2px; }
+  .pk-avatar { width: 56px; height: 56px; font-size: 26px; }
 }

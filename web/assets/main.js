@@ -51,7 +51,9 @@
     var info = util.levelInfo(state.totalXp);
     var rank = util.rankOfLevel(info.level);
     var chip = document.getElementById('lv-chip');
-    chip.textContent = rank.emoji + ' ' + rank.name + ' · Lv.' + info.level;
+    // 拆成两段：窄屏只留段位名（见 app.css 的 .lv-num），宽屏两段都显示
+    chip.innerHTML = '<span class="lv-rank">' + rank.emoji + ' ' + util.esc(rank.name) + '</span>'
+      + '<span class="lv-num">· Lv.' + info.level + '</span>';
     chip.title = '点我看全部 ' + util.ranks.length + ' 个段位';
     chip.style.cursor = 'pointer';
     chip.onclick = function () { location.hash = '#/ranks'; };

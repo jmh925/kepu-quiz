@@ -158,6 +158,10 @@ def main():
     ok = run([PY, os.path.join("tools", "verify_pk.py")])
     results.append(("PK 对战全流程 + 真人幽灵对手", ok))
 
+    section("14. 界面与渲染（四种视口宽度 + 对比度 + 管理端）")
+    ok = run([PY, os.path.join("tools", "audit_ui.py")])
+    results.append(("界面审计（横向溢出 / 越界 / 触摸目标 / 文字截断 / 对比度）", ok))
+
     section("验收汇总")
     failed = 0
     for name, ok in results:

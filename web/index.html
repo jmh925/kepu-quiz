@@ -86,7 +86,7 @@
 .timer { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: var(--r-pill); background: #EAF7FE; color: var(--c-primary-deep); font-size: 14px; font-weight: 600; }
 .timer.over { background: #F1F7FC; color: var(--c-sub); }
 .feedback { background: #FBFDFF; }
-.encourage { display: flex; align-items: center; gap: 10px; background: #FFF3EE; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; color: #C24A22; font-size: 15px; }
+.encourage { display: flex; align-items: center; gap: 10px; background: #FFF3EE; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; color: #B8421A; font-size: 15px; }
 
 .score-row { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 10px 0 22px; }
 .score-num { font-size: 58px; font-weight: 700; color: var(--c-primary-deep); line-height: 1; }
@@ -97,7 +97,7 @@
 
 .level-box { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--c-line); }
 .level-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.level-badge { padding: 5px 16px; margin-right: 12px; border-radius: var(--r-pill); background: var(--c-primary); color: #fff; font-size: 14px; font-weight: 700; }
+.level-badge { padding: 5px 16px; margin-right: 12px; border-radius: var(--r-pill); background: var(--c-primary-ink); color: #fff; font-size: 14px; font-weight: 700; }
 .level-title { font-size: 16px; font-weight: 600; }
 .level-tip { text-align: center; margin-top: 8px; }
 
@@ -128,10 +128,10 @@
     <a href="#/profile" data-nav="profile">我的</a>
   </nav>
   <div class="topbar-right">
-    <span id="lv-chip" class="lv-chip">Lv.1 科学小新芽</span>
+    <span id="lv-chip" class="lv-chip">Lv.1</span>
     <span class="muted" id="who"></span>
     <button id="auth-switch" class="btn btn-ghost btn-sm" hidden>登录 / 注册</button>
-    <a href="/admin/" class="muted" style="text-decoration:none">管理端 ↗</a>
+    <a href="/admin/" class="muted admin-link" style="text-decoration:none;white-space:nowrap">管理端 ↗</a>
   </div>
 </header>
 
