@@ -81,6 +81,21 @@ class WrongItemRequest(BaseModel):
     user_answer: Optional[int] = Field(None, description="最近一次所选下标")
 
 
+# ---------------- PK 对战 ----------------
+class PkStartRequest(BaseModel):
+    """开一局 PK：随机匹配一个对手。"""
+    grade: Optional[str] = Field(None, description="学段；不传则用账号的常用学段")
+    theme: Optional[str] = Field(None, description="主题；不传则随机抽一个")
+    count: Optional[int] = Field(None, description="题目数量，按学段自动收敛")
+
+
+class PkFinishRequest(BaseModel):
+    """结算一局 PK：只提交我的作答，对手的作答在开局时就已固定。"""
+    match_id: str
+    answers: List[int] = Field(default_factory=list, description="按题序的选项下标")
+    duration_ms: int = Field(0, description="我的用时（毫秒）")
+
+
 # ---------------- 管理端 ----------------
 class AdminLoginRequest(BaseModel):
     username: str

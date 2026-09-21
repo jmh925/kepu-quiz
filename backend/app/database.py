@@ -146,6 +146,37 @@ CREATE TABLE IF NOT EXISTS admin_logs (
     detail TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
+
+-- 表 4-11 PK 对战表
+-- 对手是「异步幽灵」而不是实时联机：匹配到时若同主题同难度有别的同学的战绩，
+-- 就用他那一局的作答当对手（真实数据、可复现）；没有就用按等级生成的机器人。
+-- 这样即使全场只有一个孩子在用，PK 也永远能开局，答辩演示也能一个人跑通。
+CREATE TABLE IF NOT EXISTS pk_matches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    match_id TEXT NOT NULL UNIQUE,
+    quiz_id TEXT NOT NULL,
+    user_id INTEGER,
+    grade TEXT NOT NULL DEFAULT 'primary_high',
+    theme TEXT NOT NULL DEFAULT '',
+    opponent_kind TEXT NOT NULL DEFAULT 'bot',      -- user / bot
+    opponent_user_id INTEGER,                       -- 机器人时为 NULL
+    opponent_name TEXT NOT NULL DEFAULT '神秘对手',
+    opponent_rank TEXT NOT NULL DEFAULT '',         -- 对手段位名（机器人按等级给）
+    opponent_source_quiz TEXT,                      -- 幽灵数据来自哪一局
+    opponent_answers_json TEXT NOT NULL DEFAULT '[]',
+    my_answers_json TEXT NOT NULL DEFAULT '[]',     -- 我的作答，供别人匹配我当对手
+    paper_key TEXT NOT NULL DEFAULT '',             -- 卷子指纹：同主题同题量才是同一份卷
+    opponent_correct INTEGER NOT NULL DEFAULT 0,
+    my_correct INTEGER NOT NULL DEFAULT 0,
+    total INTEGER NOT NULL DEFAULT 0,
+    result TEXT NOT NULL DEFAULT 'pending',         -- pending / win / draw / lose
+    xp_gained INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,              -- 1 已结算 / 0 进行中
+    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    finished_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_pk_user ON pk_matches(user_id);
+CREATE INDEX IF NOT EXISTS idx_pk_pool ON pk_matches(grade, theme, status);
 """
 
 # 旧库平滑升级：早期版本的库缺列，这里按需补齐，
@@ -163,6 +194,10 @@ _MIGRATIONS = [
     ("answer_records", "duration_ms", "INTEGER NOT NULL DEFAULT 0"),
     ("knowledge_docs", "file_type", "TEXT NOT NULL DEFAULT 'txt'"),
     ("knowledge_docs", "size_bytes", "INTEGER NOT NULL DEFAULT 0"),
+    # PK 对战补齐：别人的作答要能被我当对手用，所以得存下**我自己的作答**；
+    # 还要存卷子指纹，保证只跟做过同一份卷的人比。
+    ("pk_matches", "my_answers_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("pk_matches", "paper_key", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 

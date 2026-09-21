@@ -315,6 +315,17 @@ def user_detail(user_id):
         "SELECT source, COUNT(*) AS c FROM quiz_sessions WHERE user_id=? GROUP BY source",
         (user_id,))
 
+    # PK 战绩：老师往往想看「这孩子最近在跟人对战吗、赢面如何」
+    pk_matches = db.query(
+        "SELECT match_id, theme, grade, opponent_name, opponent_kind, opponent_rank, "
+        "my_correct, opponent_correct, total, result, xp_gained, finished_at "
+        "FROM pk_matches WHERE user_id=? AND status=1 ORDER BY id DESC LIMIT 20", (user_id,))
+    pk_stats = {
+        "matches": len(pk_matches),
+        "wins": sum(1 for m in pk_matches if m["result"] == "win"),
+        "draws": sum(1 for m in pk_matches if m["result"] == "draw"),
+    }
+
     return {
         "profile": user,
         "is_guest": not (user.get("username") and _has_password(user_id)),
@@ -326,11 +337,13 @@ def user_detail(user_id):
                 "SELECT COUNT(*) FROM wrong_questions WHERE user_id=?", (user_id,))),
             "by_grade": {r["grade"]: r["c"] for r in grade_stats},
             "by_source": {r["source"]: r["c"] for r in source_stats},
+            "pk": pk_stats,
         },
         "sessions": sessions,
         "wrong_points": wrong_points,
         "wrong_items": wrong_items,
         "knowledge": docs,
+        "pk_matches": pk_matches,
     }
 
 

@@ -116,7 +116,7 @@ def main():
 
     section("4.1 题库完整性与学段分级")
     ok = run([PY, os.path.join("tools", "check_bank_integrity.py")])
-    results.append(("题库完整性 + 学段分离（150 题）", ok))
+    results.append(("题库完整性 + 学段分离（225 题）", ok))
     ok = run([PY, os.path.join("tools", "check_grade_split.py")])
     results.append(("学段分级出题（低年级与初中不重题）", ok))
 
@@ -143,6 +143,20 @@ def main():
     section("10. 批处理文件编码（.cmd 里出现中文会让 cmd.exe 解析崩掉）")
     ok = run([PY, os.path.join("tools", "check_cmd_encoding.py")])
     results.append(("批处理文件纯 ASCII 自检", ok))
+
+    section("11. 语文 / 数学 / 英语基础课程题库")
+    ok = run([PY, os.path.join("tools", "check_basic_bank.py")])
+    results.append(("基础课程题库自检（75 题，数学逐题重算）", ok))
+    ok = run([PY, os.path.join("tools", "verify_basic_courses.py")])
+    results.append(("基础课程可用性（不串科目 / 学段适配 / 首页入口）", ok))
+
+    section("12. 段位阶梯（要能看出有哪些关卡、最高到哪一级）")
+    ok = run([PY, os.path.join("tools", "verify_levels.py")])
+    results.append(("段位阶梯 + 成长阶梯页", ok))
+
+    section("13. 成员 PK 对战（随机匹配对手）")
+    ok = run([PY, os.path.join("tools", "verify_pk.py")])
+    results.append(("PK 对战全流程 + 真人幽灵对手", ok))
 
     section("验收汇总")
     failed = 0

@@ -12,12 +12,17 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Header, UploadFile
 from fastapi.responses import JSONResponse
 
+from . import database as db
 from . import grades
+from . import levels
+from . import pk
+from . import question_bank as qb
 from . import services
 from .config import settings
 from .schemas import (
-    AnswerSubmitRequest, LoginRequest, MergeGuestRequest, QuizGenerateRequest,
-    RegisterRequest, ReportGenerateRequest, WrongItemRequest, WrongPracticeRequest,
+    AnswerSubmitRequest, LoginRequest, MergeGuestRequest, PkFinishRequest,
+    PkStartRequest, QuizGenerateRequest, RegisterRequest, ReportGenerateRequest,
+    WrongItemRequest, WrongPracticeRequest,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -54,6 +59,26 @@ async def health():
 @router.get("/grades")
 async def grade_options():
     return ok({"grades": grades.list_grades(), "default": grades.DEFAULT_GRADE})
+
+
+# 2.1 主题清单（按「科普主题 / 基础课程」分组，前端按分组渲染胶囊）
+@router.get("/themes")
+async def theme_options():
+    return ok(qb.theme_groups())
+
+
+# 2.2 段位阶梯 + 我的成长进度
+@router.get("/levels")
+async def level_ladder(user_id: Optional[int] = Depends(get_optional_user)):
+    """一段位表 + 我的进度。
+
+    未登录也能看段位表（孩子可以先看看上面还有什么），只是「我的进度」为 0。
+    """
+    total_xp = 0
+    if user_id is not None:
+        row = db.query_one("SELECT total_xp FROM users WHERE id=?", (user_id,))
+        total_xp = (row or {}).get("total_xp") or 0
+    return ok(levels.overview(total_xp))
 
 
 # 3. 出题（含可选检索增强）
@@ -242,6 +267,38 @@ async def wrong_delete(stem: str, user_id: Optional[int] = Depends(get_optional_
     if not services.delete_wrong_item(user_id, stem):
         return fail(4003, "这道错题不在错题本里", 404)
     return ok({"deleted": stem})
+
+
+# ---------------- PK 对战 ----------------
+# 设计说明见 app/pk.py 头部：对手是「异步幽灵」——开局就把它这一局的作答定好，
+# 优先取真实同学在同一学段同一主题下的战绩，抽不到才按等级生成机器人。
+# 这样一个人在场也能开局，答辩演示不用凑两个人。
+
+@router.post("/pk/start")
+async def pk_start(req: PkStartRequest,
+                   user_id: Optional[int] = Depends(get_optional_user)):
+    result, err = pk.start_match(user_id, req.grade, req.theme, req.count)
+    if err:
+        return fail(4004, err, 404)
+    return ok(result)
+
+
+@router.post("/pk/finish")
+async def pk_finish(req: PkFinishRequest,
+                    user_id: Optional[int] = Depends(get_optional_user)):
+    if user_id is None:
+        return fail(4010, "登录后才能把战绩记下来哦", 401)
+    result, err = pk.finish_match(req.match_id, req.answers, user_id, req.duration_ms)
+    if err:
+        return fail(4004, err, 404)
+    return ok(result)
+
+
+@router.get("/pk/stats")
+async def pk_stats(user_id: Optional[int] = Depends(get_optional_user)):
+    """我的 PK 战绩 + 最近几局。未登录返回空战绩（前端显示引导登录）。"""
+    return ok({"stats": pk.summary(user_id), "history": pk.history(user_id, 8),
+               "logged_in": user_id is not None})
 
 
 # ---------------- 文档文本提取 ----------------

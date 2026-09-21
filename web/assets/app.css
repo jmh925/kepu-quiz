@@ -54,12 +54,95 @@ body {
 .navlinks a.on { background: var(--c-primary); color: #fff; font-weight: 600; }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--c-sub); }
 
-/* 等级胶囊 */
+/* 等级 / 段位胶囊 */
 .lv-chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 14px; border-radius: var(--r-pill);
   background: var(--c-primary); color: #fff; font-size: 14px; font-weight: 700;
 }
+
+/* ---------- 主题分组胶囊 ---------- */
+.chip-group { margin-top: 14px; }
+.chip-group-label {
+  font-size: 13px; font-weight: 700; color: var(--c-sub);
+  margin-bottom: 8px; letter-spacing: .5px;
+}
+.chip-group .chips { margin-top: 0; }
+
+/* ---------- PK 对战 ---------- */
+.pk-invite { display: flex; align-items: center; gap: 14px; }
+.pk-invite-text { flex: 1; }
+.pk-hero {
+  display: flex; align-items: center; gap: 18px;
+  background: linear-gradient(135deg, #FFF3E0, #FFF9F2);
+}
+.pk-hero-text { flex: 1; }
+
+.pk-finding { text-align: center; }
+.pk-radar {
+  width: 96px; height: 96px; margin: 6px auto 16px; border-radius: 50%;
+  background: #F2FBFF; border: 3px dashed var(--c-primary);
+  display: flex; align-items: center; justify-content: center;
+  animation: pk-pulse 1.4s ease-in-out infinite;
+}
+.pk-face { font-size: 40px; }
+@keyframes pk-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79,195,247,.45); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 16px rgba(79,195,247,0); }
+}
+
+.pk-vs { display: flex; align-items: center; gap: 12px; }
+.pk-vs-side { flex: 1; text-align: center; }
+.pk-vs-mid { font-size: 22px; font-weight: 800; color: var(--c-orange); padding: 0 6px; }
+.pk-avatar {
+  width: 66px; height: 66px; margin: 0 auto 8px; border-radius: 50%;
+  background: #F2FBFF; display: flex; align-items: center; justify-content: center; font-size: 30px;
+}
+.pk-vs-name { font-weight: 700; font-size: 16px; }
+
+.pk-result { text-align: center; }
+.pk-result.win { background: linear-gradient(135deg, #EEF9EF, #F7FFF8); }
+.pk-result.draw { background: linear-gradient(135deg, #F2FBFF, #FAFDFF); }
+.pk-result.lose { background: linear-gradient(135deg, #FFF3EE, #FFFBF8); }
+.pk-score { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 6px; }
+.pk-score-num { font-size: 46px; font-weight: 800; color: var(--c-primary-deep); line-height: 1; }
+.pk-score-colon { font-size: 32px; font-weight: 700; color: var(--c-sub); }
+.pk-score-side { min-width: 96px; }
+
+.pk-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-top: 1px solid var(--c-line);
+}
+.pk-row:first-child { border-top: 0; }
+.pk-detail { padding: 14px 0; border-top: 1px solid var(--c-line); }
+.pk-detail:first-child { border-top: 0; }
+.pk-detail-stem { font-size: 15px; margin-bottom: 8px; line-height: 1.6; }
+
+.tag-win { background: #EEF9EF; color: #2E7D32; }
+.tag-draw { background: #F2FBFF; color: var(--c-primary-deep); }
+.tag-soon { background: #FFF3EE; color: #C24A22; }
+
+/* ---------- 成长阶梯 ---------- */
+.rank-hero {
+  display: flex; align-items: center; gap: 18px;
+  background: linear-gradient(135deg, #EAF7FE, #F7FBFF);
+}
+.rank-hero-badge {
+  width: 74px; height: 74px; border-radius: 22px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center; font-size: 36px;
+  box-shadow: 0 6px 16px rgba(20,60,100,.16);
+}
+.rank-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 12px; border-top: 1px solid var(--c-line); border-radius: 12px;
+}
+.rank-row:first-child { border-top: 0; }
+.rank-row.me { background: #F2FBFF; border: 2px solid var(--c-primary); }
+.rank-badge {
+  width: 46px; height: 46px; border-radius: 14px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.rank-name { font-weight: 700; font-size: 16px; }
 
 /* ---------- 布局 ---------- */
 .wrap { max-width: 900px; margin: 0 auto; padding: 22px 22px 60px; }

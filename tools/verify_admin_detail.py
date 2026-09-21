@@ -158,7 +158,8 @@ with sync_playwright() as p:
     d = pg.locator("#user-detail").inner_text()
     print("     面板文字（前 160 字）：", d[:160].replace("\n", " / "))
 
-    for sec in ["一、逐次闯关记录", "二、薄弱知识点排行", "三、错题明细", "四、知识库资料"]:
+    for sec in ["一、逐次闯关记录", "二、薄弱知识点排行", "三、错题明细", "四、知识库资料",
+                "五、PK 对战记录"]:
         check(sec in d, "详情面板含分块：%s" % sec)
     check("经验值" in d and "平均正确率" in d, "详情面板顶部有经验值 / 平均正确率概览")
     check("验收同学" in d, "详情面板标题是该学生的昵称")
@@ -171,7 +172,7 @@ with sync_playwright() as p:
     check("还没有错题" not in sec3, "错题明细里有真实错题（学生刚答错 2 题）")
     check(len(sec3.strip()) > 20, "错题明细区块有内容")
 
-    # 光看文字还不够：面板要真的是「宽弹窗 + 四块上下排开」，不能挤成一团或溢出
+    # 光看文字还不够：面板要真的是「宽弹窗 + 各块上下排开」，不能挤成一团或溢出
     box = pg.locator("#user-modal .modal-card").bounding_box()
     check(box and box["width"] >= 700, "详情面板是宽弹窗（宽 %.0f px）" % (box["width"] if box else 0))
     geom = pg.evaluate("""() => {
@@ -186,10 +187,13 @@ with sync_playwright() as p:
         overflow: document.querySelector('#user-modal .modal-card').scrollWidth > vw,
       };
     }""")
-    check(geom["cardCount"] == 4, "顶部四张概览卡都渲染出来了（%d 张）" % geom["cardCount"])
+    # 概览卡与分块的数量跟着功能长：目前是 5 张卡（经验值/闯关/正确率/错题/PK 局数）
+    # 与 5 块（逐次闯关 / 薄弱知识点 / 错题明细 / 知识库资料 / PK 对战记录）。
+    # 断言用 >= 而不是 ==，避免以后再加一块就要改测试；但也不能少，少说明渲染坏了。
+    check(geom["cardCount"] >= 5, "顶部概览卡都渲染出来了（%d 张，至少 5 张）" % geom["cardCount"])
     check(geom["cardW"] > 100, "概览卡有实际宽度（%.0f px）" % geom["cardW"])
-    check(geom["panelCount"] == 4, "四个分块面板都渲染出来了（%d 块）" % geom["panelCount"])
-    check(geom["tops"] == sorted(geom["tops"]), "四个分块按顺序自上而下排列（top=%s）" % geom["tops"])
+    check(geom["panelCount"] >= 5, "各分块面板都渲染出来了（%d 块，至少 5 块）" % geom["panelCount"])
+    check(geom["tops"] == sorted(geom["tops"]), "各分块按顺序自上而下排列（top=%s）" % geom["tops"])
     check(not geom["overflow"], "弹窗没有横向溢出")
 
     pg.locator("#user-modal button:has-text('关闭')").click()

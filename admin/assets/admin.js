@@ -284,6 +284,8 @@ var Admin = (function () {
         + card('闯关次数', s.quiz_count, '已判分 ' + (s.answered_count || 0) + ' 次')
         + card('平均正确率', (s.avg_accuracy || 0) + '%', '按已判分的闯关计算')
         + card('错题数', s.wrong_count || 0, '待复习')
+        + card('PK 局数', (s.pk || {}).matches || 0,
+               '赢 ' + ((s.pk || {}).wins || 0) + ' 局')
         + '</div>';
 
       // 1) 逐次闯关记录
@@ -333,7 +335,28 @@ var Admin = (function () {
         + (docs || '<tr><td colspan="4" class="muted">没有上传过资料</td></tr>')
         + '</table></div>';
 
-      body.innerHTML = head + cards + sec1 + sec2 + sec3 + sec4;
+      // 5) PK 对战记录
+      var pk = (d.pk_matches || []).map(function (m) {
+        var res = m.result === 'win' ? '<span class="tag tag-ok">赢</span>'
+          : (m.result === 'draw' ? '<span class="tag">平</span>'
+                                 : '<span class="tag tag-off">差一点</span>');
+        var who = esc(m.opponent_name) + (m.opponent_kind === 'bot' ? '' : '（真人）');
+        return '<tr><td>' + esc(m.finished_at || '') + '</td><td>' + esc(m.theme) + '</td>'
+          + '<td>' + gradeLabel(m.grade) + '</td><td>' + who + '</td>'
+          + '<td>' + esc(m.opponent_rank || '') + '</td>'
+          + '<td>' + (m.my_correct || 0) + ' : ' + (m.opponent_correct || 0) + '</td>'
+          + '<td>' + (m.xp_gained || 0) + '</td><td>' + res + '</td></tr>';
+      }).join('');
+      var pkStats = (s.pk || {});
+      var sec5 = '<div class="panel"><div class="panel-head"><h3>五、PK 对战记录</h3>'
+        + '<span class="muted">共 ' + (pkStats.matches || 0) + ' 局，赢 ' + (pkStats.wins || 0)
+        + ' 局，平 ' + (pkStats.draws || 0) + ' 局</span></div>'
+        + '<table class="table"><tr><th>时间</th><th>主题</th><th>学段</th><th>对手</th>'
+        + '<th>对手段位</th><th>我 : 对手</th><th>经验</th><th>结果</th></tr>'
+        + (pk || '<tr><td colspan="8" class="muted">还没有参与过 PK 对战</td></tr>')
+        + '</table></div>';
+
+      body.innerHTML = head + cards + sec1 + sec2 + sec3 + sec4 + sec5;
     }).catch(function (e) {
       body.innerHTML = '<p class="msg">读取失败：' + esc(e.message) + '</p>';
     });

@@ -1,0 +1,231 @@
+[
+  {
+    "stem": "20 + 14 = ？",
+    "answer_text": "34",
+    "spec": {
+      "kind": "arith",
+      "expr": "20+14",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "25 + 19 = ？",
+    "answer_text": "44",
+    "spec": {
+      "kind": "arith",
+      "expr": "25+19",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "13 - 10 = ？",
+    "answer_text": "3",
+    "spec": {
+      "kind": "arith",
+      "expr": "13-10",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "77 - 64 = ？",
+    "answer_text": "13",
+    "spec": {
+      "kind": "arith",
+      "expr": "77-64",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "2 × 8 = ？",
+    "answer_text": "16",
+    "spec": {
+      "kind": "arith",
+      "expr": "2*8",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "8 × （ ）= 64，括号里填几？",
+    "answer_text": "8",
+    "spec": {
+      "kind": "arith",
+      "expr": "64/8",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "8 + 12 = ？",
+    "answer_text": "20",
+    "spec": {
+      "kind": "arith",
+      "expr": "8+12",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "8 + （ ）= 15，括号里填几？",
+    "answer_text": "7",
+    "spec": {
+      "kind": "arith",
+      "expr": "15-8",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "长方形长 7 厘米、宽 6 厘米，面积是多少？",
+    "answer_text": "42",
+    "spec": {
+      "kind": "arith",
+      "expr": "7*6",
+      "unit": "平方厘米"
+    }
+  },
+  {
+    "stem": "分数 1/2 和 1/6 比大小，哪个更大？",
+    "answer_text": "1/2",
+    "spec": {
+      "kind": "compare_frac",
+      "expr": "max(1/2,1/6)",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "3 × 11 + 2 - 5 = ？",
+    "answer_text": "30",
+    "spec": {
+      "kind": "arith",
+      "expr": "3*11+2-5",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "7 × 7 + 4 - 4 = ？",
+    "answer_text": "49",
+    "spec": {
+      "kind": "arith",
+      "expr": "7*7+4-4",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "把小数 0.15 化成最简分数，是多少？",
+    "answer_text": "3/20",
+    "spec": {
+      "kind": "frac_str",
+      "expr": "15/100",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "长方形长 17 米、宽 13 米，周长是多少米？",
+    "answer_text": "60",
+    "spec": {
+      "kind": "arith",
+      "expr": "2*(17+13)",
+      "unit": "米"
+    }
+  },
+  {
+    "stem": "方程 5x + 5 = 55 中，x 是多少？",
+    "answer_text": "10",
+    "spec": {
+      "kind": "arith",
+      "expr": "(55-5)/5",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "7 米等于多少厘米？",
+    "answer_text": "700",
+    "spec": {
+      "kind": "arith",
+      "expr": "7*100",
+      "unit": "厘米"
+    }
+  },
+  {
+    "stem": "80 的 10% 是多少？",
+    "answer_text": "8",
+    "spec": {
+      "kind": "arith",
+      "expr": "80*10/100",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "把 x² + 13x + 42 分解因式，结果是多少？",
+    "answer_text": "(x + 6)(x + 7)",
+    "spec": {
+      "kind": "poly_factor",
+      "a": 6,
+      "b": 7,
+      "unit": ""
+    }
+  },
+  {
+    "stem": "把 (7x + 6)(x + 2) 展开，结果是多少？",
+    "answer_text": "42x² + 20x + 12",
+    "spec": {
+      "kind": "poly_expand",
+      "a": 7,
+      "b": 6,
+      "c": 2,
+      "unit": ""
+    }
+  },
+  {
+    "stem": "解一元一次方程：2x + 14 = 22，x 是多少？",
+    "answer_text": "4",
+    "spec": {
+      "kind": "arith",
+      "expr": "(22-14)/2",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "直角三角形两条直角边是 9 和 12，斜边是多少？",
+    "answer_text": "15",
+    "spec": {
+      "kind": "arith",
+      "expr": "sqrt(9**2+12**2)",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "三角形两个内角是 44° 和 78°，第三个角是多少？",
+    "answer_text": "58",
+    "spec": {
+      "kind": "arith",
+      "expr": "180-44-78",
+      "unit": "度"
+    }
+  },
+  {
+    "stem": "一次函数 y = 3x + 1，当 x = 2 时 y 等于多少？",
+    "answer_text": "7",
+    "spec": {
+      "kind": "arith",
+      "expr": "3*2+1",
+      "unit": ""
+    }
+  },
+  {
+    "stem": "方程 x² - 12x + 35 = 0 的两根是多少？",
+    "answer_text": "x₁ = 7，x₂ = 5",
+    "spec": {
+      "kind": "quadratic",
+      "b": -12,
+      "c": 35,
+      "unit": ""
+    }
+  },
+  {
+    "stem": "解一元一次方程：5x + 9 = 59，x 是多少？",
+    "answer_text": "10",
+    "spec": {
+      "kind": "arith",
+      "expr": "(59-9)/5",
+      "unit": ""
+    }
+  }
+]

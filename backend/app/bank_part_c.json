@@ -1,0 +1,1127 @@
+[
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“爸”字的拼音怎么写？",
+    "options": [
+      "bà",
+      "pà",
+      "bā",
+      "dà"
+    ],
+    "answer": 0,
+    "analysis": "“爸”读第四声 bà，声母是 b 不是 p。pà 的声母是 p，bā 是第一声，dà 是另一个字“大”的音。",
+    "knowledge_point": "拼音"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“妈”的声母是哪一个？",
+    "options": [
+      "m",
+      "b",
+      "n",
+      "f"
+    ],
+    "answer": 0,
+    "analysis": "“妈”读 mā，开头是双唇闭合发出的 m，所以声母是 m。b、n、f 分别对应“八、那、发”的开头。",
+    "knowledge_point": "声母"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "下面哪个是整体认读音节？",
+    "options": [
+      "mi",
+      "ba",
+      "zhi",
+      "tu"
+    ],
+    "answer": 2,
+    "analysis": "整体认读音节要整个记住、不用拼，zhi 就是其中一个。ba、mi、tu 都能拆成声母加韵母拼出来。",
+    "knowledge_point": "整体认读音节"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“口”字一共有几笔？",
+    "options": [
+      "2 笔",
+      "5 笔",
+      "4 笔",
+      "3 笔"
+    ],
+    "answer": 3,
+    "analysis": "“口”的笔顺是竖、横折、横，一共 3 笔。数笔画要按笔顺一笔一笔地数。",
+    "knowledge_point": "笔画"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“日”字的第二笔是什么？",
+    "options": [
+      "横折",
+      "竖",
+      "横",
+      "撇"
+    ],
+    "answer": 0,
+    "analysis": "“日”的笔顺是竖、横折、横、横，第二笔是横折。撇不出现在“日”字里。",
+    "knowledge_point": "笔顺"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "一（  ）小鸟，括号里填哪个量词？",
+    "options": [
+      "只",
+      "条",
+      "把",
+      "张"
+    ],
+    "answer": 0,
+    "analysis": "小鸟是动物，用“只”来数。一条用于长长的东西，一把用于有柄的东西，一张用于扁平的纸或桌子。",
+    "knowledge_point": "量词"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“大”的反义词是什么？",
+    "options": [
+      "高",
+      "小",
+      "多",
+      "长"
+    ],
+    "answer": 1,
+    "analysis": "“大”和“小”意思正好相反，是一对反义词。高、多、长说的都是别的方面，不跟“大”相对。",
+    "knowledge_point": "反义词"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“白”的反义词是什么？",
+    "options": [
+      "亮",
+      "红",
+      "黑",
+      "净"
+    ],
+    "answer": 2,
+    "analysis": "“白”和“黑”是颜色上相对的一对反义词。红是另一种颜色，亮和净都不是“白”的反面。",
+    "knowledge_point": "反义词"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "下面哪个成语表示做事非常有把握？",
+    "options": [
+      "守株待兔",
+      "画蛇添足",
+      "胸有成竹",
+      "亡羊补牢"
+    ],
+    "answer": 2,
+    "analysis": "“胸有成竹”说画竹子之前心里已经有了竹子的样子，比喻心里有把握。画蛇添足是白费功夫，守株待兔是想不劳而获，亡羊补牢是出事后及时补救。",
+    "knowledge_point": "成语理解"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "“不耻下问”的意思是什么？",
+    "options": [
+      "不好意思开口问",
+      "向学问高的人请教",
+      "向学问浅的人请教",
+      "不想回答别人"
+    ],
+    "answer": 2,
+    "analysis": "“不耻下问”指不因为向地位或学问不如自己的人请教而觉得丢脸，所以是“向学问浅的人请教”。“耻”在这里是“以……为耻”。",
+    "knowledge_point": "成语理解"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "“光荣”的近义词是哪一个？",
+    "options": [
+      "荣誉",
+      "光线",
+      "光荣榜",
+      "明亮"
+    ],
+    "answer": 0,
+    "analysis": "“荣誉”和“光荣”意思相近，都指值得骄傲的名声。光线、明亮说的是光，光荣榜是一个名称，都不是近义词。",
+    "knowledge_point": "近义词"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "“骄傲”的反义词是哪一个？",
+    "options": [
+      "得意",
+      "自满",
+      "高兴",
+      "虚心"
+    ],
+    "answer": 3,
+    "analysis": "“骄傲”在“自以为了不起”这个意思上，反义词是“虚心”。自满和得意跟骄傲是同一个方向，不能作反义词。",
+    "knowledge_point": "反义词"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "“月亮像一只小船”用了哪种修辞？",
+    "options": [
+      "拟人",
+      "比喻",
+      "夸张",
+      "排比"
+    ],
+    "answer": 1,
+    "analysis": "把月亮说成“小船”，是用打比方的方式，所以是比喻。拟人是把物当人写，夸张是故意说大或说小，排比要三个以上结构相似的句子。",
+    "knowledge_point": "比喻"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "“他声音大得把屋顶掀翻了”用了哪种修辞？",
+    "options": [
+      "设问",
+      "比喻",
+      "拟人",
+      "夸张"
+    ],
+    "answer": 3,
+    "analysis": "声音再大也掀不翻屋顶，这里故意把程度说得很大，所以是夸张。比喻要有“像”“仿佛”这类打比方的说法。",
+    "knowledge_point": "夸张"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "“床前明月光，疑是地上霜”的作者是谁？",
+    "options": [
+      "王维",
+      "杜甫",
+      "白居易",
+      "李白"
+    ],
+    "answer": 3,
+    "analysis": "这两句出自李白的《静夜思》，李白是唐代诗人。杜甫、白居易、王维也都是唐代诗人，但这首诗不是他们写的。",
+    "knowledge_point": "古诗作者"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "“停车坐爱枫林晚”中“坐”是什么意思？",
+    "options": [
+      "坐下",
+      "因为",
+      "座位",
+      "乘坐"
+    ],
+    "answer": 1,
+    "analysis": "这里的“坐”是“因为”的意思，说的是因为喜爱枫林傍晚的景色才停下车。当作“坐下”讲，整句就说不通了。",
+    "knowledge_point": "古诗字义"
+  },
+  {
+    "theme": "语文",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "提示语在前时，后面通常用什么标点？",
+    "options": [
+      "顿号",
+      "问号",
+      "冒号",
+      "省略号"
+    ],
+    "answer": 2,
+    "analysis": "提示语在前，后面用冒号，再用引号引出说的话，例如：他说：“我们走吧。”问号用在疑问句末尾，顿号用于并列词语之间。",
+    "knowledge_point": "标点符号"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "“学而时习之”中“时”的意思是什么？",
+    "options": [
+      "时间",
+      "按时",
+      "有时候",
+      "当时"
+    ],
+    "answer": 1,
+    "analysis": "“时”在《论语》这句里是“按时”的意思，指按时温习。解释成“时间”或“有时候”，整句意思就不通了。",
+    "knowledge_point": "文言实词"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "“温故而知新”中“故”的意思是什么？",
+    "options": [
+      "所以",
+      "旧知识",
+      "故意",
+      "故事"
+    ],
+    "answer": 1,
+    "analysis": "“故”在这里是名词，指学过的旧知识，全句说温习旧知识能有新体会。“所以”“故意”都是现代汉语里的用法。",
+    "knowledge_point": "文言实词"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "“学而不思则罔”中“而”的作用是什么？",
+    "options": [
+      "表示转折",
+      "表示并列",
+      "表示顺承",
+      "表示修饰"
+    ],
+    "answer": 0,
+    "analysis": "“学而不思”是说只学习却不思考，“而”前后意思相反，表示转折。表示并列时前后意思相近，这里显然不是。",
+    "knowledge_point": "文言虚词"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "“沿溯阻绝”中“绝”的意思是什么？",
+    "options": [
+      "绝句",
+      "极高",
+      "绝对",
+      "断绝"
+    ],
+    "answer": 3,
+    "analysis": "“绝”在这里是“断绝”，说的是上行下行的航道都被阻断。表示“极高”的是“绝顶”这类词，意思不同。",
+    "knowledge_point": "文言实词"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "“略无阙处”中的通假字是哪个？",
+    "options": [
+      "岸",
+      "略",
+      "连",
+      "阙"
+    ],
+    "answer": 3,
+    "analysis": "“阙”通“缺”，意思是空缺、中断，写两岸都是山，没有一点缺口。其他三个字都是本字，没有通假。",
+    "knowledge_point": "通假字"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "“属予作文以记之”中“属”通哪个字？",
+    "options": [
+      "嘱",
+      "注",
+      "祝",
+      "著"
+    ],
+    "answer": 0,
+    "analysis": "“属”通“嘱”，是嘱托的意思，说的是嘱托我写一篇文章来记这件事。注、祝、著都不能替换成这里的用法。",
+    "knowledge_point": "通假字"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "下面哪部作品的作者是鲁迅？",
+    "options": [
+      "《背影》",
+      "《故乡》",
+      "《春》",
+      "《济南的冬天》"
+    ],
+    "answer": 1,
+    "analysis": "《故乡》出自鲁迅的小说集《呐喊》。《背影》和《春》是朱自清写的，《济南的冬天》是老舍写的。",
+    "knowledge_point": "文学常识"
+  },
+  {
+    "theme": "语文",
+    "grade": "junior",
+    "type": "single",
+    "stem": "“先天下之忧而忧”出自哪篇文章？",
+    "options": [
+      "《爱莲说》",
+      "《醉翁亭记》",
+      "《岳阳楼记》",
+      "《陋室铭》"
+    ],
+    "answer": 2,
+    "analysis": "这句出自范仲淹的《岳阳楼记》。《醉翁亭记》是欧阳修的，《爱莲说》是周敦颐的，《陋室铭》是刘禹锡的。",
+    "knowledge_point": "文学常识"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "20 + 30 = ？",
+    "options": [
+      "50",
+      "51",
+      "49",
+      "52"
+    ],
+    "answer": 0,
+    "analysis": "把 20 看成 2 个十，把 30 看成 3 个十，2 个十加 3 个十是 5 个十，也就是 50，所以选 50。整十数相加，按「几个十」来数又快又稳。",
+    "knowledge_point": "100以内加法"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "21 + 19 = ？",
+    "options": [
+      "41",
+      "40",
+      "39",
+      "42"
+    ],
+    "answer": 1,
+    "analysis": "先算个位：1 + 9 = 10，写 0 再进 1；十位 2 + 1 + 1 = 4，合起来是 40，所以选 40。",
+    "knowledge_point": "进位加法"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "17 - 11 = ？",
+    "options": [
+      "5",
+      "7",
+      "6",
+      "8"
+    ],
+    "answer": 2,
+    "analysis": "17 减去 11，就是先从 17 个里拿走 11 个，剩下 6 个，所以选 6。从总数里去掉一部分，要用减法。",
+    "knowledge_point": "20以内减法"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "99 - 14 = ？",
+    "options": [
+      "87",
+      "86",
+      "84",
+      "85"
+    ],
+    "answer": 3,
+    "analysis": "个位 9 减 4 得 5，十位 9 减 1 得 8，合起来是 85，所以选 85。按数位一位一位地减，答案就稳稳的。",
+    "knowledge_point": "100以内减法"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "6 × 5 = ？",
+    "options": [
+      "30",
+      "36",
+      "24",
+      "35"
+    ],
+    "answer": 0,
+    "analysis": "乘法口诀里「5630」说的就是这道题：6 个 5 相加等于 30，所以选 30。记住口诀，算乘法就会又快又准。",
+    "knowledge_point": "表内乘法"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "7 × （ ）= 49，括号里填几？",
+    "options": [
+      "7",
+      "8",
+      "6",
+      "9"
+    ],
+    "answer": 0,
+    "analysis": "想几乘 7 等于 49：49 除以 7 得 7，所以括号里填 7。求另一个乘数，用积除以已知的乘数就行。",
+    "knowledge_point": "乘法口诀求乘数"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "8 + 2 = ？",
+    "options": [
+      "11",
+      "10",
+      "9",
+      "12"
+    ],
+    "answer": 1,
+    "analysis": "8 加 2，就是把 8 和 2 合起来，一共是 10，所以选 10。两个数合在一起要用加法算。",
+    "knowledge_point": "20以内加法"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "6 + （ ）= 13，括号里填几？",
+    "options": [
+      "6",
+      "8",
+      "7",
+      "9"
+    ],
+    "answer": 2,
+    "analysis": "想 6 加上几等于 13，用 13 减 6 得 7，所以括号里填 7。求一个加数，可以用和减掉另一个加数。",
+    "knowledge_point": "求未知加数"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "长方形长 9 米、宽 8 米，周长是多少米？",
+    "options": [
+      "36",
+      "17",
+      "72",
+      "34"
+    ],
+    "answer": 3,
+    "analysis": "长方形周长 = （长 + 宽）× 2 = （9 + 8）× 2 = 34 米，所以选 34。72 是它的面积，单位是平方米；周长算的是一圈的长度。",
+    "knowledge_point": "长方形周长"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "9 × 19 + 5 - 10 = ？",
+    "options": [
+      "186",
+      "206",
+      "166",
+      "156"
+    ],
+    "answer": 2,
+    "analysis": "先乘除后加减：9 × 19 = 171，171 + 5 = 176，176 - 10 = 166，所以选 166。要是先算 5 + 10 = 15，再拿 9 去乘 15，结果 135 就对不上了。",
+    "knowledge_point": "四则混合运算"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "20 的 50% 是多少？",
+    "options": [
+      "10",
+      "60",
+      "2",
+      "11"
+    ],
+    "answer": 0,
+    "analysis": "求一个数的百分之几用乘法：20 × 50% = 20 × 50 ÷ 100 = 10，所以选 10。",
+    "knowledge_point": "百分数计算"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "长方形长 10 厘米、宽 5 厘米，面积是多少？",
+    "options": [
+      "60",
+      "30",
+      "15",
+      "50"
+    ],
+    "answer": 3,
+    "analysis": "长方形面积 = 长 × 宽 = 10 × 5 = 50 平方厘米，所以选 50。30 是它的周长（10 + 5 再乘 2），求面积不要用周长那个算法。",
+    "knowledge_point": "长方形面积"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "方程 5x + 10 = 55 中，x 是多少？",
+    "options": [
+      "10",
+      "9",
+      "11",
+      "15"
+    ],
+    "answer": 1,
+    "analysis": "先把 10 移到右边：5x = 55 - 10 = 45，再两边同时除以 5，得 x = 9，所以选 9。检验：5 × 9 + 10 = 55，正好相等。",
+    "knowledge_point": "解简单方程"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "4 × 6 + 5 - 5 = ？",
+    "options": [
+      "14",
+      "39",
+      "34",
+      "24"
+    ],
+    "answer": 3,
+    "analysis": "先乘除后加减：4 × 6 = 24，24 + 5 = 29，29 - 5 = 24，所以选 24。要是先算 5 + 5 = 10，再拿 4 去乘 10，结果 40 就对不上了。",
+    "knowledge_point": "四则混合运算"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "9 米等于多少厘米？",
+    "options": [
+      "1000",
+      "90",
+      "9000",
+      "900"
+    ],
+    "answer": 3,
+    "analysis": "1 米 = 100 厘米，9 米就是 9 个 100 厘米，等于 900 厘米，所以选 900。米化厘米是乘 100，不是乘 10。",
+    "knowledge_point": "长度单位换算"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "把小数 0.55 化成最简分数，是多少？",
+    "options": [
+      "55/10",
+      "11/20",
+      "11/40",
+      "12/20"
+    ],
+    "answer": 1,
+    "analysis": "0.55 表示百分之 55，先写成 55/100，再把分子分母同时除以 5，就得到最简分数 11/20，所以选 11/20。",
+    "knowledge_point": "小数化分数"
+  },
+  {
+    "theme": "数学",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "分数 7/8 和 4/5 比大小，哪个更大？",
+    "options": [
+      "一样大",
+      "4/5",
+      "7/8",
+      "不能比较"
+    ],
+    "answer": 2,
+    "analysis": "把两个分数化成小数看：7/8 ≈ 0.88，4/5 ≈ 0.80，所以 7/8 更大。分母不同的时候，化成小数或者通分再比最稳妥。",
+    "knowledge_point": "分数大小比较"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "把 x² + 9x + 20 分解因式，结果是多少？",
+    "options": [
+      "(x + 4)(x + 20)",
+      "(x + 4)(x + 5)",
+      "(x - 4)(x - 5)",
+      "(x + 9)(x + 20)"
+    ],
+    "answer": 1,
+    "analysis": "要找两个数，乘积是 20、和是 9，正好是 4 和 5，所以 x² + 9x + 20 = (x + 4)(x + 5)。把括号展开就能验证回原式。",
+    "knowledge_point": "因式分解"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "解一元一次方程：9x + 5 = 95，x 是多少？",
+    "options": [
+      "12",
+      "11",
+      "10",
+      "90"
+    ],
+    "answer": 2,
+    "analysis": "移项得 9x = 95 - 5 = 90，两边同时除以 9，x = 10，检验：9 × 10 + 5 = 95，等式成立，所以选 10。",
+    "knowledge_point": "一元一次方程"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "把 (7x + 8)(x + 4) 展开，结果是多少？",
+    "options": [
+      "56x² + 36x + 32",
+      "56x² + 19",
+      "56x + 36",
+      "56x² + 60x + 32"
+    ],
+    "answer": 0,
+    "analysis": "用乘法分配律逐项相乘：7x·x = 56x²，7x·4 = 28x，8·x = 8x，8·4 = 32，合并同类项得 56x² + 36x + 32，所以选 56x² + 36x + 32。",
+    "knowledge_point": "整式乘法"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "方程 x² - 10x + 24 = 0 的两根是多少？",
+    "options": [
+      "x₁ = 8，x₂ = 5",
+      "x₁ = -6，x₂ = 4",
+      "x₁ = 7，x₂ = 4",
+      "x₁ = 6，x₂ = 4"
+    ],
+    "answer": 3,
+    "analysis": "因式分解：x² - 10x + 24 = (x - 6)(x - 4)，所以 x = 6 或 x = 4。两根相加等于 10、相乘等于 24，和原方程正好对得上。",
+    "knowledge_point": "一元二次方程"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "三角形两个内角是 54° 和 64°，第三个角是多少？",
+    "options": [
+      "116°",
+      "126°",
+      "118°",
+      "62°"
+    ],
+    "answer": 3,
+    "analysis": "三角形内角和是 180°，第三个角 = 180° - 54° - 64° = 62°，所以选 62°。118° 只是另外两个角的和，不是第三个角。",
+    "knowledge_point": "三角形内角和"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "把 2000000 用科学记数法表示，结果是多少？",
+    "options": [
+      "2 × 10^6",
+      "2 × 10^7",
+      "2 × 10^5",
+      "20 × 10^5"
+    ],
+    "answer": 0,
+    "analysis": "科学记数法写成 a × 10^n，其中 1 ≤ a < 10。2000000 就是 2 后面跟 6 个 0，所以等于 2 × 10^6，选它。",
+    "knowledge_point": "科学记数法"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "直角三角形两条直角边是 3 和 4，斜边是多少？",
+    "options": [
+      "12",
+      "5",
+      "7",
+      "4"
+    ],
+    "answer": 1,
+    "analysis": "勾股定理：斜边² = 3² + 4² = 9 + 16 = 25，所以斜边 = 5。3、4、5 是一组常用的勾股数，记住它能算得又快又准。",
+    "knowledge_point": "勾股定理"
+  },
+  {
+    "theme": "数学",
+    "grade": "junior",
+    "type": "single",
+    "stem": "一次函数 y = 3x + 3，当 x = -3 时 y 等于多少？",
+    "options": [
+      "4",
+      "2",
+      "-6",
+      "6"
+    ],
+    "answer": 2,
+    "analysis": "把 x = -3 代入 y = 3x + 3：y = 3 × (-3) + 3 = -6，所以选 -6。代入的时候别忘了常数项 3 也要一起算。",
+    "knowledge_point": "一次函数求值"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "字母 A 后面的一个字母是什么？",
+    "options": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "answer": 0,
+    "analysis": "字母表按顺序是 A、B、C、D、E，A 的后面紧跟 B。C 是 B 后面的字母，隔了一个。",
+    "knowledge_point": "字母顺序"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "早上见到老师，应该说什么？",
+    "options": [
+      "Bye!",
+      "Hello!",
+      "Good!",
+      "Sorry!"
+    ],
+    "answer": 1,
+    "analysis": "早上见面打招呼用 Hello! 最合适，也可以说 Good morning!。Bye! 是再见时说的，Sorry! 是道歉时说的。",
+    "knowledge_point": "问候语"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“Good morning” 是什么意思？",
+    "options": [
+      "晚上好",
+      "下午好",
+      "早上好",
+      "晚安"
+    ],
+    "answer": 2,
+    "analysis": "morning 是早上，所以 Good morning 是“早上好”。下午好用 Good afternoon，晚上好用 Good evening。",
+    "knowledge_point": "日常问候"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“红色”用英语怎么说？",
+    "options": [
+      "yellow",
+      "blue",
+      "green",
+      "red"
+    ],
+    "answer": 3,
+    "analysis": "红色的英语是 red。blue 是蓝色，green 是绿色，yellow 是黄色，别弄混。",
+    "knowledge_point": "颜色单词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“黄色”用英语怎么说？",
+    "options": [
+      "yellow",
+      "red",
+      "black",
+      "white"
+    ],
+    "answer": 0,
+    "analysis": "黄色的英语是 yellow。red 是红色，black 是黑色，white 是白色。",
+    "knowledge_point": "颜色单词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "数字 3 用英语怎么写？",
+    "options": [
+      "three",
+      "two",
+      "four",
+      "five"
+    ],
+    "answer": 0,
+    "analysis": "数字 3 是 three。two 是 2，four 是 4，five 是 5，按顺序数就能记住。",
+    "knowledge_point": "数字单词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "“cat” 表示哪种动物？",
+    "options": [
+      "狗",
+      "猫",
+      "鸟",
+      "鱼"
+    ],
+    "answer": 1,
+    "analysis": "cat 是猫。狗是 dog，鸟是 bird，鱼是 fish，这几个小动物单词要分清楚。",
+    "knowledge_point": "动物单词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_low",
+    "type": "single",
+    "stem": "称呼爸爸用哪个英语单词？",
+    "options": [
+      "uncle",
+      "mother",
+      "father",
+      "sister"
+    ],
+    "answer": 2,
+    "analysis": "爸爸是 father，也可以说 dad。mother 是妈妈，uncle 是叔叔或舅舅，sister 是姐妹。",
+    "knowledge_point": "称呼单词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "He ___ football every Sunday. 选哪个？",
+    "options": [
+      "playing",
+      "play",
+      "plays",
+      "played"
+    ],
+    "answer": 2,
+    "analysis": "主语 He 是第三人称单数，一般现在时的动词要加 s，所以用 plays。play 用于 I 或复数主语，playing 需要 be 动词，played 是过去式。",
+    "knowledge_point": "第三人称单数"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "There are three ___ in the box. 选哪个？",
+    "options": [
+      "boxs",
+      "box",
+      "boxes",
+      "a box"
+    ],
+    "answer": 2,
+    "analysis": "three 后面要用可数名词的复数形式，box 以 x 结尾，复数加 es，所以是 boxes。boxs 是拼写不正确的形式。",
+    "knowledge_point": "名词复数"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "The book is ___ the desk. 书在哪里？",
+    "options": [
+      "on",
+      "in",
+      "under",
+      "behind"
+    ],
+    "answer": 0,
+    "analysis": "在桌子的表面上用 on。in 表示在里面，under 表示在下面，behind 表示在后面，都和“在上面”不符。",
+    "knowledge_point": "方位介词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "I ___ my homework yesterday. 选哪个？",
+    "options": [
+      "finishing",
+      "finish",
+      "finishes",
+      "finished"
+    ],
+    "answer": 3,
+    "analysis": "yesterday 说明事情发生在过去，要用过去式 finished。finish 和 finishes 是现在时，finishing 不能单独作谓语。",
+    "knowledge_point": "一般过去时"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "My sister and I ___ students. 选哪个？",
+    "options": [
+      "is",
+      "are",
+      "am",
+      "be"
+    ],
+    "answer": 1,
+    "analysis": "主语是两个人，属于复数，be 动词用 are。is 用于第三人称单数，am 只跟 I 搭配，be 是原形不能直接放在这里。",
+    "knowledge_point": "be 动词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "What time ___ it now? 选哪个？",
+    "options": [
+      "be",
+      "are",
+      "am",
+      "is"
+    ],
+    "answer": 3,
+    "analysis": "问时间用 What time is it?，主语 it 是第三人称单数，be 动词用 is。",
+    "knowledge_point": "be 动词"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "Which word means “快乐的”？",
+    "options": [
+      "tired",
+      "hungry",
+      "angry",
+      "happy"
+    ],
+    "answer": 3,
+    "analysis": "happy 是快乐的。hungry 是饿的，angry 是生气的，tired 是累的，这几个形容词描述的心情不一样。",
+    "knowledge_point": "词汇辨析"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "Which word is a verb（动词）? 选哪个？",
+    "options": [
+      "red",
+      "run",
+      "desk",
+      "quickly"
+    ],
+    "answer": 1,
+    "analysis": "run 表示跑，是动词。red 是形容词，desk 是名词，quickly 是副词。",
+    "knowledge_point": "词性辨析"
+  },
+  {
+    "theme": "英语",
+    "grade": "primary_high",
+    "type": "single",
+    "stem": "I go to school ___ bus every day. 选哪个？",
+    "options": [
+      "in",
+      "on",
+      "by",
+      "with"
+    ],
+    "answer": 2,
+    "analysis": "“乘公交车”固定说 by bus，by 后面直接跟交通工具，不加冠词。要说 on a bus 才用 on。",
+    "knowledge_point": "固定搭配"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "I ___ to the park last Sunday. 选哪个？",
+    "options": [
+      "go",
+      "went",
+      "have gone",
+      "am going"
+    ],
+    "answer": 1,
+    "analysis": "last Sunday 是过去的时间，要用一般过去时 went。have gone 是现在完成时，不能和表示过去的时间状语连用。",
+    "knowledge_point": "一般过去时"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "I ___ this book twice. 选哪个？",
+    "options": [
+      "read",
+      "have read",
+      "am reading",
+      "will read"
+    ],
+    "answer": 1,
+    "analysis": "twice 表示到目前为止的次数，要用现在完成时 have read。一般过去时 read 不能表达“到现在为止两次”。",
+    "knowledge_point": "现在完成时"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "This bridge ___ in 1998. 被动语态选哪个？",
+    "options": [
+      "was built",
+      "built",
+      "is built",
+      "builds"
+    ],
+    "answer": 0,
+    "analysis": "桥是被建造的，要用被动语态；1998 是过去时间，所以用 was built。built 是主动的过去式，is built 是现在的被动。",
+    "knowledge_point": "被动语态"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "The boy is ___ than his brother. 选哪个？",
+    "options": [
+      "more tall",
+      "tall",
+      "tallest",
+      "taller"
+    ],
+    "answer": 3,
+    "analysis": "than 前面要用比较级 taller，单音节词加 -er。tallest 是最高级，more tall 不是正确的比较级形式。",
+    "knowledge_point": "比较级"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "He is the ___ student in our class. 选哪个？",
+    "options": [
+      "more tall",
+      "taller",
+      "tall",
+      "tallest"
+    ],
+    "answer": 3,
+    "analysis": "the 加上 in our class 表示在班里这个范围里最高，要用最高级 tallest。taller 是比较级，要和 than 一起用。",
+    "knowledge_point": "最高级"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "Tell me what time the shop ___ every day. 选哪个？",
+    "options": [
+      "closes",
+      "close",
+      "closed",
+      "closing"
+    ],
+    "answer": 0,
+    "analysis": "宾语从句说的是每天固定的营业安排，属于经常发生的事，要用一般现在时；主语 the shop 是第三人称单数，所以用 closes。",
+    "knowledge_point": "宾语从句"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "The teacher said the earth ___ around the sun. 选哪个？",
+    "options": [
+      "move",
+      "moves",
+      "moving",
+      "moved"
+    ],
+    "answer": 1,
+    "analysis": "宾语从句说的是客观真理，不管主句用什么时态，从句都用一般现在时；the earth 是第三人称单数，所以用 moves。move、moving 不是单数形式，moved 是过去式。",
+    "knowledge_point": "宾语从句"
+  },
+  {
+    "theme": "英语",
+    "grade": "junior",
+    "type": "single",
+    "stem": "My brother is good ___ playing basketball. 选哪个？",
+    "options": [
+      "on",
+      "in",
+      "at",
+      "for"
+    ],
+    "answer": 2,
+    "analysis": "be good at 是固定搭配，表示擅长做某事，at 后面接动名词 playing。in、on、for 都不能和 good 构成这个意思。",
+    "knowledge_point": "固定搭配"
+  }
+]

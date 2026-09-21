@@ -49,7 +49,12 @@
 
   function renderTop() {
     var info = util.levelInfo(state.totalXp);
-    document.getElementById('lv-chip').textContent = 'Lv.' + info.level + ' ' + util.levelTitle(info.level);
+    var rank = util.rankOfLevel(info.level);
+    var chip = document.getElementById('lv-chip');
+    chip.textContent = rank.emoji + ' ' + rank.name + ' · Lv.' + info.level;
+    chip.title = '点我看全部 ' + util.ranks.length + ' 个段位';
+    chip.style.cursor = 'pointer';
+    chip.onclick = function () { location.hash = '#/ranks'; };
     var user = api.getUser();
     var btn = document.getElementById('auth-switch');
     if (!api.getToken()) {
@@ -135,6 +140,12 @@
           { value: 'junior', short: '初中' }
         ];
       });
+
+    // 主题清单（后端只返回题库里真有题的主题），供首页胶囊与 PK 选择用。
+    // 拿不到就退回 app.js 里的本地清单，不影响使用。
+    api.themes()
+      .then(function (data) { state.themes = data || null; })
+      .catch(function () { state.themes = null; });
 
     // 路由与登录态：没登录先去登录页（但「去闯关」允许以游客身份试玩）
     window.addEventListener('hashchange', route);
@@ -335,7 +346,9 @@
     report: renderReport,
     wrong: renderWrong,
     knowledge: renderKnowledge,
-    profile: renderProfile
+    profile: renderProfile,
+    pk: renderPk,
+    ranks: renderRanks
   };
 
   function route() {
@@ -371,6 +384,52 @@
   var askTimer = null;
   var askTick = 0;
 
+  /**
+   * 主题胶囊（分组渲染）。
+   *
+   * 清单来自后端 GET /themes，**只包含题库里真的有题的主题**——否则会出现
+   * 「显示了『英语』胶囊但点进去没题」这种尴尬。接口不可用时用本地兜底清单。
+   * 分组是为了让孩子一眼分清「科普主题」和「基础课程（语文/数学/英语）」。
+   */
+  function renderTopicGroups() {
+    var groups = util.topicGroups;
+    if (state.themes) {
+      var byKey = {};
+      util.topicGroups.forEach(function (g) { byKey[g.key] = g; });
+      var labels = state.themes.labels || {};
+      groups = ['science', 'basic'].map(function (key) {
+        // 接口的形状是 {science: [...], basic: [...], labels: {...}}，
+        // 分组名就是顶层键本身。早期写成 state.themes.groups[key] 取到 undefined，
+        // 结果首页的分组胶囊整块渲染不出来（浏览器验收抓到的）。
+        var names = state.themes[key] || [];
+        var base = byKey[key] || { key: key, label: key, emoji: '📚', items: [] };
+        var items = names.map(function (name) {
+          var known = null;
+          (base.items || []).forEach(function (it) { if (it.label === name) known = it; });
+          return {
+            label: name,
+            emoji: (known && known.emoji) || util.themeEmoji[name] || '📘',
+            // 科普主题填「描述性主题」（点『天文』填『太阳系』，更像在回答问题）；
+            // 基础课程填「科目名」本身（点『数学』就填『数学』）——三科是科目不是话题，
+            // 按钮写着数学却填进「加减法」会让人对不上。
+            topic: (key === 'basic' ? name : ((known && known.topic) || name))
+          };
+        });
+        return { key: key, label: labels[key] || base.label, emoji: base.emoji, items: items };
+      }).filter(function (g) { return g.items.length; });
+    }
+    return groups.map(function (g) {
+      return '<div class="chip-group">'
+        + '<div class="chip-group-label">' + g.emoji + ' ' + util.esc(g.label) + '</div>'
+        + '<div class="chips">'
+        + g.items.map(function (c) {
+            return '<span class="chip" data-topic="' + util.esc(c.topic) + '">'
+              + c.emoji + ' ' + util.esc(c.label) + '</span>';
+          }).join('')
+        + '</div></div>';
+    }).join('');
+  }
+
   function renderHome() {
     var gs = state.grades.length ? state.grades : [
       { value: 'primary_low', short: '小学低年级', emoji: '🌱' },
@@ -385,9 +444,7 @@
         + '<span class="gn">' + util.esc(g.short || g.label) + '</span></button>';
     }).join('');
 
-    var chipsHtml = util.topicChips.map(function (c) {
-      return '<span class="chip" data-topic="' + util.esc(c.topic) + '">' + c.emoji + ' ' + util.esc(c.label) + '</span>';
-    }).join('');
+    var chipsHtml = renderTopicGroups();
 
     var docCard = state.docId
       ? '<div class="fact-box" style="background:#EAF7FE"><div class="fact-head" style="color:#0288D1">📘 本次将基于《' + util.esc(state.docName) + '》出题</div>'
@@ -412,10 +469,17 @@
       + '  <div class="card">'
       + '    <div class="card-title">想探索什么主题？</div>'
       + docCard
-      + '    <input id="topic" class="input" maxlength="30" placeholder="比如：太阳系、恐龙、彩虹是怎么来的" value="' + util.esc(state.topic) + '">'
-      + '    <div class="chips">' + chipsHtml + '</div>'
+      + '    <input id="topic" class="input" maxlength="30" placeholder="比如：太阳系、恐龙、拼音和汉字" value="' + util.esc(state.topic) + '">'
+      + '    <div id="topic-groups">' + chipsHtml + '</div>'
       + '    <div id="ask-warn" class="muted" style="margin-top:12px">先告诉小科你想学什么吧</div>'
       + '    <button id="start-ask" class="btn btn-primary btn-block off" style="margin-top:14px">开始出题</button>'
+      + '  </div>'
+      + '  <div class="card pk-invite">'
+      + '    <div class="pk-invite-text">'
+      + '      <div class="h3">⚔️ 想跟人比一比？</div>'
+      + '      <div class="muted">随机匹配一位对手，同主题同难度，看谁答得准。</div>'
+      + '    </div>'
+      + '    <button id="go-pk" class="btn btn-primary">去 PK</button>'
       + '  </div>'
       + '</div>';
 
@@ -440,6 +504,7 @@
     };
     topicInput.onkeydown = function (e) { if (e.key === 'Enter' && state.topic.trim()) startAsk(); };
     view.querySelector('#start-ask').onclick = function () { startAsk(); };
+    view.querySelector('#go-pk').onclick = function () { location.hash = '#/pk'; };
     syncAskButton();
 
     function syncAskButton() {
@@ -1182,6 +1247,414 @@
       .catch(function () {
         view.innerHTML = '<div class="card empty-box">' + util.mascot('encourage', 'md', '没读到你的资料，刷新一下再试试') + '</div>';
       });
+  }
+
+  /* ================= PK 对战 =================
+   * 对手是「异步幽灵」：开局时服务端就把对手这一局的作答定好了（优先取真实同学在
+   * 同一学段同一主题下的战绩，抽不到才按我的段位生成机器人），我答完再一起比。
+   * 为什么要这样：实时联机需要 WebSocket + 匹配队列 + 两个人同时在线，
+   * 一个人在场就开不了局，答辩演示会直接卡住。异步对战既有「随机匹配」的紧张感，
+   * 又永远能开局，而且对手还是真人的真实战绩。
+   */
+  var pkState = { phase: 'setup', match: null, idx: 0, answers: [], picked: null,
+                  startedAt: 0, result: null, theme: '', grade: '', themes: null };
+
+  /** 匹配动画期间轮播的对手候选，纯装饰，让"正在找人"这件事有实感 */
+  var PK_FINDING_FACES = ['🔍', '🧭', '🎒', '📚', '⚗️', '🔬', '🎓', '🏀'];
+
+  function renderPk() {
+    pkState.grade = pkState.grade || state.grade;
+    if (pkState.phase === 'playing') { paintPkQuestion(); return; }
+    if (pkState.phase === 'result') { paintPkResult(pkState.result); return; }
+
+    api.pkStats().then(function (d) { state.pkStats = d; renderPkSetup(d); })
+      .catch(function () { renderPkSetup(null); });
+  }
+
+  function renderPkSetup(d) {
+    pkState.phase = 'setup';
+    var stats = (d && d.stats) || { matches: 0, wins: 0, draws: 0, streak: 0,
+                                    best_streak: 0, win_rate: 0 };
+    var logged = !!(d && d.logged_in);
+    var history = (d && d.history) || [];
+
+    var gs = state.grades.length ? state.grades : [
+      { value: 'primary_low', short: '小学低年级' },
+      { value: 'primary_high', short: '小学高年级' },
+      { value: 'junior', short: '初中' }
+    ];
+    var emojis = { primary_low: '🌱', primary_high: '🚀', junior: '🔭' };
+    var gradeHtml = gs.map(function (g) {
+      return '<button class="grade-btn ' + (g.value === pkState.grade ? 'on' : '') + '" data-pk-grade="' + util.esc(g.value) + '">'
+        + '<span class="ge">' + (emojis[g.value] || '📘') + '</span>'
+        + '<span class="gn">' + util.esc(g.short || g.label) + '</span></button>';
+    }).join('');
+
+    // 主题选择：随机 + 分组的全部主题
+    var themeNames = themeListForPk();
+    var themeChips = '<span class="chip ' + (pkState.theme ? '' : 'on') + '" data-pk-theme="">🎲 随机</span>'
+      + themeNames.map(function (t) {
+          return '<span class="chip ' + (pkState.theme === t ? 'on' : '') + '" data-pk-theme="' + util.esc(t) + '">'
+            + (util.themeEmoji[t] || '📘') + ' ' + util.esc(t) + '</span>';
+        }).join('');
+
+    var historyHtml = history.length
+      ? history.map(function (h) {
+          var tag = h.result === 'win' ? '<span class="tag tag-win">赢</span>'
+            : (h.result === 'draw' ? '<span class="tag tag-draw">平</span>'
+                                   : '<span class="tag tag-soon">差一点</span>');
+          return '<div class="pk-row"><div class="grow">'
+            + '<div><b>' + (util.themeEmoji[h.theme] || '📘') + ' ' + util.esc(h.theme) + '</b> '
+            + '<span class="muted">对 ' + util.esc(h.opponent_name) + '</span></div>'
+            + '<div class="muted">' + (h.my_correct || 0) + ' : ' + (h.opponent_correct || 0)
+            + '　' + util.esc(h.finished_at || '') + '</div>'
+            + '</div>' + tag + '</div>';
+        }).join('')
+      : '<div class="muted">还没有对战记录，打一局就有啦。</div>';
+
+    view.innerHTML = '<div class="card pk-hero">'
+      + '  <div class="pk-hero-text">'
+      + '    <h1 class="h1">PK 对战</h1>'
+      + '    <div class="body">随机匹配一位对手，同一套题，看谁答得准。</div>'
+      + '  </div>'
+      + util.mascot('idle', 'md', '我帮你找个对手')
+      + '</div>'
+
+      + '<div class="card"><div class="card-title">我的战绩</div>'
+      + '  <div class="settle-grid">'
+      + '    <div><div class="settle-num">' + stats.matches + '</div><div class="muted">对战次数</div></div>'
+      + '    <div><div class="settle-num">' + stats.wins + '</div><div class="muted">赢的局数</div></div>'
+      + '    <div><div class="settle-num">' + stats.streak + '</div><div class="muted">当前连胜</div></div>'
+      + '    <div><div class="settle-num">' + stats.best_streak + '</div><div class="muted">最长连胜</div></div>'
+      + '  </div>'
+      + (logged ? '' : '<div class="muted" style="margin-top:12px">登录后才会记战绩哦。</div>')
+      + '</div>'
+
+      + '<div class="card"><div class="card-title">这一局比什么</div>'
+      + '  <div class="muted" style="margin-bottom:10px">先选学段</div>'
+      + '  <div class="grade-list">' + gradeHtml + '</div>'
+      + '  <div class="muted" style="margin:14px 0 0">主题（选「随机」让小科决定）</div>'
+      + '  <div class="chips">' + themeChips + '</div>'
+      + '  <button id="pk-start" class="btn btn-primary btn-block" style="margin-top:16px">随机匹配对手</button>'
+      + '</div>'
+
+      + '<div class="card"><div class="card-title">最近对战</div>' + historyHtml + '</div>';
+
+    view.querySelectorAll('[data-pk-grade]').forEach(function (b) {
+      b.onclick = function () { pkState.grade = b.getAttribute('data-pk-grade'); renderPk(); };
+    });
+    view.querySelectorAll('[data-pk-theme]').forEach(function (c) {
+      c.onclick = function () { pkState.theme = c.getAttribute('data-pk-theme'); renderPk(); };
+    });
+    view.querySelector('#pk-start').onclick = startPkMatch;
+  }
+
+  function themeListForPk() {
+    var out = [];
+    (util.topicGroups || []).forEach(function (g) {
+      (g.items || []).forEach(function (it) { out.push(it.label); });
+    });
+    return out;
+  }
+
+  function startPkMatch() {
+    pkState.phase = 'finding';
+    view.innerHTML = '<div class="card pk-finding">'
+      + util.mascot('thinking', 'lg', '正在找一位对手…')
+      + '<div class="pk-radar"><span class="pk-face">' + PK_FINDING_FACES[0] + '</span></div>'
+      + '<div class="muted">同一学段、同一主题，题是一样的</div>'
+      + '</div>';
+    // 装饰性动画：换脸，让"正在匹配"有实感（不依赖后端返回时间）
+    var faceEl = view.querySelector('.pk-face');
+    var i = 0;
+    var timer = setInterval(function () {
+      if (!faceEl || !document.body.contains(faceEl)) { clearInterval(timer); return; }
+      i = (i + 1) % PK_FINDING_FACES.length;
+      faceEl.textContent = PK_FINDING_FACES[i];
+    }, 220);
+
+    api.pkStart(pkState.grade, pkState.theme, null)
+      .then(function (data) {
+        clearInterval(timer);
+        pkState.match = data;
+        pkState.idx = 0;
+        pkState.answers = [];
+        pkState.picked = null;
+        pkState.startedAt = Date.now();
+        pkState.phase = 'playing';
+        paintPkVs(data);
+      })
+      .catch(function (err) {
+        clearInterval(timer);
+        pkState.phase = 'setup';
+        view.innerHTML = '<div class="card empty-box">'
+          + util.mascot('encourage', 'md', (err && err.message) || '没匹配上，再试一次吧')
+          + '<div style="margin-top:14px"><button class="btn btn-primary" id="pk-back">回到 PK 首页</button></div>'
+          + '</div>';
+        view.querySelector('#pk-back').onclick = function () { renderPk(); };
+      });
+  }
+
+  /** 对战开始前的 VS 画面：先让孩子看清对手是谁，再进题 */
+  function paintPkVs(data) {
+    var me = api.getUser() || {};
+    var myRank = util.rankOfLevel(util.levelInfo(state.totalXp).level);
+    var opp = data.opponent || {};
+    view.innerHTML = '<div class="card pk-vs">'
+      + '<div class="pk-vs-side">'
+      + '  <div class="pk-avatar">' + myRank.emoji + '</div>'
+      + '  <div class="pk-vs-name">' + util.esc(me.nickname || '我') + '</div>'
+      + '  <div class="muted">' + util.esc(myRank.name) + '</div>'
+      + '</div>'
+      + '<div class="pk-vs-mid">VS</div>'
+      + '<div class="pk-vs-side">'
+      + '  <div class="pk-avatar">' + (opp.kind === 'user' ? '🙋' : '✨') + '</div>'
+      + '  <div class="pk-vs-name">' + util.esc(opp.name || '神秘对手') + '</div>'
+      + '  <div class="muted">' + util.esc(opp.rank || '') + '</div>'
+      + '</div>'
+      + '</div>'
+      + '<div class="card pk-meta">'
+      + '<div class="meta-row" style="justify-content:center">'
+      + '<span class="tag">' + (util.themeEmoji[data.theme] || '📘') + ' ' + util.esc(data.theme) + '</span>'
+      + '<span class="tag">' + util.esc(data.grade_label) + '</span>'
+      + '<span class="tag">共 ' + data.count + ' 题</span>'
+      + (opp.kind === 'user' ? '<span class="tag tag-win">真人同学的战绩</span>'
+                             : '<span class="tag">神秘对手</span>')
+      + '</div>'
+      + '<div class="muted" style="text-align:center;margin-top:12px">'
+      + (opp.kind === 'user'
+         ? '对手是另一位同学在同一主题下的成绩，题和你现在做的一模一样。'
+         : '对手的答案已经提前定好了，你答完就能看到结果。')
+      + '</div>'
+      + '<button id="pk-go" class="btn btn-primary btn-block" style="margin-top:16px">开始答题</button>'
+      + '</div>';
+    view.querySelector('#pk-go').onclick = function () {
+      pkState.startedAt = Date.now();
+      paintPkQuestion();
+    };
+  }
+
+  function paintPkQuestion() {
+    var m = pkState.match;
+    if (!m) { pkState.phase = 'setup'; renderPk(); return; }
+    var q = m.questions[pkState.idx];
+    var total = m.questions.length;
+    var picked = pkState.picked;
+    var opts = (q.options || []).map(function (text, i) {
+      var cls = 'option';
+      if (picked !== null) {
+        if (i === picked) cls += ' selected';
+      }
+      return '<div class="' + cls + '" data-opt="' + i + '">'
+        + '<span class="opt-key">' + 'ABCD'[i] + '</span>'
+        + '<span class="opt-text">' + util.esc(text) + '</span></div>';
+    }).join('');
+
+    view.innerHTML = '<div class="card">'
+      + '<div class="between" style="margin-bottom:8px">'
+      + '  <span class="muted">第 ' + (pkState.idx + 1) + ' / ' + total + ' 题</span>'
+      + '  <span class="tag">⚔️ 对 ' + util.esc((m.opponent || {}).name || '对手') + '</span>'
+      + '</div>'
+      + '<div class="progress"><div class="progress-inner" style="width:'
+      + Math.round((pkState.idx / total) * 100) + '%"></div></div>'
+      + '<div class="stem">' + util.esc(q.stem) + '</div>'
+      + '<div class="options">' + opts + '</div>'
+      + '<button id="pk-next" class="btn btn-primary btn-block off" style="margin-top:16px">'
+      + (pkState.idx === total - 1 ? '交卷看结果' : '下一题') + '</button>'
+      + '</div>';
+
+    view.querySelectorAll('[data-opt]').forEach(function (el) {
+      el.onclick = function () {
+        pkState.picked = parseInt(el.getAttribute('data-opt'), 10);
+        view.querySelectorAll('[data-opt]').forEach(function (x) { x.classList.remove('selected'); });
+        el.classList.add('selected');
+        view.querySelector('#pk-next').classList.remove('off');
+      };
+    });
+    view.querySelector('#pk-next').onclick = function () {
+      if (pkState.picked === null) { UI.toast('先选一个答案吧'); return; }
+      pkState.answers.push(pkState.picked);
+      pkState.picked = null;
+      if (pkState.idx === total - 1) { finishPk(); return; }
+      pkState.idx += 1;
+      paintPkQuestion();
+    };
+  }
+
+  function finishPk() {
+    UI.loading(true, '小科正在算分…');
+    var ms = Date.now() - pkState.startedAt;
+    api.pkFinish(pkState.match.match_id, pkState.answers, ms)
+      .then(function (res) {
+        UI.loading(false);
+        pkState.result = res;
+        pkState.phase = 'result';
+        paintPkResult(res);
+      })
+      .catch(function (err) {
+        UI.loading(false);
+        UI.toast((err && err.message) || '算分没成功，再试一次吧');
+      });
+  }
+
+  function paintPkResult(res) {
+    var win = res.result === 'win';
+    var draw = res.result === 'draw';
+    var mascotState = win ? 'win' : (draw ? 'correct' : 'encourage');
+    var rows = (res.details || []).map(function (d, i) {
+      // 注意：答错用暖橙，不用纯红（面向小朋友的视觉规范）
+      var mineCls = d.is_correct ? 'ok' : 'no';
+      var oppCls = d.opponent_correct ? 'ok' : 'no';
+      return '<div class="pk-detail">'
+        + '<div class="pk-detail-stem">' + (i + 1) + '. ' + util.esc(d.stem) + '</div>'
+        + '<div class="meta-row">'
+        + '<span class="tag ' + (mineCls === 'ok' ? 'tag-win' : 'tag-soon') + '">你：'
+        + util.esc(optionText(d, d.user_answer)) + (d.is_correct ? ' ✓' : '') + '</span>'
+        + '<span class="tag ' + (oppCls === 'ok' ? 'tag-win' : 'tag-soon') + '">对手：'
+        + util.esc(optionText(d, d.opponent_answer)) + (d.opponent_correct ? ' ✓' : '') + '</span>'
+        + (d.is_correct ? '' : '<span class="tag">正确答案：' + util.esc(optionText(d, d.correct_answer)) + '</span>')
+        + '</div>'
+        + (d.analysis ? '<div class="muted" style="margin-top:6px">' + util.esc(d.analysis) + '</div>' : '')
+        + '</div>';
+    }).join('');
+
+    view.innerHTML = '<div class="card pk-result ' + (win ? 'win' : (draw ? 'draw' : 'lose')) + '">'
+      + util.mascot(mascotState, 'lg', res.result_text)
+      + '<div class="pk-score">'
+      + '  <div class="pk-score-side"><div class="pk-score-num">' + res.my_correct + '</div><div class="muted">你</div></div>'
+      + '  <div class="pk-score-colon">:</div>'
+      + '  <div class="pk-score-side"><div class="pk-score-num">' + res.opponent_correct + '</div>'
+      + '    <div class="muted">' + util.esc((res.opponent || {}).name || '对手') + '</div></div>'
+      + '</div>'
+      + '<div class="settle-grid" style="margin-top:16px">'
+      + '  <div><div class="settle-num">' + res.total + '</div><div class="muted">总题数</div></div>'
+      + '  <div><div class="settle-num">+' + res.xp_gained + '</div><div class="muted">经验值</div></div>'
+      + '  <div><div class="settle-num">' + (res.streak || 0) + '</div><div class="muted">当前连胜</div></div>'
+      + '  <div><div class="settle-num">' + (res.wrong_added || 0) + '</div><div class="muted">进了错题本</div></div>'
+      + '</div>'
+      + '<div class="acts" style="margin-top:18px">'
+      + '  <button class="btn btn-primary grow" id="pk-again">再来一局</button>'
+      + '  <button class="btn btn-ghost grow" id="pk-to-wrong">看错题本</button>'
+      + '  <button class="btn btn-ghost grow" id="pk-home">回去闯关</button>'
+      + '</div>'
+      + '</div>'
+      + '<div class="card"><div class="card-title">逐题对照</div>' + rows + '</div>';
+
+    view.querySelector('#pk-again').onclick = function () {
+      pkState.phase = 'setup';
+      pkState.match = null;
+      renderPk();
+    };
+    view.querySelector('#pk-to-wrong').onclick = function () { location.hash = '#/wrong'; };
+    view.querySelector('#pk-home').onclick = function () { location.hash = '#/home'; };
+
+    reloadProfile();
+    if (win) { flash('赢啦！+ ' + res.xp_gained + ' 经验'); }
+  }
+
+  /** 取某题某个下标对应的选项文字（-1 表示没作答） */
+  function optionText(d, idx) {
+    if (idx === null || idx === undefined || idx < 0) return '没作答';
+    var opts = d.options || [];
+    return opts[idx] === undefined ? '没作答' : opts[idx];
+  }
+
+  /* ================= 成长阶梯 ================= */
+  function renderRanks() {
+    api.levels()
+      .then(function (d) { paintRanks(d); })
+      .catch(function () { paintRanks(localLevels()); });
+  }
+
+  /** 接口不可用时的兜底：用 app.js 里的段位表拼一个同结构的数据 */
+  function localLevels() {
+    var info = util.levelInfo(state.totalXp);
+    var ranks = util.ranks.map(function (r) {
+      var item = {};
+      for (var k in r) { if (Object.prototype.hasOwnProperty.call(r, k)) item[k] = r[k]; }
+      item.min_xp = (r.min_level - 1) * 50;
+      item.max_xp = r.max_level === null ? null : r.max_level * 50 - 1;
+      item.is_top = r.max_level === null;
+      return item;
+    });
+    var cur = util.rankOfLevel(info.level);
+    return {
+      xp_per_level: 50,
+      ranks: ranks,
+      me: {
+        total_xp: state.totalXp,
+        level_progress: { level: info.level, xp_in_level: info.inLevel, xp_per_level: 50,
+                          xp_to_next_level: info.remain, percent: info.percent },
+        rank: cur,
+        rank_progress: null,
+        is_max_rank: cur.max_level === null,
+        total_ranks: ranks.length,
+        max_rank_name: ranks[ranks.length - 1].name,
+        xp_to_max_rank: Math.max(0, ranks[ranks.length - 1].min_xp - state.totalXp)
+      }
+    };
+  }
+
+  function paintRanks(d) {
+    var me = d.me || {};
+    var cur = me.rank || {};
+    var lp = me.level_progress || {};
+    var rp = me.rank_progress;
+    var ranks = d.ranks || [];
+
+    var ladderHtml = ranks.map(function (r) {
+      var isMe = r.index === cur.index;
+      var hi = r.max_xp === null ? '没有上限' : (r.max_xp + ' 经验');
+      return '<div class="rank-row ' + (isMe ? 'me' : '') + '">'
+        + '<div class="rank-badge" style="background:' + r.color + '">' + r.emoji + '</div>'
+        + '<div class="grow">'
+        + '  <div class="rank-name">' + util.esc(r.name)
+        + (r.is_top ? ' <span class="tag tag-win">最高段位</span>' : '')
+        + (isMe ? ' <span class="tag">你在这里</span>' : '') + '</div>'
+        + '  <div class="muted">Lv.' + r.min_level + (r.max_level === null ? ' 起' : ' ~ ' + r.max_level)
+        + '　' + r.min_xp + ' ~ ' + hi + '</div>'
+        + '  <div class="muted">' + util.esc(r.slogan || '') + '</div>'
+        + '</div></div>';
+    }).join('');
+
+    var nextHtml = me.is_max_rank
+      ? '<div class="muted">你已经在最高段位「' + util.esc(d.max_rank_name || '')
+        + '」了，等级还会继续涨，继续积累吧。</div>'
+      : '<div class="between"><span class="muted">再攒 <b>' + (rp ? rp.xp_needed : 0)
+        + '</b> 经验就到「' + util.esc(rp ? rp.next_name : '') + '」</span>'
+        + '<span class="muted">' + (rp ? rp.percent : 0) + '%</span></div>'
+        + '<div class="progress" style="margin-top:8px"><div class="progress-inner" style="width:'
+        + (rp ? rp.percent : 0) + '%"></div></div>';
+
+    view.innerHTML = '<div class="card rank-hero">'
+      + '  <div class="rank-hero-badge" style="background:' + (cur.color || '#7CB342') + '">'
+      + (cur.emoji || '🌱') + '</div>'
+      + '  <div class="grow">'
+      + '    <div class="h1" style="margin:0">' + util.esc(cur.name || '') + '</div>'
+      + '    <div class="body">Lv.' + lp.level + '　累计 ' + me.total_xp + ' 经验值</div>'
+      + '    <div class="muted">' + util.esc(cur.slogan || '') + '</div>'
+      + '  </div>'
+      + '</div>'
+
+      + '<div class="card"><div class="card-title">离下一级</div>'
+      + '  <div class="between"><span class="muted">本级经验 ' + lp.xp_in_level + ' / '
+      + lp.xp_per_level + '</span><span class="muted">' + lp.percent + '%</span></div>'
+      + '  <div class="progress" style="margin-top:8px"><div class="progress-inner" style="width:'
+      + lp.percent + '%"></div></div>'
+      + '  <div class="muted" style="margin-top:10px">再答对 ' + Math.ceil((lp.xp_to_next_level || 0) / 2)
+      + ' 题就能升级（每答对一题 2 点经验，完成一局还有 10 点）。</div>'
+      + '</div>'
+
+      + '<div class="card"><div class="card-title">离下一段位</div>' + nextHtml + '</div>'
+
+      + '<div class="card"><div class="card-title">全部 ' + (d.total_ranks || ranks.length)
+      + ' 个段位（最高：' + util.esc(d.max_rank_name || '') + '）</div>'
+      + '  <div class="muted" style="margin-bottom:12px">'
+      + (me.is_max_rank ? '你已经登顶了。' : '从下往上爬，到「' + util.esc(d.max_rank_name || '')
+         + '」还需要 ' + me.xp_to_max_rank + ' 经验值。')
+      + '  </div>'
+      + ladderHtml
+      + '</div>';
   }
 
   // 启动：只能放在文件末尾——boot() 会立刻读取 state，

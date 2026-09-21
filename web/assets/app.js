@@ -114,6 +114,27 @@
       return request('POST', '/user/merge-guest', { guest_token: guestToken },
                      { silent: true });
     },
+    /** 主题清单（后端按「科普主题 / 基础课程」分好组） */
+    themes: function () {
+      return request('GET', '/themes', null, { silent: true });
+    },
+    /** 段位阶梯 + 我的成长进度 */
+    levels: function () {
+      return request('GET', '/levels', null, { silent: true });
+    },
+    /** 开一局 PK：服务端随机匹配一个对手并定题 */
+    pkStart: function (grade, theme, count) {
+      return request('POST', '/pk/start', { grade: grade, theme: theme, count: count });
+    },
+    /** 结算 PK：只提交我的作答 */
+    pkFinish: function (matchId, answers, durationMs) {
+      return request('POST', '/pk/finish',
+                     { match_id: matchId, answers: answers, duration_ms: durationMs || 0 });
+    },
+    /** 我的 PK 战绩与最近几局 */
+    pkStats: function () {
+      return request('GET', '/pk/stats', null, { silent: true });
+    },
     /**
      * 管理员登录：入口页上直接放了一个管理员页签，不必先手敲 /admin/ 地址。
      * 管理端登录接口在 /admin/login，用的是 X-Admin-Token，与学生 JWT 互不影响；
@@ -285,7 +306,10 @@
       if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
       return (n / 1024 / 1024).toFixed(1) + ' MB';
     },
-    /** 经验值 → 等级信息：每 50 点一级，给孩子一个一直够得着的短期目标 */
+    /**
+     * 经验值 → 等级信息：每 50 点一级，给孩子一个一直够得着的短期目标。
+     * 每级 50 点这个数与后端 app/levels.py 的 XP_PER_LEVEL 必须一致。
+     */
     levelInfo: function (totalXp) {
       var unit = 50;
       var xp = Math.max(0, Number(totalXp) || 0);
@@ -299,10 +323,51 @@
         percent: Math.round((inLevel / unit) * 100)
       };
     },
+    /**
+     * 段位阶梯的本地兜底副本。
+     *
+     * 权威数据在后端 app/levels.py，由 GET /levels 下发；这里只是**断网/接口拿不到时
+     * 的降级**，保证顶栏不会出现空白。两边的名称与等级区间必须保持一致，
+     * tools/check_levels.py 会比对这两份数据是否漂移。
+     */
+    ranks: [
+      { index: 1, name: '科学小新芽', emoji: '🌱', min_level: 1, max_level: 2,
+        color: '#7CB342', slogan: '刚开始发芽，先随便逛逛' },
+      { index: 2, name: '好奇心学徒', emoji: '🔍', min_level: 3, max_level: 4,
+        color: '#43A047', slogan: '开始主动问为什么了' },
+      { index: 3, name: '问题小侦探', emoji: '🕵️', min_level: 5, max_level: 7,
+        color: '#00ACC1', slogan: '错题本开始派上用场' },
+      { index: 4, name: '实验小助手', emoji: '⚗️', min_level: 8, max_level: 10,
+        color: '#039BE5', slogan: '能把知识讲给别人听了' },
+      { index: 5, name: '知识小达人', emoji: '📚', min_level: 11, max_level: 14,
+        color: '#3949AB', slogan: '知识面已经很宽了' },
+      { index: 6, name: '探索小队长', emoji: '🧭', min_level: 15, max_level: 19,
+        color: '#8E24AA', slogan: '会带着别人一起学' },
+      { index: 7, name: '科学小博士', emoji: '🎓', min_level: 20, max_level: 25,
+        color: '#D81B60', slogan: '离最高段位只差一步' },
+      { index: 8, name: '传奇科学家', emoji: '🏆', min_level: 26, max_level: null,
+        color: '#F57C00', slogan: '最高段位，可以一直待下去' }
+    ],
+    /** 按等级找段位（本地兜底版，逻辑与后端 levels.rank_of_level 一致） */
+    rankOfLevel: function (level) {
+      var lv = Math.max(1, Number(level) || 1);
+      var list = util.ranks;
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i];
+        if (r.max_level === null) { if (lv >= r.min_level) return r; continue; }
+        if (lv >= r.min_level && lv <= r.max_level) return r;
+      }
+      return list[0];
+    },
+    /** 顶栏 / 徽章用的短标签：「🌱 科学小新芽」 */
+    rankLabel: function (totalXp) {
+      var info = util.levelInfo(totalXp);
+      var r = util.rankOfLevel(info.level);
+      return r.emoji + ' ' + r.name;
+    },
+    /** 等级称号（兼容旧调用点，返回当前段位名） */
     levelTitle: function (level) {
-      var titles = ['科学小新芽', '好奇心学徒', '问题小侦探', '实验小助手',
-                    '知识小达人', '探索小队长', '科学小博士'];
-      return titles[Math.max(0, Math.min(titles.length - 1, (Number(level) || 1) - 1))];
+      return util.rankOfLevel(level).name;
     },
     /** 吉祥物「小科」：纯 CSS 绘制，六种状态 */
     mascot: function (state, size, caption) {
@@ -327,15 +392,35 @@
         + '</div></div></div></div>'
         + '<div class="mascot-caption">' + util.esc(text) + '</div></div>';
     },
-    /** 主题快捷入口 */
-    topicChips: [
-      { label: '天文', emoji: '🪐', topic: '太阳系' },
-      { label: '地理', emoji: '🌏', topic: '地球的构造' },
-      { label: '生物', emoji: '🌿', topic: '植物的光合作用' },
-      { label: '物理', emoji: '🧲', topic: '力和运动' },
-      { label: '化学', emoji: '⚗️', topic: '水的三态变化' },
-      { label: '科技', emoji: '🤖', topic: '人工智能' }
+    /**
+     * 主题快捷入口（分组）。
+     * 权威清单由后端 GET /themes 下发（只返回题库里真有题的主题）；
+     * 这份是接口不可用时的兜底，两边主题名必须一致。
+     */
+    topicGroups: [
+      {
+        key: 'science', label: '科普主题', emoji: '🔬', items: [
+          { label: '天文', emoji: '🪐', topic: '太阳系' },
+          { label: '地理', emoji: '🌏', topic: '地球的构造' },
+          { label: '生物', emoji: '🌿', topic: '植物的光合作用' },
+          { label: '物理', emoji: '🧲', topic: '力和运动' },
+          { label: '化学', emoji: '⚗️', topic: '水的三态变化' },
+          { label: '科技', emoji: '🤖', topic: '人工智能' }
+        ]
+      },
+      {
+        key: 'basic', label: '基础课程', emoji: '📖', items: [
+          { label: '语文', emoji: '📕', topic: '语文' },
+          { label: '数学', emoji: '📐', topic: '数学' },
+          { label: '英语', emoji: '🔤', topic: '英语' }
+        ]
+      }
     ],
+    /** 主题 → emoji（渲染胶囊与段位卡时复用） */
+    themeEmoji: {
+      '天文': '🪐', '地理': '🌏', '生物': '🌿', '物理': '🧲', '化学': '⚗️', '科技': '🤖',
+      '语文': '📕', '数学': '📐', '英语': '🔤'
+    },
     /** 等待出题时轮播的科普小知识：把等待时间变成学习时间 */
     scienceFacts: [
       '太阳表面约 5500℃，核心温度超过 1500 万℃。',
