@@ -1,14 +1,22 @@
 /* 管理端样式：零依赖手写 CSS，不引入任何前端框架与外部字体 */
+/* 配色说明：这几个颜色都按 WCAG AA（正文 4.5:1）实测调过。
+   改之前的问题——全部只在 2.4~4.4:1 之间，看起来"还行"但确实不达标：
+     --c-primary #2b7cd3：白字压 4.26，作为标签文字压浅蓝底 3.85
+     --c-sub     #6b7a8d：白底 4.38、页面浅底 4.08（表头、指标名、提示文字都用它）
+     --c-ok      #2e9e6b：压绿色浅底 3.06
+     --c-warn    #e8833a：压橙色浅底 2.44（最差的一个）
+   现在分别调到 5.58 / 5.05 / 4.99 / 4.72。色调没变，只是各压深一档。
+   守这条的工具是 tools/audit_ui.py（会真的在浏览器里量出来）。 */
 :root {
-  --c-primary: #2b7cd3;
+  --c-primary: #2569b5;
   --c-primary-dark: #1f5fa6;
   --c-ink: #1f2a37;
-  --c-sub: #6b7a8d;
+  --c-sub: #63707f;
   --c-line: #e4eaf1;
   --c-bg: #f4f7fb;
   --c-card: #ffffff;
-  --c-warn: #e8833a;
-  --c-ok: #2e9e6b;
+  --c-warn: #a85618;
+  --c-ok: #21774f;
   --r: 10px;
 }
 
@@ -83,12 +91,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--c-primary); }
 .btn {
   border: 1px solid transparent; border-radius: 8px; padding: 8px 16px;
   font-size: 14px; cursor: pointer; font-family: inherit;
+  /* 最小高度 34px：原来小按钮只有 29px 高，「退出」「刷新」这类相邻按钮
+     很容易点偏。WCAG 2.5.8 的硬底线是 24px，但 34px 用鼠标舒服得多，
+     也留出了触屏（老师用平板看数据）的余地。 */
+  min-height: 34px;
 }
 .btn-primary { background: var(--c-primary); color: #fff; }
 .btn-primary:hover { background: var(--c-primary-dark); }
 .btn-ghost { background: #fff; border-color: var(--c-line); color: var(--c-ink); }
 .btn-ghost:hover { border-color: var(--c-primary); color: var(--c-primary); }
-.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-sm { padding: 6px 12px; font-size: 13px; min-height: 32px; }
 .btn-danger { background: #fff; border-color: #f0c4c4; color: #c0392b; }
 .btn-danger:hover { background: #fdf3f3; }
 
@@ -121,16 +133,21 @@ input:focus, select:focus, textarea:focus { border-color: var(--c-primary); }
 .table tr:hover td { background: #fafcfe; }
 .table .stem { max-width: 420px; }
 .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; background: #eef4fb; color: var(--c-primary); }
-/* 学段标签用颜色区分，扫一眼就知道这道题是给哪个学段的 */
+/* 学段标签用颜色区分，扫一眼就知道这道题是给哪个学段的。
+   颜色一律走变量，别在标签里写死字面值——.g-primary_low 原来写死了旧的 #2e9e6b，
+   改 --c-ok 时漏掉了它，对比度仍然是 3.06:1（复测才发现）。 */
 .tag-grade { font-weight: 600; }
-.g-primary_low { background: #eaf7f0; color: #2e9e6b; }
+.g-primary_low { background: #eaf7f0; color: var(--c-ok); }
 .g-primary_high { background: #eef4fb; color: var(--c-primary); }
 .g-junior { background: #f3eefb; color: #6b4bc4; }
 .tag-ok { background: #eaf7f0; color: var(--c-ok); }
 .tag-off { background: #f4f5f7; color: var(--c-sub); }
 .tag-warn { background: #fdf1e7; color: var(--c-warn); }
 .pager { display: flex; gap: 8px; align-items: center; }
-.pager button { border: 1px solid var(--c-line); background: #fff; border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+.pager button {
+  border: 1px solid var(--c-line); background: #fff; border-radius: 8px;
+  padding: 6px 12px; cursor: pointer; min-height: 32px;
+}
 .pager button:disabled { color: #b9c2ce; cursor: not-allowed; }
 
 /* ---------- 弹层 ---------- */

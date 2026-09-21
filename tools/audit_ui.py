@@ -44,7 +44,9 @@ STUDENT_PAGES = [
     ("profile", "我的"),
 ]
 
-MIN_TAP = 40          # 最小可点尺寸（px）
+MIN_TAP = 40          # 触摸优先界面（学生端）的按钮目标尺寸
+MIN_TAP_DESKTOP = 32  # 鼠标优先界面（管理端）的按钮目标尺寸
+WCAG_TARGET = 24      # WCAG 2.5.8（AA）对点击目标的硬底线，任何界面都必须满足
 MIN_CONTRAST = 4.5    # WCAG AA 正文对比度
 
 problems = []
@@ -65,8 +67,11 @@ def check(ok, msg, hard=True):
 
 # 注入到页面里的审计函数：一次把该页所有指标量出来
 AUDIT_JS = r"""
-() => {
-  const MIN_TAP = 40;
+(minTap) => {
+  // 按钮目标尺寸由调用方按界面类型给：学生端 40（触摸优先），管理端 32（鼠标优先）。
+  // 纯文字链接一律按 WCAG 2.5.8 的 24px —— 那是标准里的硬底线。
+  const MIN_TAP = minTap;
+  const WCAG_TARGET = 24;   // WCAG 2.5.8 的硬底线，任何界面都不许破
   const out = {
     docScrollW: document.documentElement.scrollWidth,
     docClientW: document.documentElement.clientWidth,
@@ -119,7 +124,7 @@ AUDIT_JS = r"""
     if (cs.display === 'none' || cs.visibility === 'hidden') return;
     const isButton = el.tagName === 'BUTTON' || el.hasAttribute('data-opt') ||
                      el.hasAttribute('data-toggle') || el.hasAttribute('data-topic');
-    const need = isButton ? MIN_TAP : 24;
+    const need = isButton ? Math.max(MIN_TAP, WCAG_TARGET) : WCAG_TARGET;
     if (r.height < need || r.width < need) {
       const label = (el.innerText || el.getAttribute('aria-label') || el.tagName).trim().slice(0, 14);
       out.tinyTaps.push({label: label, w: Math.round(r.width), h: Math.round(r.height),
@@ -228,6 +233,17 @@ AUDIT_JS = r"""
   pick('.lv-chip', '顶栏段位胶囊');
   pick('.rank-name', '段位名');
   pick('.chip-group-label', '分组标题');
+  // 管理端专用（学生端页面上取不到就跳过）。
+  // 注意标签要和学生端区分开，否则同名会在去重时把管理端那组盖掉。
+  pick('.table th', '管理端表头');
+  pick('.nav a', '管理端导航项');
+  pick('.card .k', '管理端指标名');
+  pick('.card .s', '管理端指标说明');
+  pick('.tip', '管理端提示文字');
+  pick('.view .btn-primary', '管理端主按钮');
+  pick('.tag-ok', '管理端成功标签');
+  pick('.tag-warn', '管理端提醒标签');
+  pick('.tag-off', '管理端停用标签');
   out.colorSamples = samples;
   return out;
 }
@@ -322,7 +338,7 @@ def main():
             for route, name in STUDENT_PAGES:
                 pg.goto(web + "#/" + route)
                 pg.wait_for_timeout(1600)
-                d = pg.evaluate(AUDIT_JS)
+                d = pg.evaluate(AUDIT_JS, MIN_TAP)
                 prefix = "%s / %s" % (label, name)
 
                 # 横向溢出
@@ -403,19 +419,28 @@ def main():
         print("  管理端（1180 × 900）")
         print("=" * 66)
         pg.set_viewport_size({"width": 1180, "height": 900})
+        admin_colors = []
         if login(pg, base, role="admin"):
             for route, name in [("dashboard", "看板"), ("questions", "题库"),
                                 ("users", "用户"), ("sessions", "闯关记录"),
                                 ("logs", "日志")]:
                 pg.goto(base + "/admin/#/" + route)
                 pg.wait_for_timeout(1800)
-                d = pg.evaluate(AUDIT_JS)
+                d = pg.evaluate(AUDIT_JS, MIN_TAP_DESKTOP)
                 check(d["docScrollW"] <= d["docClientW"] + 1,
                       "管理端 %s：没有横向滚动条" % name)
                 check(not d["overflowing"], "管理端 %s：没有元素超出视口%s"
                       % (name, "" if not d["overflowing"] else " " + str(d["overflowing"][:2])))
                 if d["emptyBoxes"]:
                     check(False, "管理端 %s：空容器 %s" % (name, sorted(set(d["emptyBoxes"]))))
+                if d["tinyTaps"]:
+                    hard = any(t["kind"] == "按钮" for t in d["tinyTaps"])
+                    uniq = {}
+                    for t in d["tinyTaps"]:
+                        uniq["%s(%s)" % (t["label"], t["kind"])] = (t["w"], t["h"])
+                    check(False, "管理端 %s：点击目标偏小 %s" % (name, list(uniq.items())[:3]),
+                          hard=hard)
+                admin_colors.extend(d["colorSamples"])
             # 学生详情弹窗
             pg.goto(base + "/admin/#/users")
             pg.wait_for_timeout(2000)
@@ -425,13 +450,35 @@ def main():
             if pg.locator("#u-table button:has-text('答题详情')").count():
                 pg.locator("#u-table button:has-text('答题详情')").first.click()
                 pg.wait_for_timeout(2500)
-                d = pg.evaluate(AUDIT_JS)
+                d = pg.evaluate(AUDIT_JS, MIN_TAP_DESKTOP)
                 check(not d["overflowing"], "管理端学生详情弹窗：没有元素超出视口%s"
                       % ("" if not d["overflowing"] else " " + str(d["overflowing"][:2])))
                 if args.shots:
                     pg.screenshot(path=os.path.join(shots, "ui_admin_detail.png"), full_page=True)
         else:
             check(False, "管理端登录失败，跳过管理端审计")
+
+        # 管理端的对比度也要量：只查版面不查颜色的话，
+        # 「次要文字 4.38:1」这种不达标会一直藏着（这轮就是补上这一项才发现的）。
+        if admin_colors:
+            print("\n" + "=" * 66)
+            print("  管理端文字对比度（WCAG AA 要求 ≥ %.1f:1）" % MIN_CONTRAST)
+            print("=" * 66)
+            aseen = {}
+            for s in admin_colors:
+                aseen.setdefault(s["label"], s)
+            for label, s in aseen.items():
+                if s.get("gradient"):
+                    print("[跳过] 管理端 %s：背景是渐变" % label)
+                    continue
+                c = contrast(s["fg"], s["bg"])
+                if c is None:
+                    print("[跳过] 管理端 %s：背景色取不到不透明值" % label)
+                    continue
+                big = s["size"] >= 24 or (s["size"] >= 18.66 and int(s["weight"] or 400) >= 700)
+                need = 3.0 if big else MIN_CONTRAST
+                check(c >= need, "管理端 %s %.2f:1（要求 %.1f，字号 %.0fpx，%s）"
+                      % (label, c, need, s["size"], s["fg"]))
 
         check(not errs, "全程无 JS 报错%s" % ("" if not errs else "：" + " | ".join(errs[:2])))
         b.close()
