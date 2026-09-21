@@ -178,6 +178,14 @@ def start_match(user_id, grade=None, theme=None, count=None):
 
     # 对手答案长度对齐到本局题量：不够的按「没答」(-1) 处理
     opp_answers = (opp_answers + [-1] * n)[:n]
+
+    # 开局就把对手的得分算出来存下，不要留到结算时才写。
+    # 开局时答案已经定死了，得分就是确定的；留成默认 0 会让这一行在结算前
+    # 处于自相矛盾的状态（题面重算得出 6，字段却写着 0），任何在结算前读库的
+    # 地方（管理端排查、验收脚本、以后可能加的战况预览）都会被这个 0 误导。
+    opp_correct = sum(1 for i, q in enumerate(questions)
+                      if i < len(opp_answers) and opp_answers[i] == int(q.get("answer", 0)))
+
     quiz_id = uuid.uuid4().hex[:16]
     match_id = uuid.uuid4().hex[:16]
 
@@ -191,10 +199,10 @@ def start_match(user_id, grade=None, theme=None, count=None):
     db.execute(
         "INSERT INTO pk_matches(match_id, quiz_id, user_id, grade, theme, opponent_kind, "
         "opponent_user_id, opponent_name, opponent_rank, opponent_source_quiz, "
-        "opponent_answers_json, paper_key, total, status) "
-        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,0)",
+        "opponent_answers_json, opponent_correct, paper_key, total, status) "
+        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)",
         (match_id, quiz_id, user_id, g, theme, opp_kind, opp_user_id, opp_name,
-         opp_rank, opp_source, db.dumps(opp_answers), paper_key, n))
+         opp_rank, opp_source, db.dumps(opp_answers), opp_correct, paper_key, n))
 
     return {
         "match_id": match_id,

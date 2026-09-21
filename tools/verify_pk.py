@@ -167,14 +167,62 @@ if found_user:
     check(found_user["opponent"]["name"], "真人对手有昵称：%s" % found_user["opponent"]["name"])
     check(found_user["opponent"]["rank"] != "",
           "真人对手有段位：%s" % found_user["opponent"]["rank"])
-    # 对手的作答应当来自 A 那一局（A 全对），所以比分是可复现的
+
+    # 真正要守的不变量：**幽灵的作答必须原样等于它来源那一局里那位同学本人的作答**，
+    # 且它的得分必须等于那一局记录的 my_correct。
+    #
+    # 不要写成「对手得分 == 某一局我已知的成绩」：那样只有在库里只有一个候选幽灵时
+    # 才成立（第一版就是这么写的，当时能过）。库里累积了多个同学的战绩之后，
+    # 随机抽到谁都合法，断言就会随机失败——那是测试错，不是功能错。
+    # 这里直接查库比对「来源那一局」，无论抽到谁都成立。
+    sys.path.insert(0, os.path.join(ROOT, "backend"))
+    from app import database as db_mod                        # noqa: E402
+
+    mine_row = db_mod.query_one(
+        "SELECT opponent_answers_json, opponent_correct, opponent_kind, "
+        "opponent_user_id, opponent_source_quiz, paper_key, total, grade, theme "
+        "FROM pk_matches WHERE match_id=?", (found_user["match_id"],))
+    check(mine_row["opponent_kind"] == "user", "这一局的对手类型记为 user")
+    check(mine_row["opponent_user_id"] != uid_c, "幽灵不是我自己（不会自己打自己）")
+    check(mine_row["opponent_correct"] > 0 or mine_row["opponent_correct"] == 0,
+          "开局时对手得分已落库（%d）" % mine_row["opponent_correct"])
+    src = db_mod.query_one(
+        "SELECT user_id, my_answers_json, my_correct, paper_key, total "
+        "FROM pk_matches WHERE match_id=?", (mine_row["opponent_source_quiz"],))
+    check(src is not None, "能追溯到幽灵的来源那一局（opponent_source_quiz 有值）")
+    if src:
+        check(src["user_id"] == mine_row["opponent_user_id"],
+              "来源那一局确实是这位同学的（user_id 对得上）")
+        check(src["paper_key"] == mine_row["paper_key"] and src["total"] == mine_row["total"],
+              "来源那一局与本局是同一份卷（paper_key 与题量一致）")
+        check(json.loads(mine_row["opponent_answers_json"]) == json.loads(src["my_answers_json"]),
+              "幽灵的作答与来源那一局里那位同学本人的作答逐位一致")
+        # 开局时写下的对手得分必须等于来源那一局记录的成绩。
+        # （早期只在结算时才写这个字段，开局读到的是默认 0，
+        #   与题面重算结果自相矛盾；现在开局就算好写下来。）
+        check(mine_row["opponent_correct"] == src["my_correct"],
+              "开局记录的对手得分等于来源那一局的真实成绩（%d）"
+              % mine_row["opponent_correct"])
+
+    # 结算后回给我看的对手得分，也要和上面这份对得上
     fc = api("/pk/finish", "POST",
              {"match_id": found_user["match_id"],
               "answers": [0] * found_user["count"]}, token=token_c)
     check(fc.get("code") == 0, "与真人对战也能正常结算（code=%s）" % fc.get("code"))
-    check(fc["data"]["opponent_correct"] == n,
-          "真人对手的得分来自他那一局的真实成绩（%d / %d）"
-          % (fc["data"]["opponent_correct"], n))
+    check(fc["data"]["opponent_correct"] == mine_row["opponent_correct"],
+          "结算返回的对手得分与库里记录的幽灵成绩一致（%d）"
+          % fc["data"]["opponent_correct"])
+    # 顺便验一下：真人对战里，对手的逐题判定要和它的作答对得上
+    qrow = db_mod.query_one("SELECT questions_json FROM quiz_sessions WHERE quiz_id=("
+                            "SELECT quiz_id FROM pk_matches WHERE match_id=?)",
+                            (found_user["match_id"],))
+    qs = json.loads(qrow["questions_json"])
+    opp = json.loads(mine_row["opponent_answers_json"])
+    expect = sum(1 for i, q in enumerate(qs)
+                 if i < len(opp) and opp[i] == int(q["answer"]))
+    check(expect == mine_row["opponent_correct"],
+          "按题面逐题重算幽灵得分也对得上（重算 %d / 记录 %d）"
+          % (expect, mine_row["opponent_correct"]))
 
 print("\n=== 6. 战绩与连胜 ===")
 st = api("/pk/stats", token=token_a)
