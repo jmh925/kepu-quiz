@@ -20,6 +20,7 @@ import datetime
 import io
 import os
 import shutil
+import sqlite3
 import sys
 import zipfile
 
@@ -50,13 +51,112 @@ def ignore(dirpath, names):
     return out
 
 
+def collect_data_stats(db_path):
+    """从数据库里读几个数字，写进包里的说明文档，让人一眼知道这份数据是什么。"""
+    stats = {}
+    try:
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        for key, sql in (
+            ("用户数", "SELECT COUNT(*) FROM users"),
+            ("闯关记录", "SELECT COUNT(*) FROM quiz_sessions"),
+            ("答题记录", "SELECT COUNT(*) FROM answer_records"),
+            ("错题本条目", "SELECT COUNT(*) FROM wrong_questions"),
+            ("PK 对战", "SELECT COUNT(*) FROM pk_matches"),
+            ("知识库文档", "SELECT COUNT(*) FROM knowledge_docs"),
+            ("管理端操作日志", "SELECT COUNT(*) FROM admin_logs"),
+        ):
+            try:
+                stats[key] = conn.execute(sql).fetchone()[0]
+            except Exception:
+                stats[key] = "（读不到）"
+        conn.close()
+    except Exception as exc:
+        stats["读取失败"] = str(exc)
+    return stats
+
+
+def write_readme(pkg, with_data, stats, admin_user, admin_pwd):
+    """在包根目录放一份「运行说明.md」：怎么跑、数据是什么、口令是什么。"""
+    lines = []
+    lines.append("# 运行说明\n")
+    lines.append("本包是《中小学生科普知识闯关系统的设计与实现》的毕业设计交付物。\n")
+
+    lines.append("## 一、怎么跑起来\n")
+    lines.append("```bash")
+    lines.append("cd backend")
+    lines.append("pip install -r requirements.txt")
+    lines.append("python -m uvicorn app.main:app --host 127.0.0.1 --port 8000")
+    lines.append("```\n")
+    lines.append("Windows 上也可以直接双击 `scripts\\run_server.cmd`（等同上面三步），")
+    lines.append("或双击 `scripts\\share.cmd` 一键起服务并生成一个公网地址给别人看。\n")
+    lines.append("启动后打开：\n")
+    lines.append("| 地址 | 是什么 |")
+    lines.append("| --- | --- |")
+    lines.append("| http://127.0.0.1:8000/app/ | 学生端（网页版） |")
+    lines.append("| http://127.0.0.1:8000/admin/ | 管理端 |")
+    lines.append("| http://127.0.0.1:8000/docs | 接口文档（Swagger） |\n")
+
+    lines.append("## 二、账号与口令\n")
+    lines.append("| 角色 | 账号 | 口令 |")
+    lines.append("| --- | --- | --- |")
+    if with_data:
+        lines.append("| 管理员 | %s | %s |" % (admin_user, admin_pwd))
+    else:
+        lines.append("| 管理员 | admin | kepu@2026（默认值，建议改） |")
+    lines.append("| 学生 | 自己注册 | 自己设（6~32 位） |\n")
+    if with_data:
+        lines.append("管理员口令来自随包附带的 `backend/.env`，可以直接改那个文件里的 "
+                     "`ADMIN_PASSWORD=` 然后重启。\n")
+        lines.append("> 这个 `.env` 是**给你自己部署用的**，不要连同公网地址一起发给别人。\n")
+    else:
+        lines.append("> 本包为「仅源码」模式，未包含 `backend/.env` 与数据库，")
+        lines.append("> 首次启动会用 `config.py` 里的默认口令建管理员。\n")
+
+    lines.append("## 三、包里有什么\n")
+    lines.append("| 目录 | 内容 |")
+    lines.append("| --- | --- |")
+    lines.append("| `backend/` | FastAPI 服务端（路由、业务、数据访问分层） |")
+    lines.append("| `backend/app/bank_part_*.json` | 内置题库数据（225 题，9 个主题） |")
+    lines.append("| `frontend/` | 微信小程序原生代码（需微信开发者工具运行） |")
+    lines.append("| `web/` | 网页版学生端（零构建原生单页应用，挂载在 `/app/`） |")
+    lines.append("| `admin/` | Web 管理端（同样零构建，挂载在 `/admin/`） |")
+    lines.append("| `demo/` | 小程序在浏览器里的可交互预览 |")
+    lines.append("| `docs/` | 论文正文、插图、接口清单、数据库字典、部署与答辩说明 |")
+    lines.append("| `scripts/` | 一键启动 / 一键对外演示 / 一键打包等批处理 |")
+    lines.append("| `tools/` | 题库生成与校验、密钥生成、验收与审计脚本 |\n")
+
+    if with_data:
+        lines.append("## 四、随包附带的运行数据\n")
+        lines.append("数据库：`backend/data/kepu.db`（SQLite 单文件，直接拷走就是全部数据）\n")
+        if stats:
+            lines.append("| 内容 | 条数 |")
+            lines.append("| --- | --- |")
+            for k, v in stats.items():
+                lines.append("| %s | %s |" % (k, v))
+            lines.append("")
+        lines.append("> 这些是开发与验收过程中累积的测试数据（含大量 `ui…`/`pk…` 开头的测试账号）。")
+        lines.append("> 想要一个干净库：删掉 `backend/data/kepu.db` 再启动，会自动重建空库并建好管理员。\n")
+
+        lines.append("## 五、论文用到的实测数据从哪来\n")
+        lines.append("```bash")
+        lines.append("python tools/acceptance.py      # 17 组验收一把跑，含真实浏览器端到端")
+        lines.append("```")
+        lines.append("它会同时产出 `backend/tests/smoke_report.md`（论文第 6 章表 6-1～6-3 的数据来源）。\n")
+
+    with open(os.path.join(pkg, "运行说明.md"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(lines))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-zip", action="store_true", help="只准备目录，不压缩")
+    ap.add_argument("--with-data", action="store_true",
+                    help="连同运行数据一起打包（数据库 + backend/.env + 说明文档）")
     args = ap.parse_args()
 
     stamp = datetime.datetime.now().strftime("%Y%m%d")
-    name = "科普知识闯关小程序_交付物_%s" % stamp
+    name = "科普知识闯关小程序_交付物_%s%s" % ("含数据_" if args.with_data else "", stamp)
     pkg = os.path.join(DIST, name)
 
     if os.path.exists(pkg):
@@ -86,6 +186,49 @@ def main():
                 os.remove(os.path.join(dirpath, fn))
                 removed += 1
     print("      清掉 %d 个文件（数据库 / 缓存 / 日志 / .env）" % removed)
+
+    # ---- 可选：把运行数据与配置放回去 ----
+    # 必须在上面那步清理**之后**做，否则刚放进去的 .db/.env 会被一起清掉。
+    if args.with_data:
+        print("[2.5/3] 附加运行数据与配置 …")
+        data_dir = os.path.join(pkg, "backend", "data")
+        os.makedirs(data_dir, exist_ok=True)
+        db_src = os.path.join(ROOT, "backend", "data", "kepu.db")
+        if os.path.isfile(db_src):
+            # 用 SQLite 的在线备份接口拷库，而不是直接 copy 文件。
+            # 服务可能正在写库：直接拷 .db 会拿到"写了一半"的状态，
+            # WAL 模式下的最新事务还躺在 -wal 里，只拷 .db 会丢数据。
+            # 在线备份会把一个事务一致的快照写进目标文件，不需要停服务。
+            dst = os.path.join(data_dir, "kepu.db")
+            src_conn = sqlite3.connect(db_src)
+            dst_conn = sqlite3.connect(dst)
+            try:
+                with dst_conn:
+                    src_conn.backup(dst_conn)
+            finally:
+                dst_conn.close()
+                src_conn.close()
+            print("      数据库：kepu.db（%.1f MB，在线备份快照）"
+                  % (os.path.getsize(dst) / 1048576.0))
+        else:
+            print("      没有找到数据库，跳过")
+        env_src = os.path.join(ROOT, "backend", ".env")
+        if os.path.isfile(env_src):
+            shutil.copy2(env_src, os.path.join(pkg, "backend", ".env"))
+            print("      配置：backend/.env（含管理员口令，注意别外传）")
+        stats = collect_data_stats(db_src) if os.path.isfile(db_src) else {}
+        admin_user, admin_pwd = "admin", "kepu@2026"
+        try:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import kepu_env
+            admin_user, admin_pwd = kepu_env.admin_credentials()
+        except Exception:
+            pass
+        write_readme(pkg, True, stats, admin_user, admin_pwd)
+        print("      说明：运行说明.md")
+    else:
+        write_readme(pkg, False, {}, "admin", "kepu@2026")
+        print("      说明：运行说明.md（仅源码模式）")
 
     if args.no_zip:
         print("[3/3] 跳过压缩（--no-zip）")
