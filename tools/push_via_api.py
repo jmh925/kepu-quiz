@@ -73,7 +73,11 @@ def call(method, path, body=None, auth=None):
         data = json.dumps(body).encode("utf-8")
         req.add_header("Content-Type", "application/json")
     try:
-        with urllib.request.urlopen(req, data=data, timeout=20) as resp:
+        # 超时给到 120 秒：单个 blob 可能是几 MB 的二进制（例如交付用的 .docx），
+        # base64 编码后请求体还要再涨三分之一。原来写死 20 秒，在上行较慢的网络
+        # （移动热点、共享带宽）上会在**发送请求体**这一步就超时，
+        # 报错是 "The write operation timed out"，看起来像 GitHub 挂了，其实是本地发不出去。
+        with urllib.request.urlopen(req, data=data, timeout=120) as resp:
             text = resp.read().decode("utf-8")
             return json.loads(text) if text else {}
     except urllib.error.HTTPError as exc:
