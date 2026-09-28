@@ -38,9 +38,26 @@ import kepu_env                                        # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND = os.path.join(ROOT, "backend")
-# cloudflared 是 50 MB 级的单文件，放用户目录而不是仓库，免得把仓库搞脏
-TOOL_DIR = os.path.join(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~"),
-                        "kepu-tools")
+
+# cloudflared 是 50 MB 级的单文件，不放进仓库（免得把仓库搞脏），
+# 但也不写 C 盘用户目录——按「就近放在项目旁边」的约定：
+#   仓库在 E:\dev\kepu-quiz  →  工具放 E:\dev\.kepu-tools
+# 这样换一台机器、或把项目整体挪个位置，工具目录跟着走，不用改代码。
+# 查找顺序：环境变量 → 项目旁边的 .kepu-tools → 旧的用户目录副本 → 运行时下载。
+def _tool_candidates():
+    cands = []
+    env = os.environ.get("CLOUDFLARED")
+    if env:
+        cands.append(env)
+    cands.append(os.path.join(os.path.dirname(ROOT), ".kepu-tools", "cloudflared.exe"))
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        cands.append(os.path.join(local, "kepu-tools", "cloudflared.exe"))
+    return cands
+
+
+# 下载目的地：项目旁边的 .kepu-tools；若那里不可写，再退回用户目录
+TOOL_DIR = os.path.join(os.path.dirname(ROOT), ".kepu-tools")
 CF_EXE = os.path.join(TOOL_DIR, "cloudflared.exe")
 CF_URL = ("https://github.com/cloudflare/cloudflared/releases/latest/download/"
           "cloudflared-windows-amd64.exe")
@@ -96,11 +113,10 @@ def port_busy(port):
 
 
 def ensure_cloudflared():
-    got = os.environ.get("CLOUDFLARED")
-    if got and os.path.exists(got):
-        return got
-    if os.path.exists(CF_EXE):
-        return CF_EXE
+    """按 _tool_candidates() 的顺序找一个可用的 cloudflared；都没有才下载。"""
+    for cand in _tool_candidates():
+        if cand and os.path.exists(cand):
+            return cand
     say("没有找到 cloudflared，正在自动下载（约 52 MB，只需一次）…")
     os.makedirs(TOOL_DIR, exist_ok=True)
     try:
