@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
-"""把论文 Markdown 合并稿转换成符合学校规范的 .docx。
+"""把 Markdown 转换成 .docx。两种排版配置：
 
-为什么自己写转换器：论文对格式有硬性要求（章标题三号黑体居中、节标题四号黑体、
-三线表、图名在图下方五号黑体、正文小四宋体固定行距 20 磅），
-通用的 Markdown 转换工具做不到，而逐条手工调整又容易漏改。
+- `--profile thesis`（默认）：学术排版，按学校撰写规范——章标题三号黑体居中、
+  节标题四号黑体、三线表、图名在图下方五号黑体、正文小四宋体固定行距 20 磅。
+- `--profile product`：产品文档排版——标题左对齐、微软雅黑、正文 11 磅 1.5 倍行距、
+  页边距对称、不做首行缩进。产品手册要的是好读，不是符合论文规范。
+
+为什么自己写转换器：论文对格式有硬性要求，通用 Markdown 工具做不到；
+而产品文档又需要另一套版式。两套配置共用一个解析器，避免维护两份 400 行代码。
 
 用法（在仓库根目录）：
-    python tools/md2docx.py                      # 合并 docs/thesis/part_*.md 并导出
+    python tools/md2docx.py                      # 合并 docs/thesis/0[2-4]_*.md 并导出
     python tools/md2docx.py --input a.md b.md    # 指定输入文件
     python tools/md2docx.py --no-merge           # 只转换已合并好的 05_论文全文.md
 
-产物：docs/thesis/论文正文.docx
+    # 产品文档（不写论文合并稿，输出到 docs/product/）
+    python tools/md2docx.py --profile product ^
+        --input docs/product/产品说明书.md ^
+        --output docs/product/科普知识闯关系统_产品说明书.docx
 """
 import argparse
 import glob
@@ -31,17 +38,32 @@ ROOT = os.path.dirname(HERE)
 THESIS = os.path.join(ROOT, "docs", "thesis")
 FIGURES = os.path.join(ROOT, "docs", "figures")
 
+# 当前排版配置。由 --profile 设置；函数里通过 _is_product() 判断分支。
+PROFILE = "thesis"
+
+
+def _is_product():
+    return PROFILE == "product"
+
 # ---------------- 字体与字号（按学校撰写规范） ----------------
 FONT_SONG = "宋体"
 FONT_HEI = "黑体"
 FONT_KAI = "楷体"
 FONT_EN = "Times New Roman"
+FONT_YAHEI = "微软雅黑"
 
 SIZE_CH1 = Pt(16)      # 三号
 SIZE_H2 = Pt(14)       # 四号
 SIZE_H3 = Pt(12)       # 小四
 SIZE_BODY = Pt(12)     # 小四
 SIZE_CAPTION = Pt(10.5)  # 五号
+
+# 产品文档用的一套
+PROD_H1 = Pt(18)
+PROD_H2 = Pt(15)
+PROD_H3 = Pt(13)
+PROD_BODY = Pt(11)
+PROD_CAPTION = Pt(9.5)
 
 
 # ==================================================================
@@ -59,35 +81,58 @@ def set_run(run, size=SIZE_BODY, bold=False, font_cn=FONT_SONG, font_en=FONT_EN,
 
 def set_para_format(p, align=None, first_line_indent=True, line_spacing=20,
                     space_before=0, space_after=0):
-    """固定行距 20 磅、正文首行缩进 2 字符。"""
+    """论文：固定行距 20 磅、正文首行缩进 2 字符。
+
+    产品文档：1.5 倍行距、不缩进 —— 手册里有大量步骤和清单，
+    首行缩进反而让条目看起来参差不齐。
+    """
     if align is not None:
         p.alignment = align
     pf = p.paragraph_format
+    if _is_product():
+        pf.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+        pf.space_before = Pt(max(space_before, 2))
+        pf.space_after = Pt(max(space_after, 4))
+        return p
     pf.line_spacing_rule = WD_LINE_SPACING.EXACTLY
     pf.line_spacing = Pt(line_spacing)
     pf.space_before = Pt(space_before)
     pf.space_after = Pt(space_after)
     if first_line_indent and align is None:
         pf.first_line_indent = Pt(24)      # 2 字符 × 小四 12pt
+    return p
 
 
 def add_body(doc, text, indent=True, align=WD_ALIGN_PARAGRAPH.JUSTIFY):
     p = doc.add_paragraph()
-    set_para_format(p, align=align, first_line_indent=indent)
+    # 产品文档不首行缩进
+    set_para_format(p, align=align, first_line_indent=(False if _is_product() else indent))
     # 处理行内加粗 **xx**
     for seg in re.split(r"(\*\*[^*]+\*\*)", text):
         if not seg:
             continue
         if seg.startswith("**") and seg.endswith("**"):
-            set_run(p.add_run(seg[2:-2]), bold=True)
+            set_run(p.add_run(seg[2:-2]),
+                    size=(PROD_BODY if _is_product() else SIZE_BODY), bold=True)
         else:
-            set_run(p.add_run(seg))
+            set_run(p.add_run(seg),
+                    size=(PROD_BODY if _is_product() else SIZE_BODY))
     return p
 
 
 def add_heading(doc, level, text):
-    """章标题三号黑体居中（段前 2 行段后 1 行），节四号黑体左起，小节小四黑体左起。"""
+    """论文：章标题三号黑体居中，节四号黑体左起，小节小四黑体左起。
+
+    产品文档：三级都左对齐、微软雅黑、字号递减，不居中——
+    手册靠层级和留白区分结构，居中标题会显得像宣传册。
+    """
     p = doc.add_paragraph()
+    if _is_product():
+        size = {1: PROD_H1, 2: PROD_H2}.get(level, PROD_H3)
+        set_para_format(p, align=WD_ALIGN_PARAGRAPH.LEFT, first_line_indent=False,
+                        space_before=(14 if level == 1 else 10), space_after=6)
+        set_run(p.add_run(text), size=size, bold=True, font_cn=FONT_YAHEI)
+        return p
     if level == 1:
         set_para_format(p, align=WD_ALIGN_PARAGRAPH.CENTER, first_line_indent=False,
                         line_spacing=20, space_before=20, space_after=10)
@@ -104,18 +149,38 @@ def add_heading(doc, level, text):
 
 
 def add_caption(doc, text):
-    """图名在图下方、表名在表上方：五号黑体居中。"""
+    """图名在图下方、表名在表上方：五号黑体居中。产品文档用更小的字号。"""
     p = doc.add_paragraph()
     set_para_format(p, align=WD_ALIGN_PARAGRAPH.CENTER, first_line_indent=False,
                     line_spacing=14, space_before=2, space_after=6)
-    set_run(p.add_run(text), size=SIZE_CAPTION, font_cn=FONT_HEI)
+    set_run(p.add_run(text),
+            size=(PROD_CAPTION if _is_product() else SIZE_CAPTION), font_cn=FONT_HEI)
     return p
 
 
+def _resolve_image(filename):
+    """找插图：先按给定路径解析，再在 docs/figures、web/shots 下按文件名找。
+
+    产品文档要插界面截图，截图都在 web/shots 里；论文插图在 docs/figures。
+    两处都找一遍，写 Markdown 时只写文件名就行。
+    """
+    if os.path.isabs(filename) and os.path.exists(filename):
+        return filename
+    cands = [
+        os.path.join(ROOT, filename),
+        os.path.join(FIGURES, os.path.basename(filename)),
+        os.path.join(ROOT, "web", "shots", os.path.basename(filename)),
+    ]
+    for c in cands:
+        if os.path.exists(c):
+            return c
+    return None
+
+
 def add_picture(doc, filename, width_cm=14.0):
-    """插入插图：按文件名在 docs/figures 下查找，找不到则留占位说明。"""
-    path = os.path.join(FIGURES, filename)
-    if not os.path.exists(path):
+    """插入插图；找不到文件则留一行占位说明，方便回查缺了哪张。"""
+    path = _resolve_image(filename)
+    if not path:
         p = doc.add_paragraph()
         set_para_format(p, align=WD_ALIGN_PARAGRAPH.CENTER, first_line_indent=False)
         set_run(p.add_run("[缺少插图文件：%s]" % filename), size=SIZE_CAPTION,
@@ -281,6 +346,18 @@ def parse_markdown(doc, text):
             i += 1
             continue
 
+        # 标准 Markdown 插图：![说明](路径)
+        # 产品文档要插界面截图，用这个写法比论文那套「图 x-y」占位自然。
+        m = re.match(r"^!\[([^\]]*)\]\(([^)]+)\)\s*$", stripped)
+        if m:
+            flush_para()
+            caption, img = m.group(1).strip(), m.group(2).strip()
+            add_picture(doc, img)
+            if caption:
+                add_caption(doc, caption)
+            i += 1
+            continue
+
         # 插图占位：> 图 4-1 xxx（见 docs/figures/xxx.png）
         m = re.match(r"^>\s*(图\s*\d+-\d+[^\n（(]*)[（(]\s*见\s*([^\s）)]+)\s*[）)]", stripped)
         if m:
@@ -378,6 +455,16 @@ def merge_inputs(paths):
 def setup_styles(doc):
     style = doc.styles["Normal"]
     style.font.name = FONT_EN
+    if _is_product():
+        style.font.size = PROD_BODY
+        style.element.rPr.rFonts.set(qn("w:eastAsia"), FONT_SONG)
+        section = doc.sections[0]
+        # 产品文档页边距对称，左右留白一致更像手册
+        section.top_margin = Cm(2.4)
+        section.bottom_margin = Cm(2.4)
+        section.left_margin = Cm(2.4)
+        section.right_margin = Cm(2.4)
+        return
     style.font.size = SIZE_BODY
     style.element.rPr.rFonts.set(qn("w:eastAsia"), FONT_SONG)
     section = doc.sections[0]
@@ -388,12 +475,16 @@ def setup_styles(doc):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="论文 Markdown → Word（符合学校规范）")
+    global PROFILE
+    parser = argparse.ArgumentParser(description="Markdown → Word（学术 / 产品两种版式）")
     parser.add_argument("--input", nargs="*", help="输入的 Markdown 文件（按顺序）")
     parser.add_argument("--output", default=os.path.join(THESIS, "论文正文.docx"))
     parser.add_argument("--no-merge", action="store_true",
                         help="不合并，直接使用 docs/thesis/05_论文全文.md")
+    parser.add_argument("--profile", choices=["thesis", "product"], default="thesis",
+                        help="thesis=学术排版（默认）；product=产品文档排版")
     args = parser.parse_args()
+    PROFILE = args.profile
 
     if args.input:
         inputs = args.input
@@ -407,20 +498,30 @@ def main():
         print("缺少输入文件：%s" % missing)
         return 2
     if not inputs:
-        print("没有找到任何分章 Markdown，请先完成论文写作。")
+        print("没有找到任何输入 Markdown，请先完成写作。")
         return 2
 
     full_text = merge_inputs(inputs)
-    merged_path = os.path.join(THESIS, "05_论文全文.md")
-    with open(merged_path, "w", encoding="utf-8") as fh:
-        fh.write(full_text)
-    print("合并稿：%s（%d 字）" % (merged_path, len(re.sub(r"\s", "", full_text))))
+
+    # 只有学术稿才回写合并稿。产品文档不能碰 docs/thesis/05_论文全文.md——
+    # 那会让「生成产品说明」顺手改掉论文全文，属于不该有的副作用。
+    if not _is_product():
+        merged_path = os.path.join(THESIS, "05_论文全文.md")
+        with open(merged_path, "w", encoding="utf-8") as fh:
+            fh.write(full_text)
+        print("合并稿：%s（%d 字）" % (merged_path, len(re.sub(r"\s", "", full_text))))
+    else:
+        print("排版配置：product（产品文档）")
 
     doc = Document()
     setup_styles(doc)
     parse_markdown(doc, full_text)
+    out_dir = os.path.dirname(args.output)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     doc.save(args.output)
-    print("已生成：%s" % args.output)
+    print("已生成：%s（%d 字）"
+          % (args.output, len(re.sub(r"\s", "", full_text))))
     return 0
 
 
