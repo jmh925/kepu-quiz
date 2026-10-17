@@ -38,12 +38,20 @@ ROOT = os.path.dirname(HERE)
 THESIS = os.path.join(ROOT, "docs", "thesis")
 FIGURES = os.path.join(ROOT, "docs", "figures")
 
-# 当前排版配置。由 --profile 设置；函数里通过 _is_product() 判断分支。
+# 当前排版配置。由 --profile 设置；函数里通过 _is_product() / _is_proposal() 判断分支。
 PROFILE = "thesis"
 
 
 def _is_product():
     return PROFILE == "product"
+
+
+def _is_proposal():
+    return PROFILE == "proposal"
+
+
+# 开题报告封面上的字段行，命中这些前缀的段落居中排、不缩进
+COVER_PREFIXES = ("题目", "学生姓名", "学 生 姓 名", "学院", "专业班级", "学号", "指导教师", "日期")
 
 # ---------------- 字体与字号（按学校撰写规范） ----------------
 FONT_SONG = "宋体"
@@ -85,6 +93,10 @@ def set_para_format(p, align=None, first_line_indent=True, line_spacing=20,
 
     产品文档：1.5 倍行距、不缩进 —— 手册里有大量步骤和清单，
     首行缩进反而让条目看起来参差不齐。
+
+    开题报告：按学校表格要求——宋体小四、两端对齐、首行缩进 2 字符、
+    段前段后 0 行、固定值 20 磅。与论文版式的差别只在字号由字号常量决定，
+    行距与缩进完全一致，所以这里走和论文相同的分支。
     """
     if align is not None:
         p.alignment = align
@@ -103,20 +115,33 @@ def set_para_format(p, align=None, first_line_indent=True, line_spacing=20,
     return p
 
 
+def _is_cover_line(text):
+    """开题报告封面上的「题目：…」这类行。"""
+    t = (text or "").strip()
+    for pre in COVER_PREFIXES:
+        if t.startswith(pre) and ("：" in t[:len(pre) + 2] or ":" in t[:len(pre) + 2]):
+            return True
+    return False
+
+
 def add_body(doc, text, indent=True, align=WD_ALIGN_PARAGRAPH.JUSTIFY):
     p = doc.add_paragraph()
+    if _is_proposal() and _is_cover_line(text):
+        # 封面字段单独占行、居中、不缩进
+        set_para_format(p, align=WD_ALIGN_PARAGRAPH.CENTER, first_line_indent=False)
+        set_run(p.add_run(text), size=SIZE_BODY)
+        return p
     # 产品文档不首行缩进
     set_para_format(p, align=align, first_line_indent=(False if _is_product() else indent))
+    size = PROD_BODY if _is_product() else SIZE_BODY
     # 处理行内加粗 **xx**
     for seg in re.split(r"(\*\*[^*]+\*\*)", text):
         if not seg:
             continue
         if seg.startswith("**") and seg.endswith("**"):
-            set_run(p.add_run(seg[2:-2]),
-                    size=(PROD_BODY if _is_product() else SIZE_BODY), bold=True)
+            set_run(p.add_run(seg[2:-2]), size=size, bold=True)
         else:
-            set_run(p.add_run(seg),
-                    size=(PROD_BODY if _is_product() else SIZE_BODY))
+            set_run(p.add_run(seg), size=size)
     return p
 
 
@@ -125,8 +150,25 @@ def add_heading(doc, level, text):
 
     产品文档：三级都左对齐、微软雅黑、字号递减，不居中——
     手册靠层级和留白区分结构，居中标题会显得像宣传册。
+
+    开题报告：全文宋体小四，靠加粗区分层级；学校表格明确要求段前段后 0 行，
+    所以不额外加间距。文档大标题居中。
     """
     p = doc.add_paragraph()
+    if _is_proposal():
+        if level == 1:
+            set_para_format(p, align=WD_ALIGN_PARAGRAPH.CENTER, first_line_indent=False,
+                            space_before=0, space_after=0)
+            set_run(p.add_run(text), size=SIZE_CH1, bold=True, font_cn=FONT_HEI)
+        else:
+            # 二级是「一、…」这类节标题，三级是「研究背景」这类小标题
+            indent = (level == 3)
+            set_para_format(p, align=WD_ALIGN_PARAGRAPH.LEFT,
+                            first_line_indent=False, space_before=0, space_after=0)
+            if indent:
+                p.paragraph_format.first_line_indent = Pt(24)
+            set_run(p.add_run(text), size=SIZE_BODY, bold=True, font_cn=FONT_SONG)
+        return p
     if _is_product():
         size = {1: PROD_H1, 2: PROD_H2}.get(level, PROD_H3)
         set_para_format(p, align=WD_ALIGN_PARAGRAPH.LEFT, first_line_indent=False,
@@ -468,6 +510,13 @@ def setup_styles(doc):
     style.font.size = SIZE_BODY
     style.element.rPr.rFonts.set(qn("w:eastAsia"), FONT_SONG)
     section = doc.sections[0]
+    if _is_proposal():
+        # 开题报告按学校表格：上 2.8 / 下 2.2 / 左 2.8 / 右 2.2 厘米
+        section.top_margin = Cm(2.8)
+        section.bottom_margin = Cm(2.2)
+        section.left_margin = Cm(2.8)
+        section.right_margin = Cm(2.2)
+        return
     section.top_margin = Cm(2.5)
     section.bottom_margin = Cm(2.5)
     section.left_margin = Cm(3.0)
@@ -476,13 +525,14 @@ def setup_styles(doc):
 
 def main():
     global PROFILE
-    parser = argparse.ArgumentParser(description="Markdown → Word（学术 / 产品两种版式）")
+    parser = argparse.ArgumentParser(description="Markdown → Word（学术 / 产品 / 开题报告三种版式）")
     parser.add_argument("--input", nargs="*", help="输入的 Markdown 文件（按顺序）")
     parser.add_argument("--output", default=os.path.join(THESIS, "论文正文.docx"))
     parser.add_argument("--no-merge", action="store_true",
                         help="不合并，直接使用 docs/thesis/05_论文全文.md")
-    parser.add_argument("--profile", choices=["thesis", "product"], default="thesis",
-                        help="thesis=学术排版（默认）；product=产品文档排版")
+    parser.add_argument("--profile", choices=["thesis", "product", "proposal"],
+                        default="thesis",
+                        help="thesis=学术排版（默认）；product=产品文档；proposal=开题报告")
     args = parser.parse_args()
     PROFILE = args.profile
 
@@ -503,15 +553,15 @@ def main():
 
     full_text = merge_inputs(inputs)
 
-    # 只有学术稿才回写合并稿。产品文档不能碰 docs/thesis/05_论文全文.md——
-    # 那会让「生成产品说明」顺手改掉论文全文，属于不该有的副作用。
-    if not _is_product():
+    # 只有学术稿才回写合并稿。产品文档与开题报告都不能碰 docs/thesis/05_论文全文.md——
+    # 那会让「生成别的文档」顺手改掉论文全文，属于不该有的副作用。
+    if PROFILE == "thesis":
         merged_path = os.path.join(THESIS, "05_论文全文.md")
         with open(merged_path, "w", encoding="utf-8") as fh:
             fh.write(full_text)
         print("合并稿：%s（%d 字）" % (merged_path, len(re.sub(r"\s", "", full_text))))
     else:
-        print("排版配置：product（产品文档）")
+        print("排版配置：%s" % PROFILE)
 
     doc = Document()
     setup_styles(doc)
