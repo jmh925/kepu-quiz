@@ -171,7 +171,9 @@ def add_heading(doc, level, text):
         return p
     if _is_product():
         size = {1: PROD_H1, 2: PROD_H2}.get(level, PROD_H3)
-        set_para_format(p, align=WD_ALIGN_PARAGRAPH.LEFT, first_line_indent=False,
+        # 一级标题是文档名，居中；二级及以下是节标题，左对齐
+        align = WD_ALIGN_PARAGRAPH.CENTER if level == 1 else WD_ALIGN_PARAGRAPH.LEFT
+        set_para_format(p, align=align, first_line_indent=False,
                         space_before=(14 if level == 1 else 10), space_after=6)
         set_run(p.add_run(text), size=size, bold=True, font_cn=FONT_YAHEI)
         return p
