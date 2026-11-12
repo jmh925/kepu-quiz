@@ -194,6 +194,10 @@ def main():
                     if w == 390:
                         pg.screenshot(path=os.path.join(SHOTS, "stu_390_%s.png" % name),
                                       full_page=False)
+                    if w == 1440:
+                        # 宽屏现在也应该是手机形态，留一张证据图
+                        pg.screenshot(path=os.path.join(SHOTS, "stu_1440_%s.png" % name),
+                                      full_page=False)
                     if bad and w == 390:
                         pg.screenshot(path=os.path.join(SHOTS, "bad_stu_%s_%d.png" % (name, w)),
                                       full_page=False)
