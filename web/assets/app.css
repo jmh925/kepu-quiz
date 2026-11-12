@@ -72,8 +72,8 @@ body {
    它的自然高度只有 23.99px，刚好卡在 WCAG 2.5.8 要求的 24px 之下。
    顺手做成一个带内边距的小胶囊，鼠标和手指都好点。 */
 .admin-link {
-  display: inline-flex; align-items: center; min-height: 28px;
-  padding: 0 6px; border-radius: 8px;
+  display: inline-flex; align-items: center; min-height: 32px;
+  padding: 0 8px; border-radius: 8px;
 }
 .admin-link:hover { background: #EEF7FD; color: var(--c-primary-deep); }
 
@@ -381,3 +381,170 @@ textarea { line-height: 1.7; resize: vertical; }
   .pk-vs-mid { font-size: 18px; padding: 0 2px; }
   .pk-avatar { width: 56px; height: 56px; font-size: 26px; }
 }
+
+/* ============================================================
+   手机适配层
+   ------------------------------------------------------------
+   这一层做四件事，都是为了「像手机 App」而不是「一个能看的小网页」：
+
+   1. 底部标签栏替代顶栏导航。手机上拇指够不到顶栏，6 个导航项横向
+      滑动也不好点；底部固定 6 格，每格 65×56，是最省力的位置。
+   2. 安全区避让。iPhone 的刘海与底部小白条会盖住内容，靠
+      env(safe-area-inset-*) 把内边距补回来（需要 viewport-fit=cover）。
+   3. 触摸反馈。手机没有 hover，按下必须有反馈，否则点了像没反应。
+   4. 去掉移动浏览器的「副作用」：双击缩放、点击灰色高亮、
+      下拉刷新打断操作、横屏自动放大字号。
+
+   顺序注意：媒体查询不改优先级，所以这一整块必须放在文件最后。
+   ============================================================ */
+
+/* ---------- 4. 全局去副作用 ---------- */
+html {
+  /* iOS 横屏时会自动放大正文字号，排版会突然变样 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* 页面自身不该被横向拖动；真需要横滑的元素单独开 overflow */
+  overflow-x: hidden;
+}
+body {
+  /* 点击链接/按钮时 iOS 会闪一层灰，去掉后按下反馈由我们自己的 :active 负责 */
+  -webkit-tap-highlight-color: transparent;
+  /* 下拉时不要触发浏览器自己的「刷新整个页面」，答题答到一半会被打断 */
+  overscroll-behavior-y: contain;
+}
+/* 所有可点元素去掉 300ms 点击延迟，并禁止双击缩放 */
+button, .btn, a, .chip, .option, .grade-btn, .tabbar a, label {
+  touch-action: manipulation;
+}
+
+/* 手机上按下必须看得见：只给触屏生效，桌面端靠 :hover */
+@media (hover: none) {
+  .chip:active, .grade-btn:active, .option:active,
+  .navlinks a:active, .tabbar a:active { background: #E6F4FD; }
+  .btn:active { opacity: .86; }
+  .card:active { box-shadow: 0 2px 8px rgba(79,195,247,.20); }
+}
+
+/* ---------- 1. 底部标签栏 ---------- */
+.tabbar {
+  display: none;              /* 桌面端不显示，下面 640px 处再打开 */
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  background: rgba(255,255,255,.97);
+  border-top: 1px solid var(--c-line);
+  box-shadow: 0 -2px 14px rgba(30,60,90,.07);
+  /* 2. 把底部安全区补成内边距，小白条不会压住文字 */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-backdrop-filter: saturate(1.6) blur(12px);
+  backdrop-filter: saturate(1.6) blur(12px);
+}
+.tabbar a {
+  position: relative;
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px;
+  min-height: 56px; padding: 7px 2px 5px;
+  color: var(--c-sub); text-decoration: none;
+  font-size: 11px; line-height: 1.15; letter-spacing: .3px;
+  transition: color .12s ease;
+}
+.tabbar .tb-ico {
+  font-size: 21px; line-height: 1;
+  filter: grayscale(.5) opacity(.75);
+  transition: filter .12s ease, transform .12s ease;
+}
+.tabbar .tb-txt { white-space: nowrap; }
+.tabbar a.on { color: var(--c-primary-ink); font-weight: 700; }
+.tabbar a.on .tb-ico { filter: none; transform: translateY(-1px); }
+/* 选中项顶上一条小横杠，比只改颜色更容易一眼看出在哪一页 */
+.tabbar a.on::after {
+  content: ""; position: absolute; top: 0; left: 50%;
+  width: 22px; height: 3px; border-radius: 0 0 3px 3px;
+  background: var(--c-primary-ink);
+  transform: translateX(-50%);
+}
+
+/* ---------- 手机宽度：切换到标签栏布局 ---------- */
+@media (max-width: 640px) {
+  .tabbar { display: flex; }
+
+  /* 顶栏的第二行导航让位给底部标签栏，顶栏只留「品牌 + 段位 + 登录」 */
+  .navlinks { display: none !important; }
+
+  /* 2. 顶栏顶到刘海下面（横屏时左右也可能有安全区） */
+  .topbar {
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-left: calc(14px + env(safe-area-inset-left, 0px));
+    padding-right: calc(14px + env(safe-area-inset-right, 0px));
+  }
+
+  /* 底部留出标签栏的高度，最后一行内容不会被挡住 */
+  body { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  .wrap {
+    padding-left: calc(14px + env(safe-area-inset-left, 0px));
+    padding-right: calc(14px + env(safe-area-inset-right, 0px));
+    padding-bottom: 24px;
+  }
+
+  /* 提示条往上让，否则被标签栏压住 */
+  #toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+  /* 奖励气泡在手机上也上移一点，避开标签栏 */
+  #flash { top: 34%; }
+
+  /* 弹窗在手机上留出两侧呼吸位 */
+  #modal .box { width: 92vw; max-width: 400px; }
+
+  /* 顶栏「管理端 ↗」原来只有 28px 高，手机上点不准；
+     它是个次要入口，但手指不认主次，高度得给够。 */
+  .admin-link { min-height: 40px; padding: 0 8px; }
+
+  /* 欢迎卡：原来文字与小科左右并排，390px 下文字被挤成
+     「今天想探索什 / 么？你是小学高 / 年级哦」这样的窄栏。
+     手机改成上下排：文字占满整行，小科居中放在下面当装饰。 */
+  .greet { flex-direction: column; align-items: stretch; gap: 10px; }
+  .greet .mascot { align-self: center; }
+
+  /* 表单控件已经是 16px，不会触发 iOS 聚焦缩放；
+     这里只把下拉框的高度拉到和输入框一致，手指好点 */
+  select { min-height: 48px; padding-right: 40px; }
+
+  /* 横向可滑的胶囊行：省得挤成两行占掉半屏 */
+  .chips { gap: 8px; }
+  .chip { padding: 10px 15px; font-size: 15px; }
+
+  /* 错题本、知识库这类列表行在窄屏改成上下排列 */
+  .doc-row { flex-wrap: wrap; gap: 10px; }
+  .item { padding: 14px 0; }
+
+  /* 阶梯页的每一行：名字与进度条分两行，避免名字被压成省略号 */
+  .rank-row { gap: 10px; padding: 12px 8px; }
+  .rank-name { font-size: 15px; }
+
+  /* 答题页的题干与选项字号略放大，手机上一屏看得清 */
+  .h2 { font-size: 19px; }
+  .option { font-size: 16px; min-height: 58px; padding: 12px 14px; }
+  .option-key { width: 30px; height: 30px; flex-basis: 30px; margin-right: 10px; font-size: 14px; }
+}
+
+/* ---------- 超窄屏（≤360px，如 iPhone SE 一代） ---------- */
+@media (max-width: 360px) {
+  .tabbar a { font-size: 10px; min-height: 52px; padding: 5px 1px 4px; }
+  .tabbar .tb-ico { font-size: 19px; }
+  .wrap { padding-left: 11px; padding-right: 11px; }
+  .card { padding: 13px; }
+  .h1 { font-size: 20px; }
+  .btn { font-size: 16px; padding: 0 20px; }
+  .brand { font-size: 15px; }
+  .grade-btn { min-width: 108px; }
+}
+
+/* ---------- 横屏手机：竖向空间紧张，把标签栏压薄 ---------- */
+@media (max-width: 900px) and (max-height: 480px) {
+  .tabbar a { min-height: 44px; padding: 4px 2px; }
+  .tabbar .tb-txt { display: none; }
+  .topbar { padding-top: 6px; padding-bottom: 6px; }
+  #toast { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- 100dvh：移动浏览器地址栏收起/展开时 100vh 会跳 ---------- */
+#loading { height: 100dvh; }
+

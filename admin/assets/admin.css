@@ -164,3 +164,184 @@ input:focus, select:focus, textarea:focus { border-color: var(--c-primary); }
 label.block { display: flex; flex-direction: column; gap: 6px; color: var(--c-sub); font-size: 13px; margin-bottom: 12px; }
 label.block textarea { width: 100%; resize: vertical; }
 .modal-foot { text-align: right; }
+
+/* ============================================================
+   手机适配层
+   ------------------------------------------------------------
+   管理端原本只按桌面做：侧栏固定 210px、表格不设最小宽度、
+   弹层固定 620px，在 390px 宽的手机上会横向溢出到看不见右边。
+   这一层把它改成：
+
+   1. 侧栏在 900px 以下变成顶部横条，导航项可横向滑动（拇指够得到）；
+   2. 主体单列，筛选条换行，输入框撑满；
+   3. 表格放进可横向滚动的面板，并给表格设最小宽度 —— 宁可左右滑，
+      也不要把 6 列压成看不清的一列；
+   4. 弹层改成全宽、贴顶部，避免超出屏幕高度后底部按钮点不到；
+   5. 输入框字号提到 16px，iOS 聚焦时不会自动放大页面。
+
+   顺序：媒体查询不改优先级，必须放在文件末尾。
+   ============================================================ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+button, a, .btn, input, select, textarea, .pager button {
+  touch-action: manipulation;
+}
+
+@media (max-width: 900px) {
+  /* 1. 侧栏 → 顶部横条 */
+  .app {
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  .sidebar {
+    width: 100%;
+    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 8px;
+  }
+  /* 顶部原来占三行（品牌 / 导航 / 账号退出），手机上白吃掉约 40px。
+     改成两行：品牌与「退出」并排，导航独占第二行。 */
+  .sidebar {
+    display: flex;
+    /* 基础规则是 column（桌面端的竖排侧栏），这里必须显式改成 row，
+       否则 flex-wrap 会按「列」方向换行，flex-basis:100% 算的是高度，
+       导航条会被挤到视口外 3px。第一版就漏了这一行。 */
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+  }
+  .sidebar .brand { margin-bottom: 0; font-size: 15px; flex: 1 1 auto; }
+  .nav {
+    order: 3;
+    flex: 0 0 100%;
+    flex-direction: row;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a {
+    border-left-width: 0;
+    border-bottom: 3px solid transparent;
+    padding: 10px 12px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    font-size: 14px;
+    border-radius: 8px 8px 0 0;
+  }
+  .nav a.active {
+    border-left-color: transparent;
+    border-bottom-color: #ffca28;
+  }
+  .sidebar-foot {
+    order: 2;
+    flex: 0 0 auto;
+    padding: 0;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 2. 主体单列 */
+  .main {
+    padding: 14px 12px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .view-head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .view-head h2 { font-size: 18px; }
+  .tools {
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+  .tools .input { flex: 1 1 140px; min-width: 0; }
+  .tools .btn { flex: 0 0 auto; }
+
+  /* 5. 表单控件 16px，防 iOS 聚焦缩放 */
+  input, select, textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .input { min-width: 0; }
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 40px; font-size: 14px; }
+  /* 分页按钮不是 .btn，之前漏了：32px 高，手指不好点 */
+  .pager button { min-height: 40px; font-size: 14px; padding: 6px 12px; }
+
+  /* 3. 表格：面板横向滚动 + 表格最小宽度 */
+  .panel {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 12px;
+  }
+  .table { min-width: 620px; }
+  .table .stem { max-width: none; }
+  .cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .trend { height: 110px; gap: 8px; }
+
+  /* 4. 弹层全宽、贴顶 */
+  .modal {
+    padding: 10px;
+    align-items: flex-start;
+  }
+  .modal-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .modal-card.wide { width: 100%; }
+  .modal-foot { position: sticky; bottom: 0; background: #fff; padding-top: 10px; }
+  .form-row { gap: 10px; }
+  .form-row label { min-width: 100%; }
+
+  /* 登录卡在窄屏留边 */
+  .login-layer { padding: 16px; }
+  .login-card {
+    width: min(360px, 94vw);
+    padding: 26px 20px;
+  }
+}
+
+@media (max-width: 400px) {
+  .table { min-width: 540px; font-size: 13px; }
+  .table th, .table td { padding: 9px 8px; }
+  .login-card { padding: 20px 16px; }
+  .cards { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .nav a { padding: 10px 10px; font-size: 13px; }
+}
+
+/* 横屏手机：竖向空间紧，压缩顶部 */
+@media (max-width: 900px) and (max-height: 480px) {
+  .sidebar { padding-top: 6px; padding-bottom: 4px; }
+  .sidebar .brand { display: none; }
+  .nav a { min-height: 38px; padding: 6px 10px; }
+  .modal-card { max-height: 96dvh; }
+}
+/* 登录页脚的「/app/」是个裸行内链接，自然尺寸只有 35×17，
+   手机上几乎点不中。做成带内边距的小胶囊。 */
+.login-card .muted a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: #eef4fb;
+}

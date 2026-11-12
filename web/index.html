@@ -2,7 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- viewport-fit=cover 让页面延伸到刘海与圆角区域，
+     CSS 里再用 env(safe-area-inset-*) 把内容避让回来；
+     不加这个，iPhone 的底部小白条会压在底部标签栏上。 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0277BD">
+<!-- 关掉 iOS 把数字自动识别成电话号码的行为（题库里有大量数字） -->
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="科普闯关">
 <title>科普闯关系统 · 中小学生</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -151,6 +160,18 @@
   </div>
 </div>
 <div id="flash"></div>
+
+<!-- 底部标签栏：只在手机宽度显示（桌面端的导航在顶栏）。
+     6 项等分，图标用 emoji 免去图片依赖；
+     data-nav 与顶栏一致，main.js 里的高亮逻辑会自动一起处理。 -->
+<nav class="tabbar" aria-label="主导航">
+  <a href="#/home" data-nav="home"><span class="tb-ico" aria-hidden="true">🚀</span><span class="tb-txt">闯关</span></a>
+  <a href="#/pk" data-nav="pk"><span class="tb-ico" aria-hidden="true">⚔️</span><span class="tb-txt">对战</span></a>
+  <a href="#/ranks" data-nav="ranks"><span class="tb-ico" aria-hidden="true">🏅</span><span class="tb-txt">阶梯</span></a>
+  <a href="#/wrong" data-nav="wrong"><span class="tb-ico" aria-hidden="true">📕</span><span class="tb-txt">错题</span></a>
+  <a href="#/knowledge" data-nav="knowledge"><span class="tb-ico" aria-hidden="true">📚</span><span class="tb-txt">知识</span></a>
+  <a href="#/profile" data-nav="profile"><span class="tb-ico" aria-hidden="true">👤</span><span class="tb-txt">我的</span></a>
+</nav>
 
 <script src="assets/app.js"></script>
 <script src="assets/main.js"></script>

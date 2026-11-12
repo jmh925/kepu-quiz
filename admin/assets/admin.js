@@ -2,6 +2,20 @@
    与后端约定：所有请求携带 X-Admin-Token；统一响应体 {code, message, data}。*/
 'use strict';
 
+/* 出题来源的中文名。
+ *
+ * 原来这里是个三元表达式，只认 ai 与 wrongbook，其余一律叫「题库出题」。
+ * 但库里实际有三种来源：bank（题库）、pk（同伴对战）、wrongbook（错题重练），
+ * 结果看板上出现两行都叫「题库出题」（588 次与 73 次），
+ * 73 次其实是 PK 对战 —— 数据没错，标签漏了一种。
+ * 三个地方都用同一套文案，所以收成一个函数，免得以后再漏。 */
+function sourceLabel(src) {
+  if (src === 'ai') return 'AI 出题';
+  if (src === 'pk') return 'PK 对战';
+  if (src === 'wrongbook') return '错题重练';
+  return '题库出题';
+}
+
 var Admin = (function () {
   var API = '/api/v1/admin';
   var state = { token: '', admin: null, qPage: 1, uPage: 1, sPage: 1, editing: null };
@@ -97,7 +111,7 @@ var Admin = (function () {
           esc(c[1]) + '</div><div class="s">' + esc(c[2]) + '</div></div>';
       }).join('');
       var src = (d.quizzes.by_source || []).map(function (s) {
-        return (s.source === 'ai' ? 'AI 出题' : s.source === 'wrongbook' ? '错题重练' : '题库出题') + ' ' + s.c + ' 次';
+        return sourceLabel(s.source) + ' ' + s.c + ' 次';
       }).join('、');
       $('cards').insertAdjacentHTML('beforeend',
         '<div class="card"><div class="k">出题来源分布</div><div class="v" style="font-size:15px">' +
@@ -290,7 +304,7 @@ var Admin = (function () {
 
       // 1) 逐次闯关记录
       var sessions = (d.sessions || []).map(function (x) {
-        var src = x.source === 'ai' ? 'AI 出题' : x.source === 'wrongbook' ? '错题重练' : '题库出题';
+        var src = sourceLabel(x.source);
         return '<tr><td>' + esc(x.created_at) + '</td><td>' + esc(x.title) + '</td>'
           + '<td>' + gradeLabel(x.grade) + '</td><td><span class="tag">' + src + '</span></td>'
           + '<td>' + (x.total ? (x.correct + ' / ' + x.total) : '未提交') + '</td>'
@@ -379,7 +393,7 @@ var Admin = (function () {
     state.sPage = page || 1;
     return get('/sessions?page=' + state.sPage + '&size=10').then(function (d) {
       var rows = (d.items || []).map(function (s) {
-        var src = s.source === 'ai' ? 'AI 出题' : s.source === 'wrongbook' ? '错题重练' : '题库出题';
+        var src = sourceLabel(s.source);
         return '<tr><td class="muted">' + esc(s.quiz_id) + '</td><td>' + esc(s.title) + '</td>' +
           '<td>' + esc(s.nickname) + '</td><td>' + gradeLabel(s.grade) + '</td>' +
           '<td><span class="tag">' + src + '</span></td>' +
