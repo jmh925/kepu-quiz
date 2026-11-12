@@ -63,6 +63,22 @@ class TypedStaticFiles(StaticFiles):
             return self._EXTRA[ext]
         return super().guess_type(path)
 
+    def file_response(self, *args, **kwargs):
+        """给静态资源加「必须回源校验」的缓存头。
+
+        为什么必须加：StaticFiles 默认不发 Cache-Control，浏览器于是按
+        启发式规则自行缓存（大致取 Last-Modified 至今时长的 10%）。
+        改完 CSS 直接刷新，拿到的仍是旧文件，看起来像「改了没生效」——
+        本地演示时极容易被误判成前端没渲染。
+
+        这里统一发 no-cache：不是不缓存，而是每次带着 ETag 回来问一句。
+        文件没变就是 304（几十字节），变了就是 200 新内容。
+        代价可忽略，换来的是「改完刷新就生效」。
+        """
+        resp = super().file_response(*args, **kwargs)
+        resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return resp
+
 app = FastAPI(
     title="科普知识闯关小程序 · 服务端",
     description="中小学生科普知识闯关小程序的设计与实现 —— 后端接口文档",
