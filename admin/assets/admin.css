@@ -345,3 +345,164 @@ button, a, .btn, input, select, textarea, .pager button {
   border-radius: 6px;
   background: #eef4fb;
 }
+
+/* ============================================================
+   统一「手机形态」：不论窗口多宽，整页都是小程序那样的手机版
+   ------------------------------------------------------------
+   之前管理端只在 ≤900px 时把侧栏挪到顶部，电脑上仍是宽屏后台。
+   按要求改成：整页收成 460px 中轴，导航统一走底部标签栏，
+   与小程序端的观感一致。侧栏里的竖排导航因此收起。
+
+   表格仍是横向滚动 —— 460px 放不下 6 列，压成一列会看不清。
+   ============================================================ */
+
+/* 侧栏导航由底部标签栏接管 */
+.nav { display: none !important; }
+
+/* 基础规则 .app 是 row（桌面左右分栏），这里统一改成竖排：
+   侧栏在上当标题栏，主区在下。原来只在 ≤900px 的媒体块里改过，
+   宽屏下就会侧栏占满整行、主区被挤没。 */
+.app { flex-direction: column; }
+
+/* 下面这几条原来只写在 ≤900px 的媒体块里，所以宽屏下不生效。
+   现在整页永远是 460px 中轴，宽屏同样需要它们，提到全局。 */
+
+/* 表格：460px 放不下六列，宁可左右滑也不压成一列看不清 */
+.panel { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table { min-width: 600px; }
+.table .stem { max-width: none; }
+
+/* 标题栏与筛选条换行，别把输入框挤出屏幕 */
+.view-head { flex-wrap: wrap; gap: 10px; }
+.tools { flex-wrap: wrap; gap: 8px; }
+
+/* 弹层同样收进中轴，否则会在中轴外面盖住整个视口 */
+.modal {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 460px;
+  padding: 12px;
+  align-items: flex-start;
+}
+.modal-card {
+  width: 100%;
+  max-width: 100%;
+  max-height: 92dvh;
+  padding: 16px;
+}
+.modal-card.wide { width: 100%; }
+.form-row label { min-width: 100%; }
+
+/* 登录层原本 position:fixed inset:0，会铺满整个视口；
+   现在整页是一条 460px 中轴，登录层也跟着收进中轴里。 */
+.login-layer {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 460px;
+}
+
+/* 顶部只留一行：品牌 + 账号 + 退出 */
+.sidebar {
+  flex: 0 0 auto;
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+}
+.sidebar .brand {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+}
+.sidebar-foot {
+  order: 2;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+  gap: 8px;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- 底部标签栏 ---------- */
+.tabbar {
+  display: flex;
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 460px;
+  z-index: 30;
+  background: rgba(255, 255, 255, .97);
+  border-top: 1px solid var(--c-line);
+  box-shadow: 0 -2px 14px rgba(20, 45, 70, .10);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-backdrop-filter: saturate(1.6) blur(12px);
+  backdrop-filter: saturate(1.6) blur(12px);
+}
+.tabbar a {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 7px 2px 5px;
+  color: var(--c-sub);
+  text-decoration: none;
+  font-size: 11px;
+  line-height: 1.15;
+  touch-action: manipulation;
+}
+.tabbar .tb-ico {
+  font-size: 20px;
+  line-height: 1;
+  filter: grayscale(.5) opacity(.75);
+  transition: filter .12s ease, transform .12s ease;
+}
+.tabbar a.active { color: var(--c-primary); font-weight: 700; }
+.tabbar a.active .tb-ico { filter: none; transform: translateY(-1px); }
+.tabbar a.active::after {
+  content: ";
+  position: absolute;
+  top: 0; left: 50%;
+  width: 22px; height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--c-primary);
+  transform: translateX(-50%);
+}
+.tabbar a:active { background: #eef4fb; }
+
+/* ---------- 中轴：宽屏也是手机 ---------- */
+@media (min-width: 641px) {
+  html { background: #101f2f; }
+  body {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--c-bg);
+    box-shadow: 0 0 0 1px #24466c, 0 20px 60px rgba(0, 0, 0, .28);
+  }
+  .app { min-height: 100vh; }
+  /* 内容给标签栏让位 */
+  .main { padding: 14px 12px 86px; }
+  .sidebar { max-width: 460px; margin: 0 auto; }
+  .login-card { width: min(360px, 86vw); }
+}
+
+/* 手机上同样给标签栏让位 */
+@media (max-width: 640px) {
+  .main { padding-bottom: 86px; }
+}

@@ -173,8 +173,17 @@ with sync_playwright() as p:
     check(len(sec3.strip()) > 20, "错题明细区块有内容")
 
     # 光看文字还不够：面板要真的是「宽弹窗 + 各块上下排开」，不能挤成一团或溢出
+    #
+    # 「宽」的判据要跟着版式走：早期是桌面宽屏后台，面板固定 620px / wide 版
+    # min(1080px, 94vw)，所以写死 >= 700。现在整页收成 460px 的手机中轴，
+    # 弹窗占满中轴就是「宽」——再用 700 去卡，会把正确的手机版式判成失败。
+    # 改成：取可用宽度（body 宽度）的 90% 与 700 中较小者作为门槛。
     box = pg.locator("#user-modal .modal-card").bounding_box()
-    check(box and box["width"] >= 700, "详情面板是宽弹窗（宽 %.0f px）" % (box["width"] if box else 0))
+    avail = pg.evaluate("() => document.body.getBoundingClientRect().width")
+    need = min(700, avail * 0.9)
+    check(box and box["width"] >= need,
+          "详情面板占满可用宽度（宽 %.0f px / 可用 %.0f px / 门槛 %.0f px）"
+          % (box["width"] if box else 0, avail, need))
     geom = pg.evaluate("""() => {
       const vw = window.innerWidth;
       const cards = [...document.querySelectorAll('#user-detail .detail-cards .card')];

@@ -222,6 +222,9 @@ def main():
                     if w == 390:
                         pg2.screenshot(path=os.path.join(SHOTS, "adm_390_%s.png" % name),
                                        full_page=False)
+                    if w == 1440:
+                        pg2.screenshot(path=os.path.join(SHOTS, "adm_1440_%s.png" % name),
+                                       full_page=False)
                 # 管理端登录页
                 pg2.goto(BASE + "/admin/", wait_until="load", timeout=60000)
                 pg2.evaluate("() => { sessionStorage.clear(); }")

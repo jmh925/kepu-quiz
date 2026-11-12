@@ -84,7 +84,9 @@ var Admin = (function () {
     views.forEach(function (v) {
       $('view-' + v).classList.toggle('hidden', v !== view);
     });
-    Array.prototype.forEach.call(document.querySelectorAll('.nav a'), function (a) {
+    // 用 [data-view] 而不是 .nav a：底部标签栏与侧栏导航共用同一套
+  // data-view，这样两边的高亮由同一处逻辑维护，不会一边亮一边不亮。
+  Array.prototype.forEach.call(document.querySelectorAll('[data-view]'), function (a) {
       a.classList.toggle('active', a.getAttribute('data-view') === view);
     });
     if (view === 'dashboard') { loadDashboard(); }

@@ -151,6 +151,17 @@
   </div>
 </div>
 
+<!-- 底部标签栏：与侧栏导航同源（都用 data-view），
+     手机上替代侧栏；电脑上同样显示，整页收成手机形态。
+     图标用 emoji，与小程序端的视觉保持一致。 -->
+<nav class="tabbar" aria-label="后台导航">
+  <a href="#/dashboard" data-view="dashboard"><span class="tb-ico" aria-hidden="true">📊</span><span class="tb-txt">看板</span></a>
+  <a href="#/questions" data-view="questions"><span class="tb-ico" aria-hidden="true">📚</span><span class="tb-txt">题库</span></a>
+  <a href="#/users" data-view="users"><span class="tb-ico" aria-hidden="true">👥</span><span class="tb-txt">用户</span></a>
+  <a href="#/sessions" data-view="sessions"><span class="tb-ico" aria-hidden="true">🎯</span><span class="tb-txt">记录</span></a>
+  <a href="#/logs" data-view="logs"><span class="tb-ico" aria-hidden="true">📝</span><span class="tb-txt">日志</span></a>
+</nav>
+
 <script src="assets/admin.js"></script>
 </body>
 </html>
